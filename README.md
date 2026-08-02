@@ -30,6 +30,28 @@ curl http://localhost:3000/api/health          # {"status":"ok","database":"up"}
 docker compose exec db psql -U pcpartlister -d pcpartlister -c '\dt'
 ```
 
+## Authentification
+
+Aucune page ni route API n'est accessible sans session valide, à la seule exception de
+`/connexion` et `/api/health`. Il n'y a pas d'inscription publique : les comptes se créent
+depuis **Comptes** (réservé aux administrateurs).
+
+Le premier démarrage crée un administrateur à partir de `ADMIN_EMAIL` / `ADMIN_PASSWORD`,
+avec changement de mot de passe obligatoire à la première connexion. Ce bootstrap ne
+s'exécute que si la table `users` est vide : modifier `ADMIN_PASSWORD` ensuite ne
+réinitialise aucun compte existant.
+
+- Mots de passe hachés en Argon2id (19 Mio, 2 itérations, 1 lane — paramètres OWASP).
+- Sessions en base ; le cookie contient un jeton aléatoire dont seule une empreinte HMAC
+  est stockée. Un dump de la base ne permet pas de rejouer une session.
+- Cookie `httpOnly`, `SameSite=Lax`, `secure` selon `COOKIE_SECURE`, expiration glissante.
+- Connexion limitée par IP : fenêtre glissante de 15 min, 10 échecs maximum, avec délai
+  progressif (1 s, 2 s, 4 s, 8 s) à partir du 3ᵉ échec.
+
+> **Derrière un reverse proxy**, assurez-vous qu'il transmet `X-Forwarded-For`. Sans cela
+> toutes les requêtes semblent venir de la même adresse et le rate limiting devient global
+> au lieu d'être par client.
+
 ## Configuration
 
 Toutes les variables sont documentées dans [.env.example](.env.example). La plus sensible :

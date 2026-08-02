@@ -17,3 +17,6 @@ data/images/
 Thumbs.db
 .idea/
 .vscode/
+
+# Playwright MCP session artifacts
+.playwright-mcp/
