@@ -52,6 +52,31 @@ réinitialise aucun compte existant.
 > toutes les requêtes semblent venir de la même adresse et le rate limiting devient global
 > au lieu d'être par client.
 
+## Catalogue
+
+Le catalogue décrit des **modèles** de composants, indépendamment de ce qui est possédé.
+Il est livré pré-rempli par [data/seed/catalog.json](data/seed/catalog.json), un fichier
+éditable à la main : prix en euros, une clé stable par entrée, et les `specs` sans le
+discriminant de catégorie (ajouté automatiquement au chargement).
+
+Enrichir le catalogue par le fichier :
+
+1. ajouter une entrée avec une `key` unique en kebab-case ;
+2. `docker compose restart app`.
+
+Le seed insère uniquement ce qui manque. Une entrée déjà présente n'est jamais écrasée,
+donc les modifications faites depuis l'interface survivent à tous les redémarrages. Une
+entrée mal formée est signalée dans les logs et ignorée, sans bloquer les autres.
+
+### Images
+
+Chaque entrée reçoit une image dans le volume `images`, servie par `/api/images` derrière
+la session (le volume n'est jamais exposé en statique). Le champ `imageUrl` est optionnel :
+s'il est présent et joignable, l'image est téléchargée ; sinon un visuel de remplacement
+SVG est généré localement. **L'application reste donc entièrement fonctionnelle sans
+réseau.** Depuis l'interface, chaque composant accepte une image uploadée (PNG, JPEG,
+WebP, GIF, SVG, 5 Mo max) qui remplace le visuel généré.
+
 ## Configuration
 
 Toutes les variables sont documentées dans [.env.example](.env.example). La plus sensible :

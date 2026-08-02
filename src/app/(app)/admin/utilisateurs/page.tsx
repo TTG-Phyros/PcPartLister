@@ -30,7 +30,7 @@ export default async function UsersAdminPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Comptes</h1>
-        <p className="mt-1 text-sm text-(--color-ink-muted)">
+        <p className="mt-1 text-sm text-ink-muted">
           Il n’y a pas d’inscription publique : les comptes se créent uniquement ici.
         </p>
       </div>
@@ -47,14 +47,14 @@ export default async function UsersAdminPage() {
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <div>
                 <p className="font-medium break-all">{row.email}</p>
-                <p className="text-xs text-(--color-ink-muted)">
+                <p className="text-xs text-ink-muted">
                   {row.role === 'admin' ? 'Administrateur' : 'Utilisateur'} · créé le{' '}
                   {dateFormat.format(row.createdAt)} · dernière connexion{' '}
                   {row.lastLoginAt ? dateFormat.format(row.lastLoginAt) : 'jamais'}
                 </p>
               </div>
               {row.id === admin.id ? (
-                <span className="rounded-md bg-(--color-surface-hover) px-2 py-1 text-xs text-(--color-ink-muted)">
+                <span className="rounded-md bg-surface-hover px-2 py-1 text-xs text-ink-muted">
                   vous
                 </span>
               ) : null}

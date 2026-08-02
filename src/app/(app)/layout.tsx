@@ -8,7 +8,10 @@ import { requireUser } from '@/lib/auth/guard';
 
 export const dynamic = 'force-dynamic';
 
-const LINKS: NavLink[] = [{ href: '/', label: 'Tableau de bord' }];
+const LINKS: NavLink[] = [
+  { href: '/', label: 'Tableau de bord' },
+  { href: '/catalogue', label: 'Catalogue' },
+];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   // Every page under this layout is behind the session check.
@@ -23,20 +26,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-dvh">
       <SessionKeepAlive />
-      <header className="sticky top-0 z-10 border-b border-(--color-border-subtle) bg-(--color-surface)/95 backdrop-blur">
+      <header className="sticky top-0 z-10 border-b border-border-subtle bg-surface/95 backdrop-blur">
         <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center justify-between gap-4">
-            <Link href="/" className="text-base font-semibold tracking-tight">
+          <div className="flex min-w-0 items-center justify-between gap-3">
+            <Link href="/" className="shrink-0 text-base font-semibold tracking-tight">
               PcPartLister
             </Link>
-            <div className="flex items-center gap-2 sm:hidden">
+            <div className="flex min-w-0 sm:hidden">
               <UserMenu email={user.email} />
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <AppNav links={links} />
-            <div className="hidden sm:flex sm:items-center sm:gap-2">
+            <div className="hidden min-w-0 sm:flex sm:items-center sm:gap-2">
               <UserMenu email={user.email} />
             </div>
           </div>
@@ -50,15 +53,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
 function UserMenu({ email }: { email: string }) {
   return (
-    <div className="flex items-center gap-2">
+    // min-w-0 + truncate on the address: a long email shrinks instead of
+    // pushing the logout button off a phone screen.
+    <div className="flex min-w-0 items-center gap-2">
       <Link
         href="/profil"
-        className="max-w-[12rem] truncate text-sm text-(--color-ink-muted) hover:text-(--color-ink)"
+        className="min-w-0 truncate text-sm text-ink-muted hover:text-ink sm:max-w-48"
         title={email}
       >
         {email}
       </Link>
-      <form action={logoutAction}>
+      <form action={logoutAction} className="shrink-0">
         <Button variant="ghost" type="submit" className="min-h-9 px-2 py-1 text-xs">
           Déconnexion
         </Button>

@@ -6,11 +6,11 @@ export function cn(...parts: Array<string | false | null | undefined>): string {
 
 const BUTTON_VARIANTS = {
   primary:
-    'bg-(--color-brand-strong) text-white hover:bg-(--color-brand) disabled:bg-(--color-surface-hover) disabled:text-(--color-ink-muted)',
+    'bg-brand-strong text-white hover:bg-brand disabled:bg-surface-hover disabled:text-ink-muted',
   secondary:
-    'border border-(--color-border-subtle) bg-(--color-surface-raised) text-(--color-ink) hover:bg-(--color-surface-hover)',
-  danger: 'bg-(--color-danger) text-white hover:opacity-90',
-  ghost: 'text-(--color-ink-muted) hover:bg-(--color-surface-hover) hover:text-(--color-ink)',
+    'border border-border-subtle bg-surface-raised text-ink hover:bg-surface-hover',
+  danger: 'bg-danger text-white hover:opacity-90',
+  ghost: 'text-ink-muted hover:bg-surface-hover hover:text-ink',
 } as const;
 
 export function Button({
@@ -36,7 +36,7 @@ export function Input({ className, ...props }: ComponentProps<'input'>) {
     <input
       {...props}
       className={cn(
-        'min-h-11 w-full rounded-lg border border-(--color-border-subtle) bg-(--color-surface) px-3 py-2 text-(--color-ink) outline-none placeholder:text-(--color-ink-muted)/60 focus:border-(--color-brand) focus:ring-2 focus:ring-(--color-brand)/30',
+        'min-h-11 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-ink outline-none placeholder:text-ink-muted/60 focus:border-brand focus:ring-2 focus:ring-brand/30',
         className,
       )}
     />
@@ -48,7 +48,7 @@ export function Select({ className, ...props }: ComponentProps<'select'>) {
     <select
       {...props}
       className={cn(
-        'min-h-11 w-full rounded-lg border border-(--color-border-subtle) bg-(--color-surface) px-3 py-2 text-(--color-ink) outline-none focus:border-(--color-brand) focus:ring-2 focus:ring-(--color-brand)/30',
+        'min-h-11 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/30',
         className,
       )}
     />
@@ -68,11 +68,11 @@ export function Field({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={htmlFor} className="text-sm font-medium text-(--color-ink-muted)">
+      <label htmlFor={htmlFor} className="text-sm font-medium text-ink-muted">
         {label}
       </label>
       {children}
-      {hint ? <p className="text-xs text-(--color-ink-muted)">{hint}</p> : null}
+      {hint ? <p className="text-xs text-ink-muted">{hint}</p> : null}
     </div>
   );
 }
@@ -82,7 +82,7 @@ export function Card({ className, ...props }: ComponentProps<'div'>) {
     <div
       {...props}
       className={cn(
-        'rounded-xl border border-(--color-border-subtle) bg-(--color-surface-raised) p-5',
+        'rounded-xl border border-border-subtle bg-surface-raised p-5',
         className,
       )}
     />
@@ -90,10 +90,10 @@ export function Card({ className, ...props }: ComponentProps<'div'>) {
 }
 
 const ALERT_TONES = {
-  error: 'border-(--color-danger)/40 bg-(--color-danger)/10 text-(--color-danger)',
-  success: 'border-(--color-ok)/40 bg-(--color-ok)/10 text-(--color-ok)',
-  warning: 'border-(--color-warn)/40 bg-(--color-warn)/10 text-(--color-warn)',
-  info: 'border-(--color-border-subtle) bg-(--color-surface-hover) text-(--color-ink-muted)',
+  error: 'border-danger/40 bg-danger/10 text-danger',
+  success: 'border-ok/40 bg-ok/10 text-ok',
+  warning: 'border-warn/40 bg-warn/10 text-warn',
+  info: 'border-border-subtle bg-surface-hover text-ink-muted',
 } as const;
 
 export function Alert({

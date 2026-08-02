@@ -32,7 +32,7 @@ export default async function ProfilePage() {
 
       <Card className="flex flex-col gap-3">
         <h2 className="font-medium">Session</h2>
-        <p className="text-sm text-(--color-ink-muted)">
+        <p className="text-sm text-ink-muted">
           La déconnexion supprime la session côté serveur, pas seulement le cookie.
         </p>
         <form action={logoutAction}>
@@ -48,7 +48,7 @@ export default async function ProfilePage() {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4">
-      <span className="text-(--color-ink-muted)">{label}</span>
+      <span className="text-ink-muted">{label}</span>
       <span className="text-right break-all">{value}</span>
     </div>
   );

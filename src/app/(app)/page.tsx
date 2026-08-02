@@ -20,22 +20,22 @@ export default async function DashboardPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Tableau de bord</h1>
-        <p className="mt-1 text-sm text-(--color-ink-muted)">
+        <p className="mt-1 text-sm text-ink-muted">
           Connecté en tant que {user.email} ({user.role === 'admin' ? 'administrateur' : 'utilisateur'}).
         </p>
       </div>
 
       <Card>
-        <h2 className="text-sm font-medium text-(--color-ink-muted)">État de la base</h2>
-        <p className="mt-2 text-(--color-ok)">
+        <h2 className="text-sm font-medium text-ink-muted">État de la base</h2>
+        <p className="mt-2 text-ok">
           <span aria-hidden>● </span>
           Connectée — {tables} tables dans le schéma public
         </p>
       </Card>
 
       <Card>
-        <h2 className="text-sm font-medium text-(--color-ink-muted)">Prochaines étapes</h2>
-        <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-(--color-ink-muted)">
+        <h2 className="text-sm font-medium text-ink-muted">Prochaines étapes</h2>
+        <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-ink-muted">
           <li>Étape 3 — catalogue de composants et images</li>
           <li>Étape 4 — gestion du stock</li>
           <li>Étape 5 — moteur de compatibilité</li>

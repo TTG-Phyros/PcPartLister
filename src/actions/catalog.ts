@@ -1,0 +1,254 @@
+'use server';
+
+import { eq, sql } from 'drizzle-orm';
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+import { z } from 'zod';
+import { assertSession } from '@/lib/auth/guard';
+import { db } from '@/lib/db';
+import { catalogComponents, inventoryItems } from '@/lib/db/schema';
+import {
+  ALLOWED_IMAGE_TYPES,
+  MAX_IMAGE_BYTES,
+  deleteImage,
+  saveImage,
+  uploadPath,
+} from '@/lib/images/store';
+import { COMPONENT_CATEGORIES, type ComponentCategory } from '@/lib/specs';
+import { specsFromFormData } from '@/lib/specs/fields';
+import type { ActionState } from './auth';
+
+const identitySchema = z.object({
+  category: z.enum(COMPONENT_CATEGORIES),
+  brand: z.string().trim().min(1, 'La marque est obligatoire').max(80),
+  model: z.string().trim().min(1, 'Le modèle est obligatoire').max(160),
+  releaseYear: z
+    .union([z.coerce.number().int().min(1990).max(2100), z.literal('')])
+    .optional()
+    .transform((v) => (v === '' || v === undefined ? null : v)),
+  msrpEur: z
+    .union([z.coerce.number().nonnegative(), z.literal('')])
+    .optional()
+    .transform((v) => (v === '' || v === undefined ? null : Math.round(v * 100))),
+});
+
+/** Every text field of the form, so a rejected submission can be re-rendered. */
+function echoValues(formData: FormData): Record<string, string | string[]> {
+  const values: Record<string, string | string[]> = {};
+  for (const [key, value] of formData.entries()) {
+    if (value instanceof File) continue;
+    const existing = values[key];
+    if (existing === undefined) values[key] = value;
+    else if (Array.isArray(existing)) existing.push(value);
+    else values[key] = [existing, value];
+  }
+  return values;
+}
+
+/** Reads the identity fields plus the category-specific specs, or reports errors. */
+function parseForm(formData: FormData) {
+  const identity = identitySchema.safeParse({
+    category: formData.get('category'),
+    brand: formData.get('brand'),
+    model: formData.get('model'),
+    releaseYear: formData.get('releaseYear') ?? '',
+    msrpEur: formData.get('msrpEur') ?? '',
+  });
+  if (!identity.success) {
+    return { ok: false as const, error: identity.error.issues[0]!.message };
+  }
+
+  const specs = specsFromFormData(identity.data.category as ComponentCategory, (name) => {
+    const values = formData.getAll(name);
+    if (values.length === 0) return null;
+    return values.length === 1 ? String(values[0]) : values.map(String);
+  });
+  if (!specs.ok) return { ok: false as const, error: specs.errors.join(' · ') };
+
+  return { ok: true as const, identity: identity.data, specs: specs.specs };
+}
+
+/** Stores an uploaded picture, or returns null when the field was left empty. */
+async function storeUpload(
+  file: FormDataEntryValue | null,
+  category: string,
+  brand: string,
+  model: string,
+): Promise<{ ok: true; path: string | null } | { ok: false; error: string }> {
+  if (!(file instanceof File) || file.size === 0) return { ok: true, path: null };
+
+  const extension = ALLOWED_IMAGE_TYPES[file.type];
+  if (!extension) {
+    return { ok: false, error: 'Format d’image non supporté (PNG, JPEG, WebP, GIF ou SVG).' };
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    return { ok: false, error: `Image trop lourde (max ${MAX_IMAGE_BYTES / 1024 / 1024} Mo).` };
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const stored = await saveImage(uploadPath(category, brand, model, extension), buffer);
+  return { ok: true, path: stored };
+}
+
+export async function createCatalogComponentAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await assertSession();
+
+  const parsed = parseForm(formData);
+  if (!parsed.ok) return { error: parsed.error, values: echoValues(formData) };
+  const { identity, specs } = parsed;
+
+  const [duplicate] = await db
+    .select({ id: catalogComponents.id })
+    .from(catalogComponents)
+    .where(
+      sql`${catalogComponents.category} = ${identity.category}
+          and lower(${catalogComponents.brand}) = ${identity.brand.toLowerCase()}
+          and lower(${catalogComponents.model}) = ${identity.model.toLowerCase()}`,
+    )
+    .limit(1);
+  if (duplicate) {
+    return {
+      error: 'Ce modèle existe déjà dans le catalogue.',
+      values: echoValues(formData),
+    };
+  }
+
+  const upload = await storeUpload(
+    formData.get('image'),
+    identity.category,
+    identity.brand,
+    identity.model,
+  );
+  if (!upload.ok) return { error: upload.error, values: echoValues(formData) };
+
+  const [created] = await db
+    .insert(catalogComponents)
+    .values({
+      category: identity.category,
+      brand: identity.brand,
+      model: identity.model,
+      specs,
+      imagePath: upload.path,
+      msrpCents: identity.msrpEur,
+      releaseYear: identity.releaseYear,
+    })
+    .returning({ id: catalogComponents.id });
+
+  revalidatePath('/catalogue');
+  redirect(`/catalogue/${created!.id}`);
+}
+
+export async function updateCatalogComponentAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await assertSession();
+
+  const id = String(formData.get('id') ?? '');
+  if (!id) return { error: 'Composant introuvable.' };
+
+  const parsed = parseForm(formData);
+  if (!parsed.ok) return { error: parsed.error, values: echoValues(formData) };
+  const { identity, specs } = parsed;
+
+  const [current] = await db
+    .select({ imagePath: catalogComponents.imagePath })
+    .from(catalogComponents)
+    .where(eq(catalogComponents.id, id))
+    .limit(1);
+  if (!current) return { error: 'Composant introuvable.' };
+
+  const upload = await storeUpload(
+    formData.get('image'),
+    identity.category,
+    identity.brand,
+    identity.model,
+  );
+  if (!upload.ok) return { error: upload.error, values: echoValues(formData) };
+
+  await db
+    .update(catalogComponents)
+    .set({
+      category: identity.category,
+      brand: identity.brand,
+      model: identity.model,
+      specs,
+      msrpCents: identity.msrpEur,
+      releaseYear: identity.releaseYear,
+      updatedAt: new Date(),
+      ...(upload.path ? { imagePath: upload.path } : {}),
+    })
+    .where(eq(catalogComponents.id, id));
+
+  // Only drop the old file once the new one is committed.
+  if (upload.path && current.imagePath && current.imagePath !== upload.path) {
+    await deleteImage(current.imagePath);
+  }
+
+  revalidatePath('/catalogue');
+  revalidatePath(`/catalogue/${id}`);
+  return { success: 'Composant mis à jour.' };
+}
+
+export async function deleteCatalogComponentAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await assertSession();
+
+  const id = String(formData.get('id') ?? '');
+  if (!id) return { error: 'Composant introuvable.' };
+
+  // The FK is ON DELETE RESTRICT; check first so the user gets a real message.
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(inventoryItems)
+    .where(eq(inventoryItems.catalogComponentId, id));
+  if (count > 0) {
+    return {
+      error: `Impossible de supprimer : ${count} unité(s) de stock référencent ce modèle.`,
+    };
+  }
+
+  const [removed] = await db
+    .delete(catalogComponents)
+    .where(eq(catalogComponents.id, id))
+    .returning({ imagePath: catalogComponents.imagePath });
+
+  if (removed?.imagePath) await deleteImage(removed.imagePath);
+
+  revalidatePath('/catalogue');
+  redirect('/catalogue');
+}
+
+/** Removes the picture and falls back to the generic placeholder. */
+export async function clearCatalogImageAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await assertSession();
+
+  const id = String(formData.get('id') ?? '');
+  if (!id) return { error: 'Composant introuvable.' };
+
+  const [previous] = await db
+    .select({ imagePath: catalogComponents.imagePath })
+    .from(catalogComponents)
+    .where(eq(catalogComponents.id, id))
+    .limit(1);
+  if (!previous) return { error: 'Composant introuvable.' };
+
+  await db
+    .update(catalogComponents)
+    .set({ imagePath: null, updatedAt: new Date() })
+    .where(eq(catalogComponents.id, id));
+
+  await deleteImage(previous.imagePath);
+
+  revalidatePath('/catalogue');
+  revalidatePath(`/catalogue/${id}`);
+  return { success: 'Image retirée.' };
+}

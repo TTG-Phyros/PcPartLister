@@ -1,0 +1,1741 @@
+{
+  "note": "Catalogue de reference, edite a la main. Chaque entree a une cle stable (key) : c'est elle qui rend le seed idempotent. Modifier une entree ici ne remplace PAS une entree deja modifiee depuis l'interface. Prix en euros (msrpEur), longueurs en mm, capacites en Go, frequences en MHz. imageUrl est optionnel : si l'URL repond, l'image est telechargee dans le volume, sinon un visuel de remplacement est genere.",
+  "components": [
+    {
+      "key": "cpu-intel-core-i5-6500",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i5-6500",
+      "releaseYear": 2015,
+      "msrpEur": 210,
+      "specs": { "socket": "LGA1151", "cores": 4, "threads": 4, "baseClockGhz": 3.2, "boostClockGhz": 3.6, "tdpW": 65, "integratedGraphics": true, "perfIndex": 45, "supportedChipsets": ["H110", "B150", "H170", "Z170", "B250", "H270", "Z270"] }
+    },
+    {
+      "key": "cpu-intel-core-i7-6700k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i7-6700K",
+      "releaseYear": 2015,
+      "msrpEur": 350,
+      "specs": { "socket": "LGA1151", "cores": 4, "threads": 8, "baseClockGhz": 4.0, "boostClockGhz": 4.2, "tdpW": 91, "integratedGraphics": true, "perfIndex": 60, "supportedChipsets": ["Z170", "H170", "B150", "H110", "Z270", "H270", "B250"] }
+    },
+    {
+      "key": "cpu-intel-core-i5-7500",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i5-7500",
+      "releaseYear": 2017,
+      "msrpEur": 200,
+      "specs": { "socket": "LGA1151", "cores": 4, "threads": 4, "baseClockGhz": 3.4, "boostClockGhz": 3.8, "tdpW": 65, "integratedGraphics": true, "perfIndex": 50, "supportedChipsets": ["B250", "H270", "Z270", "H110", "B150", "H170", "Z170"] }
+    },
+    {
+      "key": "cpu-intel-core-i7-7700",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i7-7700",
+      "releaseYear": 2017,
+      "msrpEur": 320,
+      "specs": { "socket": "LGA1151", "cores": 4, "threads": 8, "baseClockGhz": 3.6, "boostClockGhz": 4.2, "tdpW": 65, "integratedGraphics": true, "perfIndex": 65, "supportedChipsets": ["B250", "H270", "Z270", "H110", "B150", "H170", "Z170"] }
+    },
+    {
+      "key": "cpu-intel-core-i3-8100",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i3-8100",
+      "releaseYear": 2017,
+      "msrpEur": 120,
+      "specs": { "socket": "LGA1151-v2", "cores": 4, "threads": 4, "baseClockGhz": 3.6, "tdpW": 65, "integratedGraphics": true, "perfIndex": 50, "supportedChipsets": ["H310", "B360", "B365", "H370", "Z370", "Z390"] }
+    },
+    {
+      "key": "cpu-intel-core-i5-8400",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i5-8400",
+      "releaseYear": 2017,
+      "msrpEur": 200,
+      "specs": { "socket": "LGA1151-v2", "cores": 6, "threads": 6, "baseClockGhz": 2.8, "boostClockGhz": 4.0, "tdpW": 65, "integratedGraphics": true, "perfIndex": 65, "supportedChipsets": ["H310", "B360", "B365", "H370", "Z370", "Z390"] }
+    },
+    {
+      "key": "cpu-intel-core-i5-9400f",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i5-9400F",
+      "releaseYear": 2019,
+      "msrpEur": 170,
+      "specs": { "socket": "LGA1151-v2", "cores": 6, "threads": 6, "baseClockGhz": 2.9, "boostClockGhz": 4.1, "tdpW": 65, "integratedGraphics": false, "perfIndex": 68, "supportedChipsets": ["H310", "B360", "B365", "H370", "Z370", "Z390"] }
+    },
+    {
+      "key": "cpu-intel-core-i7-8700k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i7-8700K",
+      "releaseYear": 2017,
+      "msrpEur": 370,
+      "specs": { "socket": "LGA1151-v2", "cores": 6, "threads": 12, "baseClockGhz": 3.7, "boostClockGhz": 4.7, "tdpW": 95, "integratedGraphics": true, "perfIndex": 85, "supportedChipsets": ["Z370", "Z390", "H370", "B360", "B365"] }
+    },
+    {
+      "key": "cpu-intel-core-i7-9700k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i7-9700K",
+      "releaseYear": 2018,
+      "msrpEur": 400,
+      "specs": { "socket": "LGA1151-v2", "cores": 8, "threads": 8, "baseClockGhz": 3.6, "boostClockGhz": 4.9, "tdpW": 95, "integratedGraphics": true, "perfIndex": 90, "supportedChipsets": ["Z390", "Z370", "H370", "B365", "B360"] }
+    },
+    {
+      "key": "cpu-intel-core-i9-9900k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i9-9900K",
+      "releaseYear": 2018,
+      "msrpEur": 530,
+      "specs": { "socket": "LGA1151-v2", "cores": 8, "threads": 16, "baseClockGhz": 3.6, "boostClockGhz": 5.0, "tdpW": 95, "integratedGraphics": true, "perfIndex": 100, "supportedChipsets": ["Z390", "Z370", "H370", "B365"] }
+    },
+    {
+      "key": "cpu-intel-core-i3-10100",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i3-10100",
+      "releaseYear": 2020,
+      "msrpEur": 130,
+      "specs": { "socket": "LGA1200", "cores": 4, "threads": 8, "baseClockGhz": 3.6, "boostClockGhz": 4.3, "tdpW": 65, "integratedGraphics": true, "perfIndex": 55, "supportedChipsets": ["H410", "B460", "H470", "Z490", "H510", "B560", "H570", "Z590"] }
+    },
+    {
+      "key": "cpu-intel-core-i5-10400",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i5-10400",
+      "releaseYear": 2020,
+      "msrpEur": 190,
+      "specs": { "socket": "LGA1200", "cores": 6, "threads": 12, "baseClockGhz": 2.9, "boostClockGhz": 4.3, "tdpW": 65, "integratedGraphics": true, "perfIndex": 75, "supportedChipsets": ["H410", "B460", "H470", "Z490", "H510", "B560", "H570", "Z590"] }
+    },
+    {
+      "key": "cpu-intel-core-i5-10400f",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i5-10400F",
+      "releaseYear": 2020,
+      "msrpEur": 165,
+      "specs": { "socket": "LGA1200", "cores": 6, "threads": 12, "baseClockGhz": 2.9, "boostClockGhz": 4.3, "tdpW": 65, "integratedGraphics": false, "perfIndex": 75, "supportedChipsets": ["H410", "B460", "H470", "Z490", "H510", "B560", "H570", "Z590"] }
+    },
+    {
+      "key": "cpu-intel-core-i7-10700k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i7-10700K",
+      "releaseYear": 2020,
+      "msrpEur": 420,
+      "specs": { "socket": "LGA1200", "cores": 8, "threads": 16, "baseClockGhz": 3.8, "boostClockGhz": 5.1, "tdpW": 125, "integratedGraphics": true, "perfIndex": 105, "supportedChipsets": ["Z490", "H470", "B460", "Z590", "B560", "H570"] }
+    },
+    {
+      "key": "cpu-intel-core-i9-10900k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i9-10900K",
+      "releaseYear": 2020,
+      "msrpEur": 540,
+      "specs": { "socket": "LGA1200", "cores": 10, "threads": 20, "baseClockGhz": 3.7, "boostClockGhz": 5.3, "tdpW": 125, "integratedGraphics": true, "perfIndex": 115, "supportedChipsets": ["Z490", "H470", "Z590", "H570"] }
+    },
+    {
+      "key": "cpu-intel-core-i5-11400f",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i5-11400F",
+      "releaseYear": 2021,
+      "msrpEur": 175,
+      "specs": { "socket": "LGA1200", "cores": 6, "threads": 12, "baseClockGhz": 2.6, "boostClockGhz": 4.4, "tdpW": 65, "integratedGraphics": false, "perfIndex": 85, "supportedChipsets": ["H510", "B560", "H570", "Z590", "Z490", "H470", "B460"] }
+    },
+    {
+      "key": "cpu-intel-core-i7-11700k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i7-11700K",
+      "releaseYear": 2021,
+      "msrpEur": 420,
+      "specs": { "socket": "LGA1200", "cores": 8, "threads": 16, "baseClockGhz": 3.6, "boostClockGhz": 5.0, "tdpW": 125, "integratedGraphics": true, "perfIndex": 115, "supportedChipsets": ["Z590", "B560", "H570", "Z490", "H470"] }
+    },
+    {
+      "key": "cpu-intel-core-i3-12100f",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i3-12100F",
+      "releaseYear": 2022,
+      "msrpEur": 120,
+      "specs": { "socket": "LGA1700", "cores": 4, "threads": 8, "baseClockGhz": 3.3, "boostClockGhz": 4.3, "tdpW": 58, "integratedGraphics": false, "perfIndex": 80, "supportedChipsets": ["H610", "B660", "H670", "Z690", "B760", "H770", "Z790"] }
+    },
+    {
+      "key": "cpu-intel-core-i5-12400f",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i5-12400F",
+      "releaseYear": 2022,
+      "msrpEur": 190,
+      "specs": { "socket": "LGA1700", "cores": 6, "threads": 12, "baseClockGhz": 2.5, "boostClockGhz": 4.4, "tdpW": 65, "integratedGraphics": false, "perfIndex": 100, "supportedChipsets": ["H610", "B660", "H670", "Z690", "B760", "H770", "Z790"] }
+    },
+    {
+      "key": "cpu-intel-core-i5-12600k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i5-12600K",
+      "releaseYear": 2021,
+      "msrpEur": 300,
+      "specs": { "socket": "LGA1700", "cores": 10, "threads": 16, "baseClockGhz": 3.7, "boostClockGhz": 4.9, "tdpW": 125, "integratedGraphics": true, "perfIndex": 125, "supportedChipsets": ["Z690", "B660", "H670", "Z790", "B760", "H770"] }
+    },
+    {
+      "key": "cpu-intel-core-i7-12700k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i7-12700K",
+      "releaseYear": 2021,
+      "msrpEur": 420,
+      "specs": { "socket": "LGA1700", "cores": 12, "threads": 20, "baseClockGhz": 3.6, "boostClockGhz": 5.0, "tdpW": 125, "integratedGraphics": true, "perfIndex": 145, "supportedChipsets": ["Z690", "B660", "H670", "Z790", "B760", "H770"] }
+    },
+    {
+      "key": "cpu-intel-core-i5-13400f",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i5-13400F",
+      "releaseYear": 2023,
+      "msrpEur": 230,
+      "specs": { "socket": "LGA1700", "cores": 10, "threads": 16, "baseClockGhz": 2.5, "boostClockGhz": 4.6, "tdpW": 65, "integratedGraphics": false, "perfIndex": 115, "supportedChipsets": ["B760", "H770", "Z790", "Z690", "B660", "H670", "H610"] }
+    },
+    {
+      "key": "cpu-intel-core-i5-13600k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i5-13600K",
+      "releaseYear": 2022,
+      "msrpEur": 330,
+      "specs": { "socket": "LGA1700", "cores": 14, "threads": 20, "baseClockGhz": 3.5, "boostClockGhz": 5.1, "tdpW": 125, "integratedGraphics": true, "perfIndex": 150, "supportedChipsets": ["Z790", "B760", "H770", "Z690", "B660"] }
+    },
+    {
+      "key": "cpu-intel-core-i7-13700k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i7-13700K",
+      "releaseYear": 2022,
+      "msrpEur": 450,
+      "specs": { "socket": "LGA1700", "cores": 16, "threads": 24, "baseClockGhz": 3.4, "boostClockGhz": 5.4, "tdpW": 125, "integratedGraphics": true, "perfIndex": 175, "supportedChipsets": ["Z790", "B760", "H770", "Z690", "B660"] }
+    },
+    {
+      "key": "cpu-intel-core-i5-14600k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i5-14600K",
+      "releaseYear": 2023,
+      "msrpEur": 340,
+      "specs": { "socket": "LGA1700", "cores": 14, "threads": 20, "baseClockGhz": 3.5, "boostClockGhz": 5.3, "tdpW": 125, "integratedGraphics": true, "perfIndex": 160, "supportedChipsets": ["Z790", "B760", "H770", "Z690", "B660"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-3-1200",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 3 1200",
+      "releaseYear": 2017,
+      "msrpEur": 110,
+      "specs": { "socket": "AM4", "cores": 4, "threads": 4, "baseClockGhz": 3.1, "boostClockGhz": 3.4, "tdpW": 65, "integratedGraphics": false, "perfIndex": 35, "supportedChipsets": ["A320", "B350", "X370", "B450", "X470", "A520", "B550", "X570"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-5-1600",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 5 1600",
+      "releaseYear": 2017,
+      "msrpEur": 200,
+      "specs": { "socket": "AM4", "cores": 6, "threads": 12, "baseClockGhz": 3.2, "boostClockGhz": 3.6, "tdpW": 65, "integratedGraphics": false, "perfIndex": 45, "supportedChipsets": ["A320", "B350", "X370", "B450", "X470", "A520", "B550", "X570"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-5-2600",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 5 2600",
+      "releaseYear": 2018,
+      "msrpEur": 190,
+      "specs": { "socket": "AM4", "cores": 6, "threads": 12, "baseClockGhz": 3.4, "boostClockGhz": 3.9, "tdpW": 65, "integratedGraphics": false, "perfIndex": 55, "supportedChipsets": ["B350", "X370", "B450", "X470", "A520", "B550", "X570", "A320"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-7-2700x",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 7 2700X",
+      "releaseYear": 2018,
+      "msrpEur": 330,
+      "specs": { "socket": "AM4", "cores": 8, "threads": 16, "baseClockGhz": 3.7, "boostClockGhz": 4.3, "tdpW": 105, "integratedGraphics": false, "perfIndex": 70, "supportedChipsets": ["B450", "X470", "B350", "X370", "B550", "X570"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-5-3600",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 5 3600",
+      "releaseYear": 2019,
+      "msrpEur": 200,
+      "specs": { "socket": "AM4", "cores": 6, "threads": 12, "baseClockGhz": 3.6, "boostClockGhz": 4.2, "tdpW": 65, "integratedGraphics": false, "perfIndex": 75, "supportedChipsets": ["B450", "X470", "A520", "B550", "X570", "B350", "X370"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-7-3700x",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 7 3700X",
+      "releaseYear": 2019,
+      "msrpEur": 330,
+      "specs": { "socket": "AM4", "cores": 8, "threads": 16, "baseClockGhz": 3.6, "boostClockGhz": 4.4, "tdpW": 65, "integratedGraphics": false, "perfIndex": 90, "supportedChipsets": ["B450", "X470", "A520", "B550", "X570"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-9-3900x",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 9 3900X",
+      "releaseYear": 2019,
+      "msrpEur": 500,
+      "specs": { "socket": "AM4", "cores": 12, "threads": 24, "baseClockGhz": 3.8, "boostClockGhz": 4.6, "tdpW": 105, "integratedGraphics": false, "perfIndex": 110, "supportedChipsets": ["X570", "B550", "X470", "B450"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-5-5600",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 5 5600",
+      "releaseYear": 2022,
+      "msrpEur": 200,
+      "specs": { "socket": "AM4", "cores": 6, "threads": 12, "baseClockGhz": 3.5, "boostClockGhz": 4.4, "tdpW": 65, "integratedGraphics": false, "perfIndex": 95, "supportedChipsets": ["B550", "X570", "A520", "B450", "X470"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-5-5600x",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 5 5600X",
+      "releaseYear": 2020,
+      "msrpEur": 300,
+      "specs": { "socket": "AM4", "cores": 6, "threads": 12, "baseClockGhz": 3.7, "boostClockGhz": 4.6, "tdpW": 65, "integratedGraphics": false, "perfIndex": 100, "supportedChipsets": ["B550", "X570", "A520", "B450", "X470"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-5-5600g",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 5 5600G",
+      "releaseYear": 2021,
+      "msrpEur": 260,
+      "specs": { "socket": "AM4", "cores": 6, "threads": 12, "baseClockGhz": 3.9, "boostClockGhz": 4.4, "tdpW": 65, "integratedGraphics": true, "perfIndex": 85, "supportedChipsets": ["B550", "X570", "A520", "B450", "X470"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-7-5700x",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 7 5700X",
+      "releaseYear": 2022,
+      "msrpEur": 300,
+      "specs": { "socket": "AM4", "cores": 8, "threads": 16, "baseClockGhz": 3.4, "boostClockGhz": 4.6, "tdpW": 65, "integratedGraphics": false, "perfIndex": 115, "supportedChipsets": ["B550", "X570", "A520", "B450", "X470"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-7-5800x3d",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 7 5800X3D",
+      "releaseYear": 2022,
+      "msrpEur": 450,
+      "specs": { "socket": "AM4", "cores": 8, "threads": 16, "baseClockGhz": 3.4, "boostClockGhz": 4.5, "tdpW": 105, "integratedGraphics": false, "perfIndex": 130, "supportedChipsets": ["B550", "X570", "B450", "X470"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-9-5900x",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 9 5900X",
+      "releaseYear": 2020,
+      "msrpEur": 550,
+      "specs": { "socket": "AM4", "cores": 12, "threads": 24, "baseClockGhz": 3.7, "boostClockGhz": 4.8, "tdpW": 105, "integratedGraphics": false, "perfIndex": 140, "supportedChipsets": ["B550", "X570", "B450", "X470"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-5-7600",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 5 7600",
+      "releaseYear": 2023,
+      "msrpEur": 250,
+      "specs": { "socket": "AM5", "cores": 6, "threads": 12, "baseClockGhz": 3.8, "boostClockGhz": 5.1, "tdpW": 65, "integratedGraphics": true, "perfIndex": 130, "supportedChipsets": ["A620", "B650", "B650E", "X670", "X670E"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-7-7800x3d",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 7 7800X3D",
+      "releaseYear": 2023,
+      "msrpEur": 480,
+      "specs": { "socket": "AM5", "cores": 8, "threads": 16, "baseClockGhz": 4.2, "boostClockGhz": 5.0, "tdpW": 120, "integratedGraphics": true, "perfIndex": 165, "supportedChipsets": ["B650", "B650E", "X670", "X670E", "A620"] }
+    },
+
+    {
+      "key": "mb-asus-h110m-k",
+      "category": "motherboard",
+      "brand": "ASUS",
+      "model": "H110M-K",
+      "releaseYear": 2016,
+      "msrpEur": 60,
+      "specs": { "socket": "LGA1151", "chipset": "H110", "formFactor": "mATX", "ramType": "DDR4", "ramSlots": 2, "maxRamGb": 32, "maxRamSpeedMhz": 2133, "sataPorts": 4, "m2Slots": 0, "cpuPowerConnector": "4-pin" }
+    },
+    {
+      "key": "mb-msi-z170-a-pro",
+      "category": "motherboard",
+      "brand": "MSI",
+      "model": "Z170-A PRO",
+      "releaseYear": 2015,
+      "msrpEur": 110,
+      "specs": { "socket": "LGA1151", "chipset": "Z170", "formFactor": "ATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 64, "maxRamSpeedMhz": 3600, "sataPorts": 6, "m2Slots": 1, "cpuPowerConnector": "8-pin" }
+    },
+    {
+      "key": "mb-gigabyte-ga-b250m-ds3h",
+      "category": "motherboard",
+      "brand": "Gigabyte",
+      "model": "GA-B250M-DS3H",
+      "releaseYear": 2017,
+      "msrpEur": 75,
+      "specs": { "socket": "LGA1151", "chipset": "B250", "formFactor": "mATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 64, "maxRamSpeedMhz": 2400, "sataPorts": 6, "m2Slots": 1, "cpuPowerConnector": "8-pin" }
+    },
+    {
+      "key": "mb-asus-prime-z270-p",
+      "category": "motherboard",
+      "brand": "ASUS",
+      "model": "PRIME Z270-P",
+      "releaseYear": 2017,
+      "msrpEur": 130,
+      "specs": { "socket": "LGA1151", "chipset": "Z270", "formFactor": "ATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 64, "maxRamSpeedMhz": 3866, "sataPorts": 6, "m2Slots": 2, "cpuPowerConnector": "8-pin" }
+    },
+    {
+      "key": "mb-asus-prime-h310m-k",
+      "category": "motherboard",
+      "brand": "ASUS",
+      "model": "PRIME H310M-K",
+      "releaseYear": 2018,
+      "msrpEur": 65,
+      "specs": { "socket": "LGA1151-v2", "chipset": "H310", "formFactor": "mATX", "ramType": "DDR4", "ramSlots": 2, "maxRamGb": 32, "maxRamSpeedMhz": 2666, "sataPorts": 4, "m2Slots": 0, "cpuPowerConnector": "4-pin" }
+    },
+    {
+      "key": "mb-msi-b360m-pro-vdh",
+      "category": "motherboard",
+      "brand": "MSI",
+      "model": "B360M PRO-VDH",
+      "releaseYear": 2018,
+      "msrpEur": 85,
+      "specs": { "socket": "LGA1151-v2", "chipset": "B360", "formFactor": "mATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 64, "maxRamSpeedMhz": 2666, "sataPorts": 6, "m2Slots": 1, "cpuPowerConnector": "8-pin" }
+    },
+    {
+      "key": "mb-gigabyte-b365m-ds3h",
+      "category": "motherboard",
+      "brand": "Gigabyte",
+      "model": "B365M DS3H",
+      "releaseYear": 2019,
+      "msrpEur": 85,
+      "specs": { "socket": "LGA1151-v2", "chipset": "B365", "formFactor": "mATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 64, "maxRamSpeedMhz": 2666, "sataPorts": 6, "m2Slots": 1, "cpuPowerConnector": "8-pin" }
+    },
+    {
+      "key": "mb-asus-prime-z370-a",
+      "category": "motherboard",
+      "brand": "ASUS",
+      "model": "PRIME Z370-A",
+      "releaseYear": 2017,
+      "msrpEur": 180,
+      "specs": { "socket": "LGA1151-v2", "chipset": "Z370", "formFactor": "ATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 64, "maxRamSpeedMhz": 4000, "sataPorts": 6, "m2Slots": 2, "cpuPowerConnector": "8-pin" }
+    },
+    {
+      "key": "mb-msi-mpg-z390-gaming-plus",
+      "category": "motherboard",
+      "brand": "MSI",
+      "model": "MPG Z390 GAMING PLUS",
+      "releaseYear": 2018,
+      "msrpEur": 160,
+      "specs": { "socket": "LGA1151-v2", "chipset": "Z390", "formFactor": "ATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 64, "maxRamSpeedMhz": 4400, "sataPorts": 6, "m2Slots": 2, "cpuPowerConnector": "8-pin" }
+    },
+    {
+      "key": "mb-gigabyte-z390-aorus-elite",
+      "category": "motherboard",
+      "brand": "Gigabyte",
+      "model": "Z390 AORUS ELITE",
+      "releaseYear": 2018,
+      "msrpEur": 180,
+      "specs": { "socket": "LGA1151-v2", "chipset": "Z390", "formFactor": "ATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 64, "maxRamSpeedMhz": 4266, "sataPorts": 6, "m2Slots": 2, "cpuPowerConnector": "8+4-pin" }
+    },
+    {
+      "key": "mb-asus-prime-h410m-e",
+      "category": "motherboard",
+      "brand": "ASUS",
+      "model": "PRIME H410M-E",
+      "releaseYear": 2020,
+      "msrpEur": 70,
+      "specs": { "socket": "LGA1200", "chipset": "H410", "formFactor": "mATX", "ramType": "DDR4", "ramSlots": 2, "maxRamGb": 64, "maxRamSpeedMhz": 2933, "sataPorts": 4, "m2Slots": 1, "cpuPowerConnector": "4-pin" }
+    },
+    {
+      "key": "mb-msi-b460m-pro-vdh-wifi",
+      "category": "motherboard",
+      "brand": "MSI",
+      "model": "B460M PRO-VDH WIFI",
+      "releaseYear": 2020,
+      "msrpEur": 110,
+      "specs": { "socket": "LGA1200", "chipset": "B460", "formFactor": "mATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 128, "maxRamSpeedMhz": 2933, "sataPorts": 6, "m2Slots": 2, "cpuPowerConnector": "8-pin" }
+    },
+    {
+      "key": "mb-gigabyte-z490-ud",
+      "category": "motherboard",
+      "brand": "Gigabyte",
+      "model": "Z490 UD",
+      "releaseYear": 2020,
+      "msrpEur": 150,
+      "specs": { "socket": "LGA1200", "chipset": "Z490", "formFactor": "ATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 128, "maxRamSpeedMhz": 4400, "sataPorts": 6, "m2Slots": 2, "cpuPowerConnector": "8+4-pin" }
+    },
+    {
+      "key": "mb-asus-tuf-gaming-b560m-plus",
+      "category": "motherboard",
+      "brand": "ASUS",
+      "model": "TUF GAMING B560M-PLUS",
+      "releaseYear": 2021,
+      "msrpEur": 130,
+      "specs": { "socket": "LGA1200", "chipset": "B560", "formFactor": "mATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 128, "maxRamSpeedMhz": 5000, "sataPorts": 6, "m2Slots": 2, "cpuPowerConnector": "8-pin" }
+    },
+    {
+      "key": "mb-msi-mag-b560-tomahawk-wifi",
+      "category": "motherboard",
+      "brand": "MSI",
+      "model": "MAG B560 TOMAHAWK WIFI",
+      "releaseYear": 2021,
+      "msrpEur": 175,
+      "specs": { "socket": "LGA1200", "chipset": "B560", "formFactor": "ATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 128, "maxRamSpeedMhz": 5066, "sataPorts": 6, "m2Slots": 2, "cpuPowerConnector": "8+4-pin" }
+    },
+    {
+      "key": "mb-asus-rog-strix-z590-e-gaming",
+      "category": "motherboard",
+      "brand": "ASUS",
+      "model": "ROG STRIX Z590-E GAMING WIFI",
+      "releaseYear": 2021,
+      "msrpEur": 330,
+      "specs": { "socket": "LGA1200", "chipset": "Z590", "formFactor": "ATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 128, "maxRamSpeedMhz": 5333, "sataPorts": 6, "m2Slots": 4, "cpuPowerConnector": "8+8-pin" }
+    },
+    {
+      "key": "mb-asus-prime-h610m-e-d4",
+      "category": "motherboard",
+      "brand": "ASUS",
+      "model": "PRIME H610M-E D4",
+      "releaseYear": 2022,
+      "msrpEur": 100,
+      "specs": { "socket": "LGA1700", "chipset": "H610", "formFactor": "mATX", "ramType": "DDR4", "ramSlots": 2, "maxRamGb": 64, "maxRamSpeedMhz": 3200, "sataPorts": 4, "m2Slots": 1, "cpuPowerConnector": "8-pin" }
+    },
+    {
+      "key": "mb-msi-pro-b660m-a-ddr4",
+      "category": "motherboard",
+      "brand": "MSI",
+      "model": "PRO B660M-A DDR4",
+      "releaseYear": 2022,
+      "msrpEur": 130,
+      "specs": { "socket": "LGA1700", "chipset": "B660", "formFactor": "mATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 128, "maxRamSpeedMhz": 4800, "sataPorts": 4, "m2Slots": 2, "cpuPowerConnector": "8-pin" }
+    },
+    {
+      "key": "mb-gigabyte-b660-gaming-x-ddr4",
+      "category": "motherboard",
+      "brand": "Gigabyte",
+      "model": "B660 GAMING X DDR4",
+      "releaseYear": 2022,
+      "msrpEur": 160,
+      "specs": { "socket": "LGA1700", "chipset": "B660", "formFactor": "ATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 128, "maxRamSpeedMhz": 5333, "sataPorts": 4, "m2Slots": 3, "cpuPowerConnector": "8+4-pin" }
+    },
+    {
+      "key": "mb-gigabyte-b660i-aorus-pro-ddr4",
+      "category": "motherboard",
+      "brand": "Gigabyte",
+      "model": "B660I AORUS PRO DDR4",
+      "releaseYear": 2022,
+      "msrpEur": 190,
+      "specs": { "socket": "LGA1700", "chipset": "B660", "formFactor": "ITX", "ramType": "DDR4", "ramSlots": 2, "maxRamGb": 64, "maxRamSpeedMhz": 6000, "sataPorts": 4, "m2Slots": 2, "cpuPowerConnector": "8-pin" }
+    },
+    {
+      "key": "mb-asus-tuf-gaming-z690-plus-d4",
+      "category": "motherboard",
+      "brand": "ASUS",
+      "model": "TUF GAMING Z690-PLUS D4",
+      "releaseYear": 2021,
+      "msrpEur": 250,
+      "specs": { "socket": "LGA1700", "chipset": "Z690", "formFactor": "ATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 128, "maxRamSpeedMhz": 5333, "sataPorts": 4, "m2Slots": 4, "cpuPowerConnector": "8+8-pin" }
+    },
+    {
+      "key": "mb-msi-pro-b760m-p-ddr4",
+      "category": "motherboard",
+      "brand": "MSI",
+      "model": "PRO B760M-P DDR4",
+      "releaseYear": 2023,
+      "msrpEur": 130,
+      "specs": { "socket": "LGA1700", "chipset": "B760", "formFactor": "mATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 128, "maxRamSpeedMhz": 5333, "sataPorts": 4, "m2Slots": 2, "cpuPowerConnector": "8-pin" }
+    },
+    {
+      "key": "mb-gigabyte-b760-aorus-elite-ax",
+      "category": "motherboard",
+      "brand": "Gigabyte",
+      "model": "B760 AORUS ELITE AX",
+      "releaseYear": 2023,
+      "msrpEur": 210,
+      "specs": { "socket": "LGA1700", "chipset": "B760", "formFactor": "ATX", "ramType": "DDR5", "ramSlots": 4, "maxRamGb": 192, "maxRamSpeedMhz": 7600, "sataPorts": 4, "m2Slots": 3, "cpuPowerConnector": "8+4-pin" }
+    },
+    {
+      "key": "mb-asus-rog-strix-z790-a-gaming-wifi",
+      "category": "motherboard",
+      "brand": "ASUS",
+      "model": "ROG STRIX Z790-A GAMING WIFI",
+      "releaseYear": 2022,
+      "msrpEur": 400,
+      "specs": { "socket": "LGA1700", "chipset": "Z790", "formFactor": "ATX", "ramType": "DDR5", "ramSlots": 4, "maxRamGb": 192, "maxRamSpeedMhz": 7800, "sataPorts": 4, "m2Slots": 4, "cpuPowerConnector": "8+8-pin" }
+    },
+    {
+      "key": "mb-asus-prime-a320m-k",
+      "category": "motherboard",
+      "brand": "ASUS",
+      "model": "PRIME A320M-K",
+      "releaseYear": 2017,
+      "msrpEur": 60,
+      "specs": { "socket": "AM4", "chipset": "A320", "formFactor": "mATX", "ramType": "DDR4", "ramSlots": 2, "maxRamGb": 32, "maxRamSpeedMhz": 3200, "sataPorts": 4, "m2Slots": 1, "cpuPowerConnector": "4-pin" }
+    },
+    {
+      "key": "mb-msi-b450m-pro-vdh-max",
+      "category": "motherboard",
+      "brand": "MSI",
+      "model": "B450M PRO-VDH MAX",
+      "releaseYear": 2019,
+      "msrpEur": 80,
+      "specs": { "socket": "AM4", "chipset": "B450", "formFactor": "mATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 64, "maxRamSpeedMhz": 3466, "sataPorts": 4, "m2Slots": 1, "cpuPowerConnector": "8-pin" }
+    },
+    {
+      "key": "mb-gigabyte-b450-aorus-m",
+      "category": "motherboard",
+      "brand": "Gigabyte",
+      "model": "B450 AORUS M",
+      "releaseYear": 2018,
+      "msrpEur": 90,
+      "specs": { "socket": "AM4", "chipset": "B450", "formFactor": "mATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 64, "maxRamSpeedMhz": 3600, "sataPorts": 4, "m2Slots": 1, "cpuPowerConnector": "8-pin" }
+    },
+    {
+      "key": "mb-asus-rog-strix-b450-f-gaming",
+      "category": "motherboard",
+      "brand": "ASUS",
+      "model": "ROG STRIX B450-F GAMING",
+      "releaseYear": 2018,
+      "msrpEur": 130,
+      "specs": { "socket": "AM4", "chipset": "B450", "formFactor": "ATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 64, "maxRamSpeedMhz": 3200, "sataPorts": 6, "m2Slots": 2, "cpuPowerConnector": "8-pin" }
+    },
+    {
+      "key": "mb-msi-mag-b550-tomahawk",
+      "category": "motherboard",
+      "brand": "MSI",
+      "model": "MAG B550 TOMAHAWK",
+      "releaseYear": 2020,
+      "msrpEur": 180,
+      "specs": { "socket": "AM4", "chipset": "B550", "formFactor": "ATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 128, "maxRamSpeedMhz": 4400, "sataPorts": 6, "m2Slots": 2, "cpuPowerConnector": "8+4-pin" }
+    },
+    {
+      "key": "mb-asus-tuf-gaming-b550m-plus",
+      "category": "motherboard",
+      "brand": "ASUS",
+      "model": "TUF GAMING B550M-PLUS",
+      "releaseYear": 2020,
+      "msrpEur": 140,
+      "specs": { "socket": "AM4", "chipset": "B550", "formFactor": "mATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 128, "maxRamSpeedMhz": 4600, "sataPorts": 4, "m2Slots": 2, "cpuPowerConnector": "8-pin" }
+    },
+    {
+      "key": "mb-asus-rog-strix-b550-i-gaming",
+      "category": "motherboard",
+      "brand": "ASUS",
+      "model": "ROG STRIX B550-I GAMING",
+      "releaseYear": 2020,
+      "msrpEur": 230,
+      "specs": { "socket": "AM4", "chipset": "B550", "formFactor": "ITX", "ramType": "DDR4", "ramSlots": 2, "maxRamGb": 64, "maxRamSpeedMhz": 5100, "sataPorts": 4, "m2Slots": 2, "cpuPowerConnector": "8-pin" }
+    },
+    {
+      "key": "mb-gigabyte-x570-aorus-elite",
+      "category": "motherboard",
+      "brand": "Gigabyte",
+      "model": "X570 AORUS ELITE",
+      "releaseYear": 2019,
+      "msrpEur": 220,
+      "specs": { "socket": "AM4", "chipset": "X570", "formFactor": "ATX", "ramType": "DDR4", "ramSlots": 4, "maxRamGb": 128, "maxRamSpeedMhz": 4400, "sataPorts": 6, "m2Slots": 2, "cpuPowerConnector": "8+4-pin" }
+    },
+    {
+      "key": "mb-asus-prime-b650m-a",
+      "category": "motherboard",
+      "brand": "ASUS",
+      "model": "PRIME B650M-A",
+      "releaseYear": 2022,
+      "msrpEur": 180,
+      "specs": { "socket": "AM5", "chipset": "B650", "formFactor": "mATX", "ramType": "DDR5", "ramSlots": 4, "maxRamGb": 128, "maxRamSpeedMhz": 6400, "sataPorts": 4, "m2Slots": 2, "cpuPowerConnector": "8-pin" }
+    },
+    {
+      "key": "mb-msi-mag-b650-tomahawk-wifi",
+      "category": "motherboard",
+      "brand": "MSI",
+      "model": "MAG B650 TOMAHAWK WIFI",
+      "releaseYear": 2022,
+      "msrpEur": 260,
+      "specs": { "socket": "AM5", "chipset": "B650", "formFactor": "ATX", "ramType": "DDR5", "ramSlots": 4, "maxRamGb": 128, "maxRamSpeedMhz": 6400, "sataPorts": 6, "m2Slots": 3, "cpuPowerConnector": "8+8-pin" }
+    },
+
+    {
+      "key": "gpu-nvidia-gtx-950",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce GTX 950 2 Go",
+      "releaseYear": 2015,
+      "msrpEur": 170,
+      "specs": { "chipset": "GeForce GTX 950", "vramGb": 2, "lengthMm": 200, "tdpW": 90, "perfIndex": 20, "powerConnectors": { "pcie6pin": 1, "pcie8pin": 0, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-gtx-960",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce GTX 960 2 Go",
+      "releaseYear": 2015,
+      "msrpEur": 210,
+      "specs": { "chipset": "GeForce GTX 960", "vramGb": 2, "lengthMm": 240, "tdpW": 120, "perfIndex": 25, "powerConnectors": { "pcie6pin": 1, "pcie8pin": 0, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-gtx-970",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce GTX 970 4 Go",
+      "releaseYear": 2014,
+      "msrpEur": 330,
+      "specs": { "chipset": "GeForce GTX 970", "vramGb": 4, "lengthMm": 267, "tdpW": 145, "perfIndex": 38, "powerConnectors": { "pcie6pin": 2, "pcie8pin": 0, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-gtx-980",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce GTX 980 4 Go",
+      "releaseYear": 2014,
+      "msrpEur": 550,
+      "specs": { "chipset": "GeForce GTX 980", "vramGb": 4, "lengthMm": 267, "tdpW": 165, "perfIndex": 45, "powerConnectors": { "pcie6pin": 2, "pcie8pin": 0, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-gtx-980-ti",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce GTX 980 Ti 6 Go",
+      "releaseYear": 2015,
+      "msrpEur": 740,
+      "specs": { "chipset": "GeForce GTX 980 Ti", "vramGb": 6, "lengthMm": 267, "tdpW": 250, "perfIndex": 58, "powerConnectors": { "pcie6pin": 1, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-gtx-1050-ti",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce GTX 1050 Ti 4 Go",
+      "releaseYear": 2016,
+      "msrpEur": 155,
+      "specs": { "chipset": "GeForce GTX 1050 Ti", "vramGb": 4, "lengthMm": 145, "tdpW": 75, "perfIndex": 30, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 0, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-gtx-1060-6gb",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce GTX 1060 6 Go",
+      "releaseYear": 2016,
+      "msrpEur": 280,
+      "specs": { "chipset": "GeForce GTX 1060", "vramGb": 6, "lengthMm": 250, "tdpW": 120, "perfIndex": 45, "powerConnectors": { "pcie6pin": 1, "pcie8pin": 0, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-gtx-1070",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce GTX 1070 8 Go",
+      "releaseYear": 2016,
+      "msrpEur": 450,
+      "specs": { "chipset": "GeForce GTX 1070", "vramGb": 8, "lengthMm": 267, "tdpW": 150, "perfIndex": 62, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-gtx-1080",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce GTX 1080 8 Go",
+      "releaseYear": 2016,
+      "msrpEur": 620,
+      "specs": { "chipset": "GeForce GTX 1080", "vramGb": 8, "lengthMm": 267, "tdpW": 180, "perfIndex": 75, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-gtx-1080-ti",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce GTX 1080 Ti 11 Go",
+      "releaseYear": 2017,
+      "msrpEur": 780,
+      "specs": { "chipset": "GeForce GTX 1080 Ti", "vramGb": 11, "lengthMm": 267, "tdpW": 250, "perfIndex": 95, "powerConnectors": { "pcie6pin": 1, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-gtx-1650",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce GTX 1650 4 Go",
+      "releaseYear": 2019,
+      "msrpEur": 160,
+      "specs": { "chipset": "GeForce GTX 1650", "vramGb": 4, "lengthMm": 145, "tdpW": 75, "perfIndex": 38, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 0, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-gtx-1650-super",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce GTX 1650 SUPER 4 Go",
+      "releaseYear": 2019,
+      "msrpEur": 180,
+      "specs": { "chipset": "GeForce GTX 1650 SUPER", "vramGb": 4, "lengthMm": 200, "tdpW": 100, "perfIndex": 47, "powerConnectors": { "pcie6pin": 1, "pcie8pin": 0, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-gtx-1660",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce GTX 1660 6 Go",
+      "releaseYear": 2019,
+      "msrpEur": 230,
+      "specs": { "chipset": "GeForce GTX 1660", "vramGb": 6, "lengthMm": 229, "tdpW": 120, "perfIndex": 52, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-gtx-1660-super",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce GTX 1660 SUPER 6 Go",
+      "releaseYear": 2019,
+      "msrpEur": 250,
+      "specs": { "chipset": "GeForce GTX 1660 SUPER", "vramGb": 6, "lengthMm": 229, "tdpW": 125, "perfIndex": 58, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-gtx-1660-ti",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce GTX 1660 Ti 6 Go",
+      "releaseYear": 2019,
+      "msrpEur": 300,
+      "specs": { "chipset": "GeForce GTX 1660 Ti", "vramGb": 6, "lengthMm": 229, "tdpW": 120, "perfIndex": 60, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-rtx-2060",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce RTX 2060 6 Go",
+      "releaseYear": 2019,
+      "msrpEur": 370,
+      "specs": { "chipset": "GeForce RTX 2060", "vramGb": 6, "lengthMm": 229, "tdpW": 160, "perfIndex": 72, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-rtx-2060-super",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce RTX 2060 SUPER 8 Go",
+      "releaseYear": 2019,
+      "msrpEur": 430,
+      "specs": { "chipset": "GeForce RTX 2060 SUPER", "vramGb": 8, "lengthMm": 229, "tdpW": 175, "perfIndex": 82, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-rtx-2070-super",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce RTX 2070 SUPER 8 Go",
+      "releaseYear": 2019,
+      "msrpEur": 550,
+      "specs": { "chipset": "GeForce RTX 2070 SUPER", "vramGb": 8, "lengthMm": 267, "tdpW": 215, "perfIndex": 95, "powerConnectors": { "pcie6pin": 1, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-rtx-2080-ti",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce RTX 2080 Ti 11 Go",
+      "releaseYear": 2018,
+      "msrpEur": 1200,
+      "specs": { "chipset": "GeForce RTX 2080 Ti", "vramGb": 11, "lengthMm": 267, "tdpW": 250, "perfIndex": 125, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 2, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-rtx-3050",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce RTX 3050 8 Go",
+      "releaseYear": 2022,
+      "msrpEur": 280,
+      "specs": { "chipset": "GeForce RTX 3050", "vramGb": 8, "lengthMm": 242, "tdpW": 130, "perfIndex": 62, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-rtx-3060",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce RTX 3060 12 Go",
+      "releaseYear": 2021,
+      "msrpEur": 340,
+      "specs": { "chipset": "GeForce RTX 3060", "vramGb": 12, "lengthMm": 242, "tdpW": 170, "perfIndex": 100, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-rtx-3060-ti",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce RTX 3060 Ti 8 Go",
+      "releaseYear": 2020,
+      "msrpEur": 420,
+      "specs": { "chipset": "GeForce RTX 3060 Ti", "vramGb": 8, "lengthMm": 242, "tdpW": 200, "perfIndex": 125, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-rtx-3070",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce RTX 3070 8 Go",
+      "releaseYear": 2020,
+      "msrpEur": 520,
+      "specs": { "chipset": "GeForce RTX 3070", "vramGb": 8, "lengthMm": 242, "tdpW": 220, "perfIndex": 140, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 2, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-rtx-3080",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce RTX 3080 10 Go",
+      "releaseYear": 2020,
+      "msrpEur": 720,
+      "specs": { "chipset": "GeForce RTX 3080", "vramGb": 10, "lengthMm": 285, "tdpW": 320, "perfIndex": 175, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 2, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-rtx-4060",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce RTX 4060 8 Go",
+      "releaseYear": 2023,
+      "msrpEur": 330,
+      "specs": { "chipset": "GeForce RTX 4060", "vramGb": 8, "lengthMm": 245, "tdpW": 115, "perfIndex": 110, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-rtx-4060-ti",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce RTX 4060 Ti 8 Go",
+      "releaseYear": 2023,
+      "msrpEur": 440,
+      "specs": { "chipset": "GeForce RTX 4060 Ti", "vramGb": 8, "lengthMm": 245, "tdpW": 160, "perfIndex": 130, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-nvidia-rtx-4070",
+      "category": "gpu",
+      "brand": "NVIDIA",
+      "model": "GeForce RTX 4070 12 Go",
+      "releaseYear": 2023,
+      "msrpEur": 660,
+      "specs": { "chipset": "GeForce RTX 4070", "vramGb": 12, "lengthMm": 244, "tdpW": 200, "perfIndex": 165, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 2, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-amd-rx-570-8gb",
+      "category": "gpu",
+      "brand": "AMD",
+      "model": "Radeon RX 570 8 Go",
+      "releaseYear": 2017,
+      "msrpEur": 200,
+      "specs": { "chipset": "Radeon RX 570", "vramGb": 8, "lengthMm": 241, "tdpW": 150, "perfIndex": 42, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-amd-rx-580-8gb",
+      "category": "gpu",
+      "brand": "AMD",
+      "model": "Radeon RX 580 8 Go",
+      "releaseYear": 2017,
+      "msrpEur": 250,
+      "specs": { "chipset": "Radeon RX 580", "vramGb": 8, "lengthMm": 241, "tdpW": 185, "perfIndex": 48, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-amd-rx-590",
+      "category": "gpu",
+      "brand": "AMD",
+      "model": "Radeon RX 590 8 Go",
+      "releaseYear": 2018,
+      "msrpEur": 280,
+      "specs": { "chipset": "Radeon RX 590", "vramGb": 8, "lengthMm": 269, "tdpW": 175, "perfIndex": 55, "powerConnectors": { "pcie6pin": 1, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-amd-rx-5500-xt",
+      "category": "gpu",
+      "brand": "AMD",
+      "model": "Radeon RX 5500 XT 8 Go",
+      "releaseYear": 2019,
+      "msrpEur": 220,
+      "specs": { "chipset": "Radeon RX 5500 XT", "vramGb": 8, "lengthMm": 220, "tdpW": 130, "perfIndex": 55, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-amd-rx-5600-xt",
+      "category": "gpu",
+      "brand": "AMD",
+      "model": "Radeon RX 5600 XT 6 Go",
+      "releaseYear": 2020,
+      "msrpEur": 300,
+      "specs": { "chipset": "Radeon RX 5600 XT", "vramGb": 6, "lengthMm": 250, "tdpW": 150, "perfIndex": 78, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-amd-rx-5700-xt",
+      "category": "gpu",
+      "brand": "AMD",
+      "model": "Radeon RX 5700 XT 8 Go",
+      "releaseYear": 2019,
+      "msrpEur": 420,
+      "specs": { "chipset": "Radeon RX 5700 XT", "vramGb": 8, "lengthMm": 272, "tdpW": 225, "perfIndex": 95, "powerConnectors": { "pcie6pin": 1, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-amd-rx-6600",
+      "category": "gpu",
+      "brand": "AMD",
+      "model": "Radeon RX 6600 8 Go",
+      "releaseYear": 2021,
+      "msrpEur": 340,
+      "specs": { "chipset": "Radeon RX 6600", "vramGb": 8, "lengthMm": 200, "tdpW": 132, "perfIndex": 95, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-amd-rx-6600-xt",
+      "category": "gpu",
+      "brand": "AMD",
+      "model": "Radeon RX 6600 XT 8 Go",
+      "releaseYear": 2021,
+      "msrpEur": 380,
+      "specs": { "chipset": "Radeon RX 6600 XT", "vramGb": 8, "lengthMm": 220, "tdpW": 160, "perfIndex": 110, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-amd-rx-6700-xt",
+      "category": "gpu",
+      "brand": "AMD",
+      "model": "Radeon RX 6700 XT 12 Go",
+      "releaseYear": 2021,
+      "msrpEur": 480,
+      "specs": { "chipset": "Radeon RX 6700 XT", "vramGb": 12, "lengthMm": 267, "tdpW": 230, "perfIndex": 140, "powerConnectors": { "pcie6pin": 1, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-amd-rx-6800",
+      "category": "gpu",
+      "brand": "AMD",
+      "model": "Radeon RX 6800 16 Go",
+      "releaseYear": 2020,
+      "msrpEur": 590,
+      "specs": { "chipset": "Radeon RX 6800", "vramGb": 16, "lengthMm": 267, "tdpW": 250, "perfIndex": 175, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 2, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-amd-rx-7600",
+      "category": "gpu",
+      "brand": "AMD",
+      "model": "Radeon RX 7600 8 Go",
+      "releaseYear": 2023,
+      "msrpEur": 300,
+      "specs": { "chipset": "Radeon RX 7600", "vramGb": 8, "lengthMm": 204, "tdpW": 165, "perfIndex": 115, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-amd-rx-7700-xt",
+      "category": "gpu",
+      "brand": "AMD",
+      "model": "Radeon RX 7700 XT 12 Go",
+      "releaseYear": 2023,
+      "msrpEur": 490,
+      "specs": { "chipset": "Radeon RX 7700 XT", "vramGb": 12, "lengthMm": 276, "tdpW": 245, "perfIndex": 165, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 2, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "gpu-amd-rx-7800-xt",
+      "category": "gpu",
+      "brand": "AMD",
+      "model": "Radeon RX 7800 XT 16 Go",
+      "releaseYear": 2023,
+      "msrpEur": 580,
+      "specs": { "chipset": "Radeon RX 7800 XT", "vramGb": 16, "lengthMm": 276, "tdpW": 263, "perfIndex": 190, "powerConnectors": { "pcie6pin": 0, "pcie8pin": 2, "pcie12vhpwr": 0 } }
+    },
+
+    {
+      "key": "ram-crucial-ballistix-sport-8gb-ddr3-1600",
+      "category": "ram",
+      "brand": "Crucial",
+      "model": "Ballistix Sport 8 Go (2x4) DDR3-1600",
+      "releaseYear": 2013,
+      "msrpEur": 60,
+      "specs": { "ramType": "DDR3", "capacityPerStickGb": 4, "sticks": 2, "speedMhz": 1600, "casLatency": 9 }
+    },
+    {
+      "key": "ram-corsair-vengeance-lp-16gb-ddr3-1600",
+      "category": "ram",
+      "brand": "Corsair",
+      "model": "Vengeance LP 16 Go (2x8) DDR3-1600",
+      "releaseYear": 2013,
+      "msrpEur": 110,
+      "specs": { "ramType": "DDR3", "capacityPerStickGb": 8, "sticks": 2, "speedMhz": 1600, "casLatency": 10 }
+    },
+    {
+      "key": "ram-gskill-ripjaws-x-8gb-ddr3-1866",
+      "category": "ram",
+      "brand": "G.Skill",
+      "model": "Ripjaws X 8 Go (2x4) DDR3-1866",
+      "releaseYear": 2012,
+      "msrpEur": 70,
+      "specs": { "ramType": "DDR3", "capacityPerStickGb": 4, "sticks": 2, "speedMhz": 1866, "casLatency": 9 }
+    },
+    {
+      "key": "ram-crucial-8gb-ddr4-2400",
+      "category": "ram",
+      "brand": "Crucial",
+      "model": "8 Go (1x8) DDR4-2400",
+      "releaseYear": 2017,
+      "msrpEur": 45,
+      "specs": { "ramType": "DDR4", "capacityPerStickGb": 8, "sticks": 1, "speedMhz": 2400, "casLatency": 17 }
+    },
+    {
+      "key": "ram-corsair-vengeance-lpx-8gb-ddr4-2400",
+      "category": "ram",
+      "brand": "Corsair",
+      "model": "Vengeance LPX 8 Go (2x4) DDR4-2400",
+      "releaseYear": 2016,
+      "msrpEur": 50,
+      "specs": { "ramType": "DDR4", "capacityPerStickGb": 4, "sticks": 2, "speedMhz": 2400, "casLatency": 14 }
+    },
+    {
+      "key": "ram-kingston-hyperx-fury-8gb-ddr4-2666",
+      "category": "ram",
+      "brand": "Kingston",
+      "model": "HyperX Fury 8 Go (1x8) DDR4-2666",
+      "releaseYear": 2018,
+      "msrpEur": 45,
+      "specs": { "ramType": "DDR4", "capacityPerStickGb": 8, "sticks": 1, "speedMhz": 2666, "casLatency": 16 }
+    },
+    {
+      "key": "ram-crucial-ballistix-16gb-ddr4-3000",
+      "category": "ram",
+      "brand": "Crucial",
+      "model": "Ballistix 16 Go (2x8) DDR4-3000",
+      "releaseYear": 2019,
+      "msrpEur": 75,
+      "specs": { "ramType": "DDR4", "capacityPerStickGb": 8, "sticks": 2, "speedMhz": 3000, "casLatency": 15 }
+    },
+    {
+      "key": "ram-corsair-vengeance-lpx-16gb-ddr4-3200",
+      "category": "ram",
+      "brand": "Corsair",
+      "model": "Vengeance LPX 16 Go (2x8) DDR4-3200",
+      "releaseYear": 2019,
+      "msrpEur": 80,
+      "specs": { "ramType": "DDR4", "capacityPerStickGb": 8, "sticks": 2, "speedMhz": 3200, "casLatency": 16 }
+    },
+    {
+      "key": "ram-kingston-fury-beast-16gb-ddr4-3200",
+      "category": "ram",
+      "brand": "Kingston",
+      "model": "Fury Beast 16 Go (2x8) DDR4-3200",
+      "releaseYear": 2021,
+      "msrpEur": 80,
+      "specs": { "ramType": "DDR4", "capacityPerStickGb": 8, "sticks": 2, "speedMhz": 3200, "casLatency": 16 }
+    },
+    {
+      "key": "ram-gskill-ripjaws-v-16gb-ddr4-3600",
+      "category": "ram",
+      "brand": "G.Skill",
+      "model": "Ripjaws V 16 Go (2x8) DDR4-3600",
+      "releaseYear": 2019,
+      "msrpEur": 90,
+      "specs": { "ramType": "DDR4", "capacityPerStickGb": 8, "sticks": 2, "speedMhz": 3600, "casLatency": 16 }
+    },
+    {
+      "key": "ram-gskill-trident-z-rgb-32gb-ddr4-3200",
+      "category": "ram",
+      "brand": "G.Skill",
+      "model": "Trident Z RGB 32 Go (2x16) DDR4-3200",
+      "releaseYear": 2019,
+      "msrpEur": 160,
+      "specs": { "ramType": "DDR4", "capacityPerStickGb": 16, "sticks": 2, "speedMhz": 3200, "casLatency": 16 }
+    },
+    {
+      "key": "ram-corsair-vengeance-rgb-pro-32gb-ddr4-3600",
+      "category": "ram",
+      "brand": "Corsair",
+      "model": "Vengeance RGB Pro 32 Go (2x16) DDR4-3600",
+      "releaseYear": 2020,
+      "msrpEur": 170,
+      "specs": { "ramType": "DDR4", "capacityPerStickGb": 16, "sticks": 2, "speedMhz": 3600, "casLatency": 18 }
+    },
+    {
+      "key": "ram-kingston-fury-beast-16gb-ddr5-5200",
+      "category": "ram",
+      "brand": "Kingston",
+      "model": "Fury Beast 16 Go (2x8) DDR5-5200",
+      "releaseYear": 2022,
+      "msrpEur": 100,
+      "specs": { "ramType": "DDR5", "capacityPerStickGb": 8, "sticks": 2, "speedMhz": 5200, "casLatency": 40 }
+    },
+    {
+      "key": "ram-corsair-vengeance-32gb-ddr5-5600",
+      "category": "ram",
+      "brand": "Corsair",
+      "model": "Vengeance 32 Go (2x16) DDR5-5600",
+      "releaseYear": 2022,
+      "msrpEur": 150,
+      "specs": { "ramType": "DDR5", "capacityPerStickGb": 16, "sticks": 2, "speedMhz": 5600, "casLatency": 36 }
+    },
+    {
+      "key": "ram-gskill-trident-z5-32gb-ddr5-6000",
+      "category": "ram",
+      "brand": "G.Skill",
+      "model": "Trident Z5 32 Go (2x16) DDR5-6000",
+      "releaseYear": 2022,
+      "msrpEur": 190,
+      "specs": { "ramType": "DDR5", "capacityPerStickGb": 16, "sticks": 2, "speedMhz": 6000, "casLatency": 30 }
+    },
+
+    {
+      "key": "psu-corsair-cx450",
+      "category": "psu",
+      "brand": "Corsair",
+      "model": "CX450",
+      "releaseYear": 2017,
+      "msrpEur": 55,
+      "specs": { "wattage": 450, "efficiency": "80+ Bronze", "modular": "non", "formFactor": "ATX", "sataConnectors": 4, "pcieConnectors": { "pcie6pin": 0, "pcie8pin": 2, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "psu-corsair-cx550",
+      "category": "psu",
+      "brand": "Corsair",
+      "model": "CX550",
+      "releaseYear": 2017,
+      "msrpEur": 65,
+      "specs": { "wattage": 550, "efficiency": "80+ Bronze", "modular": "non", "formFactor": "ATX", "sataConnectors": 6, "pcieConnectors": { "pcie6pin": 0, "pcie8pin": 2, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "psu-corsair-rm650",
+      "category": "psu",
+      "brand": "Corsair",
+      "model": "RM650",
+      "releaseYear": 2019,
+      "msrpEur": 110,
+      "specs": { "wattage": 650, "efficiency": "80+ Gold", "modular": "oui", "formFactor": "ATX", "sataConnectors": 8, "pcieConnectors": { "pcie6pin": 0, "pcie8pin": 4, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "psu-corsair-rm750x",
+      "category": "psu",
+      "brand": "Corsair",
+      "model": "RM750x",
+      "releaseYear": 2018,
+      "msrpEur": 130,
+      "specs": { "wattage": 750, "efficiency": "80+ Gold", "modular": "oui", "formFactor": "ATX", "sataConnectors": 10, "pcieConnectors": { "pcie6pin": 0, "pcie8pin": 4, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "psu-corsair-rm850",
+      "category": "psu",
+      "brand": "Corsair",
+      "model": "RM850",
+      "releaseYear": 2019,
+      "msrpEur": 150,
+      "specs": { "wattage": 850, "efficiency": "80+ Gold", "modular": "oui", "formFactor": "ATX", "sataConnectors": 12, "pcieConnectors": { "pcie6pin": 0, "pcie8pin": 6, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "psu-corsair-rm1000e",
+      "category": "psu",
+      "brand": "Corsair",
+      "model": "RM1000e",
+      "releaseYear": 2022,
+      "msrpEur": 180,
+      "specs": { "wattage": 1000, "efficiency": "80+ Gold", "modular": "oui", "formFactor": "ATX", "sataConnectors": 12, "pcieConnectors": { "pcie6pin": 0, "pcie8pin": 4, "pcie12vhpwr": 1 } }
+    },
+    {
+      "key": "psu-corsair-sf600",
+      "category": "psu",
+      "brand": "Corsair",
+      "model": "SF600",
+      "releaseYear": 2018,
+      "msrpEur": 140,
+      "specs": { "wattage": 600, "efficiency": "80+ Gold", "modular": "oui", "formFactor": "SFX", "sataConnectors": 4, "pcieConnectors": { "pcie6pin": 0, "pcie8pin": 3, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "psu-seasonic-focus-gx-650",
+      "category": "psu",
+      "brand": "Seasonic",
+      "model": "Focus GX-650",
+      "releaseYear": 2019,
+      "msrpEur": 120,
+      "specs": { "wattage": 650, "efficiency": "80+ Gold", "modular": "oui", "formFactor": "ATX", "sataConnectors": 8, "pcieConnectors": { "pcie6pin": 0, "pcie8pin": 4, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "psu-seasonic-s12iii-500",
+      "category": "psu",
+      "brand": "Seasonic",
+      "model": "S12III 500",
+      "releaseYear": 2018,
+      "msrpEur": 55,
+      "specs": { "wattage": 500, "efficiency": "80+ Bronze", "modular": "non", "formFactor": "ATX", "sataConnectors": 6, "pcieConnectors": { "pcie6pin": 0, "pcie8pin": 2, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "psu-bequiet-system-power-9-500",
+      "category": "psu",
+      "brand": "be quiet!",
+      "model": "System Power 9 500W",
+      "releaseYear": 2018,
+      "msrpEur": 55,
+      "specs": { "wattage": 500, "efficiency": "80+ Bronze", "modular": "non", "formFactor": "ATX", "sataConnectors": 6, "pcieConnectors": { "pcie6pin": 0, "pcie8pin": 2, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "psu-bequiet-pure-power-11-600",
+      "category": "psu",
+      "brand": "be quiet!",
+      "model": "Pure Power 11 600W CM",
+      "releaseYear": 2019,
+      "msrpEur": 90,
+      "specs": { "wattage": 600, "efficiency": "80+ Gold", "modular": "semi", "formFactor": "ATX", "sataConnectors": 8, "pcieConnectors": { "pcie6pin": 0, "pcie8pin": 2, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "psu-bequiet-straight-power-11-750",
+      "category": "psu",
+      "brand": "be quiet!",
+      "model": "Straight Power 11 750W",
+      "releaseYear": 2018,
+      "msrpEur": 150,
+      "specs": { "wattage": 750, "efficiency": "80+ Gold", "modular": "oui", "formFactor": "ATX", "sataConnectors": 10, "pcieConnectors": { "pcie6pin": 0, "pcie8pin": 4, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "psu-evga-600-br",
+      "category": "psu",
+      "brand": "EVGA",
+      "model": "600 BR",
+      "releaseYear": 2018,
+      "msrpEur": 60,
+      "specs": { "wattage": 600, "efficiency": "80+ Bronze", "modular": "non", "formFactor": "ATX", "sataConnectors": 6, "pcieConnectors": { "pcie6pin": 0, "pcie8pin": 2, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "psu-coolermaster-mwe-gold-750-v2",
+      "category": "psu",
+      "brand": "Cooler Master",
+      "model": "MWE Gold 750 V2",
+      "releaseYear": 2021,
+      "msrpEur": 110,
+      "specs": { "wattage": 750, "efficiency": "80+ Gold", "modular": "oui", "formFactor": "ATX", "sataConnectors": 8, "pcieConnectors": { "pcie6pin": 0, "pcie8pin": 4, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "psu-msi-mag-a650bn",
+      "category": "psu",
+      "brand": "MSI",
+      "model": "MAG A650BN",
+      "releaseYear": 2020,
+      "msrpEur": 65,
+      "specs": { "wattage": 650, "efficiency": "80+ Bronze", "modular": "non", "formFactor": "ATX", "sataConnectors": 6, "pcieConnectors": { "pcie6pin": 0, "pcie8pin": 2, "pcie12vhpwr": 0 } }
+    },
+    {
+      "key": "psu-thermaltake-smart-500",
+      "category": "psu",
+      "brand": "Thermaltake",
+      "model": "Smart 500W",
+      "releaseYear": 2016,
+      "msrpEur": 45,
+      "specs": { "wattage": 500, "efficiency": "80+", "modular": "non", "formFactor": "ATX", "sataConnectors": 4, "pcieConnectors": { "pcie6pin": 1, "pcie8pin": 1, "pcie12vhpwr": 0 } }
+    },
+
+    {
+      "key": "case-fractal-design-core-1000",
+      "category": "case",
+      "brand": "Fractal Design",
+      "model": "Core 1000",
+      "releaseYear": 2012,
+      "msrpEur": 40,
+      "specs": { "supportedFormFactors": ["mATX", "ITX"], "maxGpuLengthMm": 350, "maxCoolerHeightMm": 165, "radiatorSupportMm": [120], "psuFormFactors": ["ATX"], "drivebays25": 2, "drivebays35": 2 }
+    },
+    {
+      "key": "case-coolermaster-masterbox-q300l",
+      "category": "case",
+      "brand": "Cooler Master",
+      "model": "MasterBox Q300L",
+      "releaseYear": 2018,
+      "msrpEur": 50,
+      "specs": { "supportedFormFactors": ["mATX", "ITX"], "maxGpuLengthMm": 360, "maxCoolerHeightMm": 159, "radiatorSupportMm": [120, 240], "psuFormFactors": ["ATX"], "drivebays25": 2, "drivebays35": 1 }
+    },
+    {
+      "key": "case-thermaltake-versa-h17",
+      "category": "case",
+      "brand": "Thermaltake",
+      "model": "Versa H17",
+      "releaseYear": 2018,
+      "msrpEur": 40,
+      "specs": { "supportedFormFactors": ["mATX", "ITX"], "maxGpuLengthMm": 315, "maxCoolerHeightMm": 155, "radiatorSupportMm": [120, 240], "psuFormFactors": ["ATX"], "drivebays25": 2, "drivebays35": 2 }
+    },
+    {
+      "key": "case-aerocool-cylon",
+      "category": "case",
+      "brand": "Aerocool",
+      "model": "Cylon",
+      "releaseYear": 2017,
+      "msrpEur": 45,
+      "specs": { "supportedFormFactors": ["ATX", "mATX", "ITX"], "maxGpuLengthMm": 371, "maxCoolerHeightMm": 155, "radiatorSupportMm": [120, 240], "psuFormFactors": ["ATX"], "drivebays25": 2, "drivebays35": 2 }
+    },
+    {
+      "key": "case-nzxt-h510",
+      "category": "case",
+      "brand": "NZXT",
+      "model": "H510",
+      "releaseYear": 2019,
+      "msrpEur": 80,
+      "specs": { "supportedFormFactors": ["ATX", "mATX", "ITX"], "maxGpuLengthMm": 381, "maxCoolerHeightMm": 165, "radiatorSupportMm": [120, 240, 280], "psuFormFactors": ["ATX"], "drivebays25": 2, "drivebays35": 2 }
+    },
+    {
+      "key": "case-corsair-4000d-airflow",
+      "category": "case",
+      "brand": "Corsair",
+      "model": "4000D Airflow",
+      "releaseYear": 2020,
+      "msrpEur": 95,
+      "specs": { "supportedFormFactors": ["ATX", "mATX", "ITX"], "maxGpuLengthMm": 360, "maxCoolerHeightMm": 170, "radiatorSupportMm": [120, 240, 280, 360], "psuFormFactors": ["ATX"], "drivebays25": 2, "drivebays35": 2 }
+    },
+    {
+      "key": "case-corsair-carbide-275r",
+      "category": "case",
+      "brand": "Corsair",
+      "model": "Carbide 275R",
+      "releaseYear": 2018,
+      "msrpEur": 80,
+      "specs": { "supportedFormFactors": ["ATX", "mATX", "ITX"], "maxGpuLengthMm": 370, "maxCoolerHeightMm": 170, "radiatorSupportMm": [120, 240, 280, 360], "psuFormFactors": ["ATX"], "drivebays25": 3, "drivebays35": 2 }
+    },
+    {
+      "key": "case-fractal-design-meshify-c",
+      "category": "case",
+      "brand": "Fractal Design",
+      "model": "Meshify C",
+      "releaseYear": 2017,
+      "msrpEur": 95,
+      "specs": { "supportedFormFactors": ["ATX", "mATX", "ITX"], "maxGpuLengthMm": 315, "maxCoolerHeightMm": 172, "radiatorSupportMm": [120, 240, 280, 360], "psuFormFactors": ["ATX"], "drivebays25": 3, "drivebays35": 2 }
+    },
+    {
+      "key": "case-fractal-design-define-r5",
+      "category": "case",
+      "brand": "Fractal Design",
+      "model": "Define R5",
+      "releaseYear": 2014,
+      "msrpEur": 110,
+      "specs": { "supportedFormFactors": ["ATX", "mATX", "ITX"], "maxGpuLengthMm": 440, "maxCoolerHeightMm": 180, "radiatorSupportMm": [120, 240, 280, 360], "psuFormFactors": ["ATX"], "drivebays25": 2, "drivebays35": 8 }
+    },
+    {
+      "key": "case-bequiet-pure-base-500dx",
+      "category": "case",
+      "brand": "be quiet!",
+      "model": "Pure Base 500DX",
+      "releaseYear": 2020,
+      "msrpEur": 105,
+      "specs": { "supportedFormFactors": ["ATX", "mATX", "ITX"], "maxGpuLengthMm": 369, "maxCoolerHeightMm": 190, "radiatorSupportMm": [120, 240, 280, 360], "psuFormFactors": ["ATX"], "drivebays25": 2, "drivebays35": 2 }
+    },
+    {
+      "key": "case-phanteks-eclipse-p400a",
+      "category": "case",
+      "brand": "Phanteks",
+      "model": "Eclipse P400A",
+      "releaseYear": 2019,
+      "msrpEur": 90,
+      "specs": { "supportedFormFactors": ["ATX", "mATX", "ITX"], "maxGpuLengthMm": 420, "maxCoolerHeightMm": 160, "radiatorSupportMm": [120, 240, 280, 360], "psuFormFactors": ["ATX"], "drivebays25": 2, "drivebays35": 2 }
+    },
+    {
+      "key": "case-coolermaster-masterbox-mb520",
+      "category": "case",
+      "brand": "Cooler Master",
+      "model": "MasterBox MB520",
+      "releaseYear": 2018,
+      "msrpEur": 75,
+      "specs": { "supportedFormFactors": ["ATX", "mATX", "ITX"], "maxGpuLengthMm": 410, "maxCoolerHeightMm": 165, "radiatorSupportMm": [120, 240, 280, 360], "psuFormFactors": ["ATX"], "drivebays25": 2, "drivebays35": 2 }
+    },
+    {
+      "key": "case-nzxt-h710",
+      "category": "case",
+      "brand": "NZXT",
+      "model": "H710",
+      "releaseYear": 2019,
+      "msrpEur": 150,
+      "specs": { "supportedFormFactors": ["E-ATX", "ATX", "mATX", "ITX"], "maxGpuLengthMm": 413, "maxCoolerHeightMm": 185, "radiatorSupportMm": [120, 240, 280, 360], "psuFormFactors": ["ATX"], "drivebays25": 7, "drivebays35": 3 }
+    },
+    {
+      "key": "case-lianli-lancool-ii-mesh",
+      "category": "case",
+      "brand": "Lian Li",
+      "model": "Lancool II Mesh",
+      "releaseYear": 2020,
+      "msrpEur": 110,
+      "specs": { "supportedFormFactors": ["E-ATX", "ATX", "mATX", "ITX"], "maxGpuLengthMm": 384, "maxCoolerHeightMm": 176, "radiatorSupportMm": [120, 240, 280, 360], "psuFormFactors": ["ATX"], "drivebays25": 4, "drivebays35": 3 }
+    },
+    {
+      "key": "case-coolermaster-nr200",
+      "category": "case",
+      "brand": "Cooler Master",
+      "model": "MasterBox NR200",
+      "releaseYear": 2020,
+      "msrpEur": 90,
+      "specs": { "supportedFormFactors": ["ITX"], "maxGpuLengthMm": 330, "maxCoolerHeightMm": 155, "radiatorSupportMm": [120, 240, 280], "psuFormFactors": ["SFX", "SFX-L"], "drivebays25": 3, "drivebays35": 1 }
+    },
+    {
+      "key": "case-fractal-design-node-202",
+      "category": "case",
+      "brand": "Fractal Design",
+      "model": "Node 202",
+      "releaseYear": 2015,
+      "msrpEur": 90,
+      "specs": { "supportedFormFactors": ["ITX"], "maxGpuLengthMm": 310, "maxCoolerHeightMm": 56, "radiatorSupportMm": [], "psuFormFactors": ["SFX"], "drivebays25": 2, "drivebays35": 0 }
+    },
+
+    {
+      "key": "cooling-amd-wraith-stealth",
+      "category": "cooling",
+      "brand": "AMD",
+      "model": "Wraith Stealth",
+      "releaseYear": 2017,
+      "msrpEur": 20,
+      "specs": { "coolingType": "air", "supportedSockets": ["AM4"], "heightMm": 54, "maxTdpW": 65 }
+    },
+    {
+      "key": "cooling-intel-e97379",
+      "category": "cooling",
+      "brand": "Intel",
+      "model": "Ventirad boite E97379",
+      "releaseYear": 2015,
+      "msrpEur": 12,
+      "specs": { "coolingType": "air", "supportedSockets": ["LGA1151", "LGA1151-v2", "LGA1200"], "heightMm": 46, "maxTdpW": 65 }
+    },
+    {
+      "key": "cooling-coolermaster-hyper-212-evo",
+      "category": "cooling",
+      "brand": "Cooler Master",
+      "model": "Hyper 212 EVO",
+      "releaseYear": 2016,
+      "msrpEur": 35,
+      "specs": { "coolingType": "air", "supportedSockets": ["LGA1151", "LGA1151-v2", "LGA1200", "LGA1700", "AM4", "AM5"], "heightMm": 159, "maxTdpW": 150 }
+    },
+    {
+      "key": "cooling-bequiet-pure-rock-2",
+      "category": "cooling",
+      "brand": "be quiet!",
+      "model": "Pure Rock 2",
+      "releaseYear": 2020,
+      "msrpEur": 40,
+      "specs": { "coolingType": "air", "supportedSockets": ["LGA1151", "LGA1151-v2", "LGA1200", "LGA1700", "AM4", "AM5"], "heightMm": 155, "maxTdpW": 150 }
+    },
+    {
+      "key": "cooling-noctua-nh-u12s-redux",
+      "category": "cooling",
+      "brand": "Noctua",
+      "model": "NH-U12S redux",
+      "releaseYear": 2020,
+      "msrpEur": 50,
+      "specs": { "coolingType": "air", "supportedSockets": ["LGA1151", "LGA1151-v2", "LGA1200", "LGA1700", "AM4", "AM5"], "heightMm": 158, "maxTdpW": 160 }
+    },
+    {
+      "key": "cooling-arctic-freezer-34-esports-duo",
+      "category": "cooling",
+      "brand": "Arctic",
+      "model": "Freezer 34 eSports DUO",
+      "releaseYear": 2019,
+      "msrpEur": 45,
+      "specs": { "coolingType": "air", "supportedSockets": ["LGA1151", "LGA1151-v2", "LGA1200", "LGA1700", "AM4"], "heightMm": 157, "maxTdpW": 210 }
+    },
+    {
+      "key": "cooling-noctua-nh-d15",
+      "category": "cooling",
+      "brand": "Noctua",
+      "model": "NH-D15",
+      "releaseYear": 2014,
+      "msrpEur": 100,
+      "specs": { "coolingType": "air", "supportedSockets": ["LGA1151", "LGA1151-v2", "LGA1200", "LGA1700", "AM4", "AM5"], "heightMm": 165, "maxTdpW": 220 }
+    },
+    {
+      "key": "cooling-corsair-h100i-rgb-platinum",
+      "category": "cooling",
+      "brand": "Corsair",
+      "model": "H100i RGB Platinum",
+      "releaseYear": 2019,
+      "msrpEur": 130,
+      "specs": { "coolingType": "aio", "supportedSockets": ["LGA1151", "LGA1151-v2", "LGA1200", "LGA1700", "AM4", "AM5"], "radiatorSizeMm": 240, "maxTdpW": 250 }
+    },
+    {
+      "key": "cooling-nzxt-kraken-x53",
+      "category": "cooling",
+      "brand": "NZXT",
+      "model": "Kraken X53",
+      "releaseYear": 2020,
+      "msrpEur": 140,
+      "specs": { "coolingType": "aio", "supportedSockets": ["LGA1151", "LGA1151-v2", "LGA1200", "LGA1700", "AM4", "AM5"], "radiatorSizeMm": 240, "maxTdpW": 250 }
+    },
+    {
+      "key": "cooling-arctic-liquid-freezer-ii-280",
+      "category": "cooling",
+      "brand": "Arctic",
+      "model": "Liquid Freezer II 280",
+      "releaseYear": 2020,
+      "msrpEur": 110,
+      "specs": { "coolingType": "aio", "supportedSockets": ["LGA1151", "LGA1151-v2", "LGA1200", "LGA1700", "AM4", "AM5"], "radiatorSizeMm": 280, "maxTdpW": 300 }
+    },
+    {
+      "key": "cooling-arctic-p12-pwm",
+      "category": "cooling",
+      "brand": "Arctic",
+      "model": "P12 PWM (ventilateur 120 mm)",
+      "releaseYear": 2019,
+      "msrpEur": 8,
+      "specs": { "coolingType": "fan", "supportedSockets": [] }
+    },
+
+    {
+      "key": "storage-kingston-a400-240",
+      "category": "storage",
+      "brand": "Kingston",
+      "model": "A400 240 Go",
+      "releaseYear": 2017,
+      "msrpEur": 30,
+      "specs": { "storageType": "SATA", "capacityGb": 240, "formFactor": "2.5\"" }
+    },
+    {
+      "key": "storage-crucial-bx500-480",
+      "category": "storage",
+      "brand": "Crucial",
+      "model": "BX500 480 Go",
+      "releaseYear": 2018,
+      "msrpEur": 40,
+      "specs": { "storageType": "SATA", "capacityGb": 480, "formFactor": "2.5\"" }
+    },
+    {
+      "key": "storage-crucial-mx500-500",
+      "category": "storage",
+      "brand": "Crucial",
+      "model": "MX500 500 Go",
+      "releaseYear": 2017,
+      "msrpEur": 55,
+      "specs": { "storageType": "SATA", "capacityGb": 500, "formFactor": "2.5\"" }
+    },
+    {
+      "key": "storage-crucial-mx500-1000",
+      "category": "storage",
+      "brand": "Crucial",
+      "model": "MX500 1 To",
+      "releaseYear": 2017,
+      "msrpEur": 90,
+      "specs": { "storageType": "SATA", "capacityGb": 1000, "formFactor": "2.5\"" }
+    },
+    {
+      "key": "storage-samsung-860-evo-500",
+      "category": "storage",
+      "brand": "Samsung",
+      "model": "860 EVO 500 Go",
+      "releaseYear": 2018,
+      "msrpEur": 70,
+      "specs": { "storageType": "SATA", "capacityGb": 500, "formFactor": "2.5\"" }
+    },
+    {
+      "key": "storage-samsung-870-evo-1000",
+      "category": "storage",
+      "brand": "Samsung",
+      "model": "870 EVO 1 To",
+      "releaseYear": 2021,
+      "msrpEur": 110,
+      "specs": { "storageType": "SATA", "capacityGb": 1000, "formFactor": "2.5\"" }
+    },
+    {
+      "key": "storage-wd-blue-1000-hdd",
+      "category": "storage",
+      "brand": "Western Digital",
+      "model": "WD Blue 1 To (HDD 7200 tr/min)",
+      "releaseYear": 2016,
+      "msrpEur": 45,
+      "specs": { "storageType": "SATA", "capacityGb": 1000, "formFactor": "3.5\"" }
+    },
+    {
+      "key": "storage-seagate-barracuda-2000",
+      "category": "storage",
+      "brand": "Seagate",
+      "model": "BarraCuda 2 To (HDD)",
+      "releaseYear": 2016,
+      "msrpEur": 60,
+      "specs": { "storageType": "SATA", "capacityGb": 2000, "formFactor": "3.5\"" }
+    },
+    {
+      "key": "storage-toshiba-p300-1000",
+      "category": "storage",
+      "brand": "Toshiba",
+      "model": "P300 1 To (HDD)",
+      "releaseYear": 2017,
+      "msrpEur": 40,
+      "specs": { "storageType": "SATA", "capacityGb": 1000, "formFactor": "3.5\"" }
+    },
+    {
+      "key": "storage-samsung-970-evo-plus-500",
+      "category": "storage",
+      "brand": "Samsung",
+      "model": "970 EVO Plus 500 Go",
+      "releaseYear": 2019,
+      "msrpEur": 80,
+      "specs": { "storageType": "NVMe", "capacityGb": 500, "formFactor": "M.2 2280" }
+    },
+    {
+      "key": "storage-samsung-980-1000",
+      "category": "storage",
+      "brand": "Samsung",
+      "model": "980 1 To",
+      "releaseYear": 2021,
+      "msrpEur": 110,
+      "specs": { "storageType": "NVMe", "capacityGb": 1000, "formFactor": "M.2 2280" }
+    },
+    {
+      "key": "storage-crucial-p3-1000",
+      "category": "storage",
+      "brand": "Crucial",
+      "model": "P3 1 To",
+      "releaseYear": 2022,
+      "msrpEur": 75,
+      "specs": { "storageType": "NVMe", "capacityGb": 1000, "formFactor": "M.2 2280" }
+    },
+    {
+      "key": "storage-kingston-nv2-1000",
+      "category": "storage",
+      "brand": "Kingston",
+      "model": "NV2 1 To",
+      "releaseYear": 2022,
+      "msrpEur": 70,
+      "specs": { "storageType": "NVMe", "capacityGb": 1000, "formFactor": "M.2 2280" }
+    },
+    {
+      "key": "storage-wd-black-sn770-1000",
+      "category": "storage",
+      "brand": "Western Digital",
+      "model": "WD_BLACK SN770 1 To",
+      "releaseYear": 2022,
+      "msrpEur": 100,
+      "specs": { "storageType": "NVMe", "capacityGb": 1000, "formFactor": "M.2 2280" }
+    },
+    {
+      "key": "storage-samsung-990-pro-2000",
+      "category": "storage",
+      "brand": "Samsung",
+      "model": "990 PRO 2 To",
+      "releaseYear": 2022,
+      "msrpEur": 200,
+      "specs": { "storageType": "NVMe", "capacityGb": 2000, "formFactor": "M.2 2280" }
+    },
+
+    {
+      "key": "misc-controleur-rgb-argb-hub",
+      "category": "misc",
+      "brand": "Generique",
+      "model": "Controleur ARGB 5V 10 ports",
+      "releaseYear": 2020,
+      "msrpEur": 15,
+      "specs": { "description": "Hub ARGB 5V 3 broches, alimentation SATA, telecommande incluse." }
+    },
+    {
+      "key": "misc-cable-sata-iii",
+      "category": "misc",
+      "brand": "Generique",
+      "model": "Cable SATA III 50 cm (lot de 2)",
+      "releaseYear": 2018,
+      "msrpEur": 6,
+      "specs": { "description": "Cables SATA 6 Gb/s avec clip de verrouillage." }
+    },
+    {
+      "key": "misc-adaptateur-molex-pcie",
+      "category": "misc",
+      "brand": "Generique",
+      "model": "Adaptateur 2x Molex vers PCIe 6 broches",
+      "releaseYear": 2015,
+      "msrpEur": 5,
+      "specs": { "description": "Depannage uniquement : preferer une alimentation avec de vrais connecteurs PCIe." }
+    },
+    {
+      "key": "misc-pate-thermique-arctic-mx-4",
+      "category": "misc",
+      "brand": "Arctic",
+      "model": "MX-4 (4 g)",
+      "releaseYear": 2019,
+      "msrpEur": 8,
+      "specs": { "description": "Pate thermique, environ 8 applications sur un CPU grand public." }
+    },
+    {
+      "key": "misc-carte-wifi-pcie-ax200",
+      "category": "misc",
+      "brand": "Intel",
+      "model": "Carte WiFi 6 PCIe AX200",
+      "releaseYear": 2019,
+      "msrpEur": 25,
+      "specs": { "description": "WiFi 6 + Bluetooth 5.1, occupe un port PCIe x1." }
+    }
+  ]
+}

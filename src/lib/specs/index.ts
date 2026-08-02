@@ -59,11 +59,15 @@ const positiveInt = z.number().int().positive();
 const nonNegativeInt = z.number().int().nonnegative();
 
 /** PCIe power connectors, counted by kind on both the GPU and the PSU side. */
-export const powerConnectorsSchema = z.object({
-  pcie6pin: nonNegativeInt.default(0),
-  pcie8pin: nonNegativeInt.default(0),
-  pcie12vhpwr: nonNegativeInt.default(0),
-});
+export const powerConnectorsSchema = z
+  .object({
+    pcie6pin: nonNegativeInt.default(0),
+    pcie8pin: nonNegativeInt.default(0),
+    pcie12vhpwr: nonNegativeInt.default(0),
+  })
+  // A card with no auxiliary connector leaves every field blank in the form,
+  // which must mean "none", not "missing".
+  .default({ pcie6pin: 0, pcie8pin: 0, pcie12vhpwr: 0 });
 
 export type PowerConnectors = z.infer<typeof powerConnectorsSchema>;
 

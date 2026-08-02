@@ -22,7 +22,16 @@ import {
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 
-export type ActionState = { error?: string; success?: string };
+export type ActionState = {
+  error?: string;
+  success?: string;
+  /**
+   * Submitted values echoed back on failure. React resets an uncontrolled form
+   * after a Server Action runs, so without this a rejected long form would be
+   * wiped and have to be retyped.
+   */
+  values?: Record<string, string | string[]>;
+};
 
 /** Generic on purpose: never reveal whether the email exists. */
 const INVALID_CREDENTIALS = 'Email ou mot de passe incorrect.';

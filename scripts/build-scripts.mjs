@@ -3,6 +3,7 @@
  * run migrations and seeding without shipping devDependencies (tsx, drizzle-kit).
  */
 import { build } from 'esbuild';
+import path from 'node:path';
 
 const entryPoints = ['scripts/migrate.ts', 'scripts/seed.ts'];
 
@@ -16,6 +17,8 @@ await build({
   sourcemap: false,
   // Native module: kept external and copied into the runtime image as-is.
   external: ['@node-rs/argon2'],
+  // Mirrors the "@/*" tsconfig path, which esbuild does not read on its own.
+  alias: { '@': path.resolve('src') },
   banner: {
     // postgres.js and friends still reach for CommonJS globals in ESM output.
     js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);",

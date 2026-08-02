@@ -22,8 +22,8 @@ export function AppNav({ links }: { links: NavLink[] }) {
             className={cn(
               'shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
               active
-                ? 'bg-(--color-surface-hover) text-(--color-ink)'
-                : 'text-(--color-ink-muted) hover:bg-(--color-surface-hover) hover:text-(--color-ink)',
+                ? 'bg-surface-hover text-ink'
+                : 'text-ink-muted hover:bg-surface-hover hover:text-ink',
             )}
           >
             {link.label}
