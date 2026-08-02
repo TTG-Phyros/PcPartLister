@@ -1,0 +1,9 @@
+* text=auto
+
+# Anything the Linux container executes or parses must keep LF endings,
+# whatever core.autocrlf says on the checkout machine.
+*.sh text eol=lf
+Dockerfile text eol=lf
+docker-compose*.yml text eol=lf
+*.json text eol=lf
+package-lock.json -diff linguist-generated
