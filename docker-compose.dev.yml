@@ -1,0 +1,31 @@
+# Development override — hot reload with the source mounted from the host.
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# node_modules lives in a named volume so the Linux-built native modules
+# (@node-rs/argon2, esbuild) never collide with a host install.
+services:
+  app:
+    build:
+      context: .
+      target: deps
+    command: sh -c "npm install && npm run db:migrate && npm run db:seed && npm run dev"
+    environment:
+      NODE_ENV: development
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      IMAGES_DIR: /app/data/images
+      SEED_DATA_DIR: /app/data/seed
+      MIGRATIONS_FOLDER: /app/drizzle
+      WATCHPACK_POLLING: 'true'
+    entrypoint: []
+    user: root
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - next_cache:/app/.next
+      - images:/app/data/images
+    healthcheck:
+      disable: true
+
+volumes:
+  node_modules:
+  next_cache:
