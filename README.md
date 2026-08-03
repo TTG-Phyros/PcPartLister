@@ -95,6 +95,43 @@ La synthèse affiche la valeur du stock au prix d'achat, le montant immobilisé,
 répartition par catégorie et les **composants dormants** — en stock depuis plus de
 `dormant_days` jours (90 par défaut, modifiable dans la table `settings`).
 
+## Moteur de compatibilité
+
+Isolé dans [src/lib/compat/](src/lib/compat/) : fonctions pures, aucun import de base de
+données, de React ou de Next.js. Il tourne donc à l'identique côté serveur et côté
+navigateur, et se teste avec de simples objets.
+
+**Ajouter une règle** = un fichier dans `rules/` + une ligne dans
+[registry.ts](src/lib/compat/registry.ts). Aucun composant d'interface à toucher.
+
+```ts
+export const maRegle: Rule = {
+  id: 'ma-regle',
+  label: 'Ce que la règle vérifie',
+  slots: ['gpu', 'case'],          // sur quels emplacements elle porte
+  evaluate: (selection) =>
+    condition ? ok('…') : blocking('raison affichée'),  // null = non applicable
+};
+```
+
+Deux points d'entrée :
+
+- `evaluate(selection)` — état complet d'une configuration, résultats séparés en
+  `blockingIssues()` et `warnings()`.
+- `checkCandidate(selection, categorie, candidat)` — verdict d'un composant proposé, qui
+  **ne remonte que ce que le candidat provoque lui-même**. Un problème déjà présent
+  ailleurs dans la config ne grise pas des pièces sans rapport.
+
+19 règles couvrent socket et chipset CPU/carte mère, type, nombre, capacité et fréquence
+mémoire, format carte mère et alimentation vs boîtier, longueur GPU, hauteur ventirad,
+taille de radiateur AIO, socket et TDP du refroidissement, puissance et connecteurs PCIe
+de l'alimentation, ports SATA et slots M.2, plus deux avis non bloquants (goulot
+d'étranglement CPU/GPU, absence de sortie vidéo).
+
+```bash
+npm test        # 87 tests
+```
+
 ## Configuration
 
 Toutes les variables sont documentées dans [.env.example](.env.example). La plus sensible :
