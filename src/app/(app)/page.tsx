@@ -5,6 +5,7 @@ import { requireUser } from '@/lib/auth/guard';
 import { formatPrice, formatPriceCompact } from '@/lib/catalog/format';
 import { PLATFORM_LABELS } from '@/lib/inventory/labels';
 import { getInventorySummary, searchInventory } from '@/lib/inventory/queries';
+import { getSalesStats } from '@/lib/sales/queries';
 import { getSettings } from '@/lib/settings-store';
 import { CATEGORY_LABELS } from '@/lib/specs';
 
@@ -21,10 +22,11 @@ export default async function DashboardPage() {
   const user = await requireUser();
   const settings = await getSettings();
 
-  const [summary, recent, dormant] = await Promise.all([
+  const [summary, recent, dormant, sales] = await Promise.all([
     getInventorySummary(settings.dormant_days),
     searchInventory({ limit: 5 }),
     searchInventory({ dormantDays: settings.dormant_days, limit: 5 }),
+    getSalesStats(),
   ]);
 
   return (
@@ -54,6 +56,34 @@ export default async function DashboardPage() {
           tone={summary.dormantCount > 0 ? 'warn' : undefined}
         />
       </div>
+
+      {sales.count > 0 ? (
+        <section className="flex flex-col gap-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="min-w-0 font-medium">Rentabilité</h2>
+            <Link
+              href="/ventes"
+              className="shrink-0 text-sm text-ink-muted underline underline-offset-4 hover:text-ink"
+            >
+              Tout voir
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <StatCard label="Ventes" value={String(sales.count)} />
+            <StatCard label="Chiffre d’affaires" value={formatPrice(sales.totalRevenueCents)} />
+            <StatCard
+              label="Marge cumulée"
+              value={formatPrice(sales.totalMarginCents)}
+              tone={sales.totalMarginCents >= 0 ? 'ok' : 'danger'}
+            />
+            <StatCard
+              label="Marge moyenne"
+              value={formatPrice(sales.averageMarginCents)}
+              hint={`${sales.averageMarginPct.toFixed(1)} %`}
+            />
+          </div>
+        </section>
+      ) : null}
 
       {summary.byCategory.length > 0 ? (
         <Card className="flex flex-col gap-3">
@@ -107,14 +137,14 @@ function StatCard({
   label: string;
   value: string;
   hint?: string;
-  tone?: 'warn';
+  tone?: 'warn' | 'ok' | 'danger';
 }) {
+  const toneClass =
+    tone === 'warn' ? 'text-warn' : tone === 'ok' ? 'text-ok' : tone === 'danger' ? 'text-danger' : '';
   return (
     <Card className="p-4">
       <p className="text-xs text-ink-muted">{label}</p>
-      <p className={tone === 'warn' ? 'text-lg font-semibold text-warn' : 'text-lg font-semibold'}>
-        {value}
-      </p>
+      <p className={`text-lg font-semibold ${toneClass}`}>{value}</p>
       {hint ? <p className="text-xs text-ink-muted">{hint}</p> : null}
     </Card>
   );

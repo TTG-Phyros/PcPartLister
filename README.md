@@ -122,6 +122,27 @@ Retirer une ligne, revenir en arrière ou supprimer la configuration rend les un
 stock. Une unité ne peut jamais être réservée par deux configurations : un index unique en
 base le garantit, en plus du filtrage à la sélection.
 
+## Ventes et rentabilité
+
+Une configuration passée en « montée » ouvre son formulaire de vente. La marge se recalcule
+**à chaque frappe**, avant même d'enregistrer :
+
+```
+marge = prix de vente − frais de port − commission − (composants + consommables)
+marge % = marge / prix de vente
+```
+
+Les composants sont comptés à leur **prix d'achat réel** pour les unités du stock, à leur
+estimation pour celles restant à acheter. Un bouton applique la commission par défaut
+(`default_platform_fee_pct`) au prix saisi.
+
+Enregistrer la vente bascule la configuration et toutes ses unités en `vendu`, dans une
+seule transaction. Annuler une vente ramène le tout en « montée ».
+
+La page **Ventes** cumule : chiffre d'affaires, marge cumulée, marge moyenne en € et en %,
+meilleure et pire vente, et le détail de chaque vente (prix, port, commission, composants,
+consommables).
+
 ## Moteur de compatibilité
 
 Isolé dans [src/lib/compat/](src/lib/compat/) : fonctions pures, aucun import de base de

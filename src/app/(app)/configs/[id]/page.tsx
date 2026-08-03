@@ -6,10 +6,14 @@ import {
   DeleteBuild,
 } from '@/components/builds/build-header';
 import { Configurator } from '@/components/builds/configurator';
+import { SaleForm } from '@/components/sales/sale-form';
 import { Card } from '@/components/ui';
 import { requireUser } from '@/lib/auth/guard';
+import { computeBuildCost, suggestedSalePriceCents } from '@/lib/builds/pricing';
 import { getBuildDetail } from '@/lib/builds/queries';
 import { BUILD_STATUS_LABELS, BUILD_STATUS_TONES } from '@/lib/builds/types';
+import { formatPrice } from '@/lib/catalog/format';
+import { getSaleForBuild } from '@/lib/sales/queries';
 import { getSettings } from '@/lib/settings-store';
 
 export const dynamic = 'force-dynamic';
@@ -21,7 +25,8 @@ export default async function BuildPage({ params }: { params: Promise<{ id: stri
   const build = await getBuildDetail(id);
   if (!build) notFound();
 
-  const settings = await getSettings();
+  const [settings, sale] = await Promise.all([getSettings(), getSaleForBuild(build.id)]);
+  const cost = computeBuildCost(build.lines, build.consumablesCents);
   // A sold configuration is a record: its lines stay as they were.
   const editable = build.status !== 'vendue';
 
@@ -51,6 +56,30 @@ export default async function BuildPage({ params }: { params: Promise<{ id: stri
         targetMarginPct={settings.target_margin_pct}
         editable={editable}
       />
+
+      {build.status === 'brouillon' ? null : (
+        <Card className="flex flex-col gap-4">
+          <div>
+            <h2 className="font-medium">Vente</h2>
+            <p className="mt-1 text-sm text-ink-muted">
+              Coût de revient : {formatPrice(cost.totalCents)} (
+              {formatPrice(cost.componentsCents)} de composants +{' '}
+              {formatPrice(cost.consumablesCents)} de consommables).
+            </p>
+          </div>
+          <SaleForm
+            buildId={build.id}
+            costCents={cost.totalCents}
+            suggestedPriceCents={suggestedSalePriceCents(
+              cost.totalCents,
+              settings.target_margin_pct,
+            )}
+            targetMarginPct={settings.target_margin_pct}
+            defaultPlatformFeePct={settings.default_platform_fee_pct}
+            sale={sale}
+          />
+        </Card>
+      )}
 
       <Card>
         <h2 className="mb-4 font-medium">Informations</h2>

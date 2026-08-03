@@ -12,6 +12,7 @@ const LINKS: NavLink[] = [
   { href: '/', label: 'Tableau de bord' },
   { href: '/stock', label: 'Stock' },
   { href: '/configs', label: 'Configs' },
+  { href: '/ventes', label: 'Ventes' },
   { href: '/catalogue', label: 'Catalogue' },
 ];
 
