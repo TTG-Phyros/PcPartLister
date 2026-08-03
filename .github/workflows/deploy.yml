@@ -1,0 +1,65 @@
+# Mise à jour de la web app sur le serveur auto-hébergé.
+# Déclenché à chaque push sur `main` : le serveur se recale sur la branche
+# puis reconstruit uniquement le conteneur `app` (voir docker-compose.yml).
+#
+# La base n'est JAMAIS touchée : le service `db` reste en place et le volume
+# `pgdata` (comme `images`) est conservé. On n'utilise donc ni `down -v`,
+# ni `docker volume rm`, ni `--renew-anon-volumes`.
+# Les migrations et le seed sont joués au démarrage par docker/entrypoint.sh,
+# et sont idempotents.
+#
+# Secrets requis dans le dépôt : SSH_HOST, SSH_USER, SSH_PRIVATE_KEY, DEPLOY_PATH.
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd ${{ secrets.DEPLOY_PATH }}
+            export DOCKER_CONFIG=${{ secrets.DEPLOY_PATH }}/.docker
+
+            # 1. Sauvegarde de la base avant toute chose (filet de sécurité).
+            mkdir -p backups
+            docker compose exec -T db sh -c \
+              'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
+              | gzip > "backups/pgdata-$(date +%Y%m%d-%H%M%S).sql.gz" \
+              || echo "[deploy] pas de dump (base non démarrée ?), on continue"
+            # On ne garde que les 10 derniers dumps.
+            ls -1t backups/pgdata-*.sql.gz 2>/dev/null | tail -n +11 | xargs -r rm --
+
+            # 2. Recalage sur la branche main.
+            GIT_SSH_COMMAND="ssh -i ~/.ssh/deploy_key" git fetch origin main
+            GIT_SSH_COMMAND="ssh -i ~/.ssh/deploy_key" git reset --hard origin/main
+
+            # 3. Rebuild + redémarrage de la seule app. `db` n'est pas recréé,
+            #    le volume pgdata reste attaché.
+            docker compose up -d --build app
+
+            # 4. Attente du healthcheck de l'app.
+            for i in $(seq 1 30); do
+              status=$(docker compose ps app --format '{{.Health}}' || true)
+              [ "$status" = "healthy" ] && break
+              sleep 5
+            done
+            docker compose ps
+
+            # 5. Nettoyage des images orphelines (aucun volume supprimé).
+            docker image prune -f
