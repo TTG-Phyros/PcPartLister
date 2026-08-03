@@ -90,6 +90,20 @@ l'entrée catalogue et l'unité en une seule validation. Le bouton
 
 Plateformes d'achat : Vinted, Leboncoin, Facebook Marketplace, main propre, Amazon, autre.
 
+### Stock de départ
+
+Le stock déjà possédé est décrit par [data/seed/stock.json](data/seed/stock.json), sur le même
+principe que le catalogue : une entrée = **un exemplaire physique**, une `key` stable, un
+`catalogKey` qui pointe la `key` du modèle dans `catalog.json`, prix en euros et dates en
+AAAA-MM-JJ. Un lot acheté ensemble s'écrit en plusieurs entrées avec le prix réparti, puisque
+chaque unité vit ensuite sa propre vie.
+
+Le seed insère uniquement les clés absentes et ne réécrit jamais une unité déjà présente : un
+statut passé à « en stock » depuis l'interface survit à tous les redémarrages. Une base
+recréée (volume neuf, nouveau serveur) revient donc avec le stock réel, et pas seulement avec
+le catalogue. Retirer une entrée du fichier ne supprime rien en base ; c'est la fiche de
+l'unité qui fait foi une fois l'import passé.
+
 Statuts : `en transit`, `en stock`, `réservé`, `monté`, `vendu`, `HS`. `réservé`, `monté` et
 `vendu` sont pilotés par les configurations mais restent modifiables à la main.
 
@@ -223,4 +237,5 @@ npm run db:generate   # régénère les migrations après modification du schém
 | `src/lib/specs/` | Schémas Zod des specs, une par catégorie de composant |
 | `src/lib/compat/` | Moteur de compatibilité isolé et testable |
 | `data/seed/catalog.json` | Catalogue de référence, éditable à la main |
+| `data/seed/stock.json` | Exemplaires possédés, réinjectés dans le stock au démarrage |
 | `scripts/` | Migration et seed, exécutés par l'entrypoint du conteneur |

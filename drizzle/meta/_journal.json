@@ -15,6 +15,13 @@
       "when": 1785752358655,
       "tag": "0001_bumpy_korath",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785766317580,
+      "tag": "0002_classy_quasar",
+      "breakpoints": true
     }
   ]
 }

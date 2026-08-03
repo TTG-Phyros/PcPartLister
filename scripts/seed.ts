@@ -7,10 +7,11 @@ import path from 'node:path';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq, sql } from 'drizzle-orm';
 import postgres from 'postgres';
-import { catalogComponents, settings, users } from '../src/lib/db/schema';
+import { catalogComponents, inventoryItems, settings, users } from '../src/lib/db/schema';
 import { DEFAULT_SETTINGS } from '../src/lib/settings';
 import { hashPassword } from '../src/lib/auth/password';
 import { eurosToCents, parseSeedFile, type ParsedSeedEntry } from '../src/lib/catalog/seed-schema';
+import { parseStockSeedFile, receivedAtFor } from '../src/lib/inventory/seed-schema';
 import { buildPlaceholderSvg } from '../src/lib/images/placeholder';
 import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES, saveImage } from '../src/lib/images/store';
 
@@ -161,6 +162,81 @@ async function seedCatalog(db: Db) {
   );
 }
 
+/**
+ * Physical units already owned. Same contract as the catalog: insert what is
+ * missing, never touch what is there. A unit whose key is already in the table
+ * keeps the status, the price and the notes it has in the app, so a rebuilt
+ * volume or a fresh server comes back with the real stock rather than an empty
+ * one — while a status changed by hand is never rolled back at restart.
+ */
+async function seedStock(db: Db) {
+  const dir = process.env.SEED_DATA_DIR ?? path.resolve('data/seed');
+  const file = path.join(dir, 'stock.json');
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(await readFile(file, 'utf8'));
+  } catch {
+    // Unlike the catalog, this file is optional: a fresh install owns nothing.
+    console.log('[seed] stock: no stock.json, skipped');
+    return;
+  }
+
+  const { units, errors } = parseStockSeedFile(raw);
+  for (const message of errors) console.warn(`[seed] stock: ${message}`);
+  if (units.length === 0) {
+    console.warn('[seed] stock: no valid unit, skipped');
+    return;
+  }
+
+  const models = await db
+    .select({ id: catalogComponents.id, seedKey: catalogComponents.seedKey })
+    .from(catalogComponents);
+  const modelIdByKey = new Map(models.filter((m) => m.seedKey).map((m) => [m.seedKey!, m.id]));
+
+  const owned = await db.select({ seedKey: inventoryItems.seedKey }).from(inventoryItems);
+  const known = new Set(owned.filter((u) => u.seedKey).map((u) => u.seedKey!));
+
+  let inserted = 0;
+
+  for (const unit of units) {
+    if (known.has(unit.key)) continue;
+
+    const catalogComponentId = modelIdByKey.get(unit.catalogKey);
+    if (!catalogComponentId) {
+      console.warn(`[seed] stock: ${unit.key}: unknown catalogKey ${unit.catalogKey}, skipped`);
+      continue;
+    }
+
+    const result = await db
+      .insert(inventoryItems)
+      .values({
+        catalogComponentId,
+        purchasePriceCents: Math.round(unit.purchasePriceEur * 100),
+        purchaseDate: unit.purchaseDate,
+        platform: unit.platform,
+        condition: unit.condition,
+        status: unit.status,
+        listingUrl: unit.listingUrl ?? null,
+        shippingCarrier: unit.carrier ?? null,
+        trackingNumber: unit.trackingNumber ?? null,
+        trackingUrl: unit.trackingUrl ?? null,
+        expectedArrival: unit.expectedArrival ?? null,
+        receivedAt: receivedAtFor(unit),
+        serialNumber: unit.serialNumber ?? null,
+        notes: unit.notes ?? null,
+        seedKey: unit.key,
+      })
+      // Concurrent starts (app + a manual run) must not double the stock.
+      .onConflictDoNothing({ target: inventoryItems.seedKey })
+      .returning({ id: inventoryItems.id });
+
+    if (result.length > 0) inserted++;
+  }
+
+  console.log(`[seed] stock: ${units.length} units in file, ${inserted} inserted`);
+}
+
 async function main() {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL is required');
@@ -171,6 +247,8 @@ async function main() {
     await seedSettings(db);
     await seedAdminUser(db);
     await seedCatalog(db);
+    // After the catalog: every unit points at a model that must already exist.
+    await seedStock(db);
     console.log('[seed] done');
   } finally {
     await sqlClient.end({ timeout: 5 });

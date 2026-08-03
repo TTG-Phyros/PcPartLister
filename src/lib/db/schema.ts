@@ -180,10 +180,13 @@ export const inventoryItems = pgTable(
     receivedAt: date('received_at'),
     serialNumber: text('serial_number'),
     notes: text('notes'),
+    /** Stable key from data/seed/stock.json; NULL for units created in the app. */
+    seedKey: text('seed_key'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
+    uniqueIndex('inventory_seed_key_idx').on(t.seedKey),
     index('inventory_status_idx').on(t.status),
     index('inventory_catalog_idx').on(t.catalogComponentId),
     index('inventory_purchase_date_idx').on(t.purchaseDate),

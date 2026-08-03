@@ -1,0 +1,165 @@
+{
+  "note": "Stock physique deja possede, edite a la main. Une entree = un exemplaire : un lot achete ensemble s'ecrit en plusieurs entrees avec le prix reparti. La cle (key) est stable et rend le seed idempotent : une unite deja presente n'est jamais reecrite, donc les changements de statut faits depuis l'interface survivent aux redemarrages. catalogKey pointe la cle du modele dans catalog.json. Prix en euros, dates en AAAA-MM-JJ.",
+  "units": [
+    {
+      "key": "achat-20260803-ryzen-9-5900x",
+      "catalogKey": "cpu-amd-ryzen-9-5900x",
+      "purchasePriceEur": 145.0,
+      "purchaseDate": "2026-08-03",
+      "platform": "autre",
+      "condition": "bon",
+      "status": "en_stock"
+    },
+    {
+      "key": "achat-20260803-ram-32go-3200",
+      "catalogKey": "ram-generique-32gb-2x16-ddr4-3200",
+      "purchasePriceEur": 141.75,
+      "purchaseDate": "2026-08-03",
+      "platform": "vinted",
+      "condition": "bon",
+      "status": "en_transit",
+      "carrier": "mondial_relay",
+      "trackingNumber": "17022772",
+      "trackingUrl": "https://www.mondialrelay.fr/suivi-de-colis?country=FR&codeMarque=V1&numeroExpedition=17022772&language=FR",
+      "notes": "Marque et modele a preciser a reception."
+    },
+    {
+      "key": "achat-20260803-ram-16go-3200-1",
+      "catalogKey": "ram-generique-16gb-2x8-ddr4-3200",
+      "purchasePriceEur": 63.0,
+      "purchaseDate": "2026-08-03",
+      "platform": "vinted",
+      "condition": "bon",
+      "status": "en_transit",
+      "carrier": "mondial_relay",
+      "trackingNumber": "17031496",
+      "trackingUrl": "https://www.mondialrelay.fr/suivi-de-colis?country=FR&codeMarque=V1&numeroExpedition=17031496&language=FR",
+      "notes": "Lot de 48 Go achete 189,00 EUR : 3 kits de 2x8 Go, prix reparti. Marque et frequence a confirmer a reception."
+    },
+    {
+      "key": "achat-20260803-ram-16go-3200-2",
+      "catalogKey": "ram-generique-16gb-2x8-ddr4-3200",
+      "purchasePriceEur": 63.0,
+      "purchaseDate": "2026-08-03",
+      "platform": "vinted",
+      "condition": "bon",
+      "status": "en_transit",
+      "carrier": "mondial_relay",
+      "trackingNumber": "17031496",
+      "trackingUrl": "https://www.mondialrelay.fr/suivi-de-colis?country=FR&codeMarque=V1&numeroExpedition=17031496&language=FR",
+      "notes": "Lot de 48 Go achete 189,00 EUR : 3 kits de 2x8 Go, prix reparti. Marque et frequence a confirmer a reception."
+    },
+    {
+      "key": "achat-20260803-ram-16go-3200-3",
+      "catalogKey": "ram-generique-16gb-2x8-ddr4-3200",
+      "purchasePriceEur": 63.0,
+      "purchaseDate": "2026-08-03",
+      "platform": "vinted",
+      "condition": "bon",
+      "status": "en_transit",
+      "carrier": "mondial_relay",
+      "trackingNumber": "17031496",
+      "trackingUrl": "https://www.mondialrelay.fr/suivi-de-colis?country=FR&codeMarque=V1&numeroExpedition=17031496&language=FR",
+      "notes": "Lot de 48 Go achete 189,00 EUR : 3 kits de 2x8 Go, prix reparti. Marque et frequence a confirmer a reception."
+    },
+    {
+      "key": "achat-20260803-rtx-3070-ti-zotac",
+      "catalogKey": "gpu-zotac-rtx-3070-ti-8gb",
+      "purchasePriceEur": 248.69,
+      "purchaseDate": "2026-08-03",
+      "platform": "autre",
+      "condition": "bon",
+      "status": "en_transit",
+      "carrier": "mondial_relay",
+      "trackingNumber": "89321639",
+      "trackingUrl": "https://www.mondialrelay.fr/suivi-de-colis?codeMarque=MR&numeroExpedition=89321639&language=FR&CodePostal=13004",
+      "notes": "Variante Zotac a confirmer (longueur retenue : Trinity, 318 mm)."
+    },
+    {
+      "key": "achat-20260803-psu-rm850e",
+      "catalogKey": "psu-corsair-rm850e",
+      "purchasePriceEur": 58.51,
+      "purchaseDate": "2026-08-03",
+      "platform": "amazon",
+      "condition": "bon",
+      "status": "en_stock"
+    },
+    {
+      "key": "achat-20260803-boitier-3500x-rs-r",
+      "catalogKey": "case-corsair-3500x-rs-r",
+      "purchasePriceEur": 63.1,
+      "purchaseDate": "2026-08-03",
+      "platform": "vinted",
+      "condition": "bon",
+      "status": "en_transit",
+      "carrier": "mondial_relay",
+      "trackingNumber": "17590048",
+      "trackingUrl": "https://www.mondialrelay.fr/suivi-de-colis?country=FR&codeMarque=V1&numeroExpedition=17590048&language=FR"
+    },
+    {
+      "key": "achat-20260803-aio-nautilus-240-rs-lcd",
+      "catalogKey": "cooling-corsair-nautilus-240-rs-lcd",
+      "purchasePriceEur": 59.9,
+      "purchaseDate": "2026-08-03",
+      "platform": "amazon",
+      "condition": "bon",
+      "status": "en_stock"
+    },
+    {
+      "key": "achat-20260803-ventilateur-corsair-rgb",
+      "catalogKey": "cooling-corsair-ventilateur-rgb-120",
+      "purchasePriceEur": 24.69,
+      "purchaseDate": "2026-08-03",
+      "platform": "autre",
+      "condition": "bon",
+      "status": "en_stock",
+      "notes": "Reference exacte du ventilateur a preciser."
+    },
+    {
+      "key": "achat-20260803-ram-32go-3200-rgb",
+      "catalogKey": "ram-generique-32gb-2x16-ddr4-3200-rgb",
+      "purchasePriceEur": 129.98,
+      "purchaseDate": "2026-08-03",
+      "platform": "vinted",
+      "condition": "bon",
+      "status": "en_transit",
+      "carrier": "mondial_relay",
+      "trackingNumber": "61509252",
+      "trackingUrl": "https://www.mondialrelay.fr/suivi-de-colis?country=FR&codeMarque=V2&numeroExpedition=61509252&language=FR",
+      "notes": "Marque et modele a preciser a reception."
+    },
+    {
+      "key": "achat-20260803-rtx-4060-aero-1",
+      "catalogKey": "gpu-msi-rtx-4060-aero-itx-white",
+      "purchasePriceEur": 210.0,
+      "purchaseDate": "2026-08-03",
+      "platform": "main_propre",
+      "condition": "bon",
+      "status": "en_stock",
+      "notes": "Lot de 2 cartes achete 420,00 EUR en main propre, prix reparti."
+    },
+    {
+      "key": "achat-20260803-rtx-4060-aero-2",
+      "catalogKey": "gpu-msi-rtx-4060-aero-itx-white",
+      "purchasePriceEur": 210.0,
+      "purchaseDate": "2026-08-03",
+      "platform": "main_propre",
+      "condition": "bon",
+      "status": "en_stock",
+      "notes": "Lot de 2 cartes achete 420,00 EUR en main propre, prix reparti."
+    },
+    {
+      "key": "achat-20260803-ram-8go-lpx-rma",
+      "catalogKey": "ram-corsair-vengeance-lpx-8gb-ddr4-2400",
+      "purchasePriceEur": 0,
+      "purchaseDate": "2026-08-03",
+      "platform": "autre",
+      "condition": "neuf",
+      "status": "en_transit",
+      "carrier": "dhl",
+      "trackingNumber": "2328054584",
+      "trackingUrl": "https://www.dhl.com/fr-en/home/tracking.html?tracking-id=2328054584&submit=1",
+      "notes": "Remplacement RMA Corsair, sans frais. Verifier a reception : kit 2x4 Go ou barrette 1x8 Go."
+    }
+  ]
+}
