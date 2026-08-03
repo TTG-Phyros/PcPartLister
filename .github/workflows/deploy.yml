@@ -43,7 +43,9 @@ jobs:
               | gzip > "backups/pgdata-$(date +%Y%m%d-%H%M%S).sql.gz" \
               || echo "[deploy] pas de dump (base non démarrée ?), on continue"
             # On ne garde que les 10 derniers dumps.
-            ls -1t backups/pgdata-*.sql.gz 2>/dev/null | tail -n +11 | xargs -r rm --
+            ls -1t backups/pgdata-*.sql.gz 2>/dev/null | tail -n +11 | while read -r old; do
+              rm -f -- "$old"
+            done
 
             # 2. Recalage sur la branche main.
             GIT_SSH_COMMAND="ssh -i ~/.ssh/deploy_key" git fetch origin main
@@ -54,9 +56,11 @@ jobs:
             docker compose up -d --build app
 
             # 4. Attente du healthcheck de l'app.
-            for i in $(seq 1 30); do
+            i=0
+            while [ "$i" -lt 30 ]; do
               status=$(docker compose ps app --format '{{.Health}}' || true)
               [ "$status" = "healthy" ] && break
+              i=$((i + 1))
               sleep 5
             done
             docker compose ps
