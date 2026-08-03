@@ -1,9 +1,19 @@
 'use client';
 
-import { useActionState, useEffect, useMemo, useRef, useState } from 'react';
+import { useActionState, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ActionState } from '@/actions/auth';
 import { addBuildItemAction } from '@/actions/builds';
+import {
+  facetOptions,
+  facetsFor,
+  filterCandidates,
+  hasActiveFilters,
+  sortCandidates,
+  sortOptionsFor,
+  type FacetSelection,
+  type SortKey,
+} from '@/lib/builds/browse';
 import { candidateToPart } from '@/lib/builds/selection';
 import type { Candidate } from '@/lib/builds/types';
 import { formatPriceCompact } from '@/lib/catalog/format';
@@ -15,7 +25,7 @@ import { buildTierIndex, findTierEntry } from '@/lib/tier-list/parse';
 import type { TierEntry, TierRow } from '@/lib/tier-list/types';
 import { TierEntryBadge } from '@/components/tier-list/tier-badge';
 import { TierList } from '@/components/tier-list/tier-list';
-import { Alert, Button, Input, cn } from '@/components/ui';
+import { Alert, Button, Input, Select, cn } from '@/components/ui';
 
 type GradedCandidate = Candidate & { verdict: CandidateVerdict };
 
@@ -87,18 +97,6 @@ export function SlotPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.success]);
 
-  const grade = (list: Candidate[]): GradedCandidate[] => {
-    const graded = list.map((candidate) => ({
-      ...candidate,
-      verdict: checkCandidate(selection, slot, candidateToPart(candidate)),
-    }));
-    // Incompatible parts stay visible, with their reason, but at the bottom.
-    return graded.sort((a, b) => Number(b.verdict.compatible) - Number(a.verdict.compatible));
-  };
-
-  const stock = useMemo(() => grade(data ? data.stock : []), [data, selection, slot]);
-  const catalog = useMemo(() => grade(data ? data.catalog : []), [data, selection, slot]);
-
   // Ranking lookups happen here rather than on the server: the candidate list is
   // already in the browser, and matching a part name is pure string work.
   const tierKind = tierListKindFor(slot);
@@ -112,6 +110,44 @@ export function SlotPicker({
           vramGb: candidate.specs.category === 'gpu' ? candidate.specs.vramGb : null,
         })
       : null;
+
+  // Ordering and filtering are per slot: opening another one starts clean.
+  const facets = useMemo(() => facetsFor(slot), [slot]);
+  const sortOptions = useMemo(
+    () => sortOptionsFor(slot, { ranked: ranking.length > 0 }),
+    [slot, ranking],
+  );
+  const [sort, setSort] = useState<SortKey>('pertinence');
+  const [filters, setFilters] = useState<FacetSelection>({});
+  useEffect(() => {
+    setSort('pertinence');
+    setFilters({});
+  }, [slot]);
+
+  // Both groups feed the selects, so a value is offered whether the part is
+  // owned or still to buy.
+  const all = useMemo(() => (data ? [...data.stock, ...data.catalog] : []), [data]);
+
+  /** Narrow, order, then grade: incompatible parts stay visible, at the bottom. */
+  const arrange = (list: Candidate[]): GradedCandidate[] =>
+    sortCandidates(filterCandidates(list, facets, filters), sort, { slot, tierEntryFor })
+      .map((candidate) => ({
+        ...candidate,
+        verdict: checkCandidate(selection, slot, candidateToPart(candidate)),
+      }))
+      // Stable, so the chosen order survives inside each group.
+      .sort((a, b) => Number(b.verdict.compatible) - Number(a.verdict.compatible));
+
+  const stock = useMemo(
+    () => arrange(data ? data.stock : []),
+    [data, selection, slot, sort, filters],
+  );
+  const catalog = useMemo(
+    () => arrange(data ? data.catalog : []),
+    [data, selection, slot, sort, filters],
+  );
+
+  const filtered = hasActiveFilters(filters);
 
   return (
     <div
@@ -139,7 +175,7 @@ export function SlotPicker({
           </Button>
         </header>
 
-        <div className="border-b border-border-subtle p-4">
+        <div className="flex flex-col gap-3 border-b border-border-subtle p-4">
           <Input
             type="search"
             placeholder="Filtrer par marque, modèle, puce…"
@@ -148,6 +184,61 @@ export function SlotPicker({
             aria-label="Filtrer les composants"
             autoFocus
           />
+
+          <div className="flex flex-wrap items-end gap-2">
+            <Picker
+              id="tri"
+              label="Trier par"
+              value={sort}
+              onChange={(value) => setSort(value as SortKey)}
+            >
+              {sortOptions.map((option) => (
+                <option key={option.key} value={option.key}>
+                  {option.label}
+                </option>
+              ))}
+            </Picker>
+
+            {facets.map((facet) => {
+              const selected = filters[facet.id] ?? '';
+              const options = facetOptions(facet, all);
+              // A single value narrows nothing, so the select stays out of the
+              // way — unless it is the one currently narrowing the list.
+              if (options.length < 2 && selected === '') return null;
+              const values =
+                selected !== '' && !options.includes(selected) ? [selected, ...options] : options;
+
+              return (
+                <Picker
+                  key={facet.id}
+                  id={`facette-${facet.id}`}
+                  label={facet.label}
+                  value={selected}
+                  onChange={(value) =>
+                    setFilters((current) => ({ ...current, [facet.id]: value }))
+                  }
+                >
+                  <option value="">Indifférent</option>
+                  {values.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </Picker>
+              );
+            })}
+
+            {filtered ? (
+              <Button
+                type="button"
+                variant="ghost"
+                className="min-h-9 px-2 py-1 text-xs"
+                onClick={() => setFilters({})}
+              >
+                Tout afficher
+              </Button>
+            ) : null}
+          </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
@@ -168,7 +259,13 @@ export function SlotPicker({
           <Group
             title={`En stock (${stock.length})`}
             hint="Prix d’achat réel, déjà payé."
-            empty={loading ? 'Chargement…' : 'Aucune unité disponible dans cette catégorie.'}
+            empty={
+              loading
+                ? 'Chargement…'
+                : filtered
+                  ? 'Aucune unité ne correspond aux filtres.'
+                  : 'Aucune unité disponible dans cette catégorie.'
+            }
             candidates={stock}
             buildId={buildId}
             slot={slot}
@@ -179,7 +276,13 @@ export function SlotPicker({
           <Group
             title={`À acheter (${catalog.length})`}
             hint="Modèles du catalogue, au prix neuf indicatif."
-            empty={loading ? 'Chargement…' : 'Aucun modèle au catalogue.'}
+            empty={
+              loading
+                ? 'Chargement…'
+                : filtered
+                  ? 'Aucun modèle ne correspond aux filtres.'
+                  : 'Aucun modèle au catalogue.'
+            }
             candidates={catalog}
             buildId={buildId}
             slot={slot}
@@ -189,6 +292,37 @@ export function SlotPicker({
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+/** A labelled select of the toolbar, sized to sit several per row on a phone. */
+function Picker({
+  id,
+  label,
+  value,
+  onChange,
+  children,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="min-w-38 flex-1">
+      <label htmlFor={id} className="mb-1 block text-xs text-ink-muted">
+        {label}
+      </label>
+      <Select
+        id={id}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="min-h-9 py-1 text-sm"
+      >
+        {children}
+      </Select>
     </div>
   );
 }
