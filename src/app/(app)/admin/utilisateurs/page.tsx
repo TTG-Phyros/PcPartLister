@@ -1,6 +1,6 @@
 import { asc } from 'drizzle-orm';
 import { CreateUserForm, UserRowActions } from '@/components/admin/user-forms';
-import { Alert, Card } from '@/components/ui';
+import { Card } from '@/components/ui';
 import { requireAdmin } from '@/lib/auth/guard';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
@@ -19,7 +19,6 @@ export default async function UsersAdminPage() {
       id: users.id,
       email: users.email,
       role: users.role,
-      mustChangePassword: users.mustChangePassword,
       createdAt: users.createdAt,
       lastLoginAt: users.lastLoginAt,
     })
@@ -59,12 +58,6 @@ export default async function UsersAdminPage() {
                 </span>
               ) : null}
             </div>
-
-            {row.mustChangePassword ? (
-              <Alert tone="warning">
-                Mot de passe initial non modifié — l’accès est bloqué tant qu’il n’a pas été changé.
-              </Alert>
-            ) : null}
 
             {row.id === admin.id ? null : (
               <UserRowActions userId={row.id} email={row.email} />

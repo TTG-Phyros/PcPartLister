@@ -44,8 +44,6 @@ export async function createUserAction(
     email: parsed.data.email,
     passwordHash: await hashPassword(parsed.data.password),
     role: parsed.data.role,
-    // The admin knows the password, so the account owner must replace it.
-    mustChangePassword: true,
   });
 
   revalidatePath(ADMIN_PATH);
@@ -98,7 +96,6 @@ export async function resetUserPasswordAction(
     .update(users)
     .set({
       passwordHash: await hashPassword(parsed.data.password),
-      mustChangePassword: true,
       updatedAt: new Date(),
     })
     .where(eq(users.id, parsed.data.userId));
@@ -106,5 +103,5 @@ export async function resetUserPasswordAction(
   await destroyAllUserSessions(parsed.data.userId);
 
   revalidatePath(ADMIN_PATH);
-  return { success: 'Mot de passe réinitialisé. Le compte devra le changer à la connexion.' };
+  return { success: 'Mot de passe réinitialisé. Les sessions du compte ont été déconnectées.' };
 }

@@ -46,7 +46,7 @@ export function CreateUserForm() {
       <Field
         label="Mot de passe initial"
         htmlFor="new-password"
-        hint="Le compte devra le changer à sa première connexion."
+        hint="10 caractères minimum. Transmettez-le au titulaire du compte."
       >
         <div className="flex gap-2">
           <Input

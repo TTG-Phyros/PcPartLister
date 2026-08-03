@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { logoutAction } from '@/actions/auth';
 import { AppNav, type NavLink } from '@/components/app-nav';
 import { SessionKeepAlive } from '@/components/auth/session-keepalive';
@@ -19,7 +18,6 @@ const LINKS: NavLink[] = [
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   // Every page under this layout is behind the session check.
   const user = await requireUser();
-  if (user.mustChangePassword) redirect('/premiere-connexion');
 
   const links =
     user.role === 'admin'

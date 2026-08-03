@@ -43,7 +43,7 @@ async function seedAdminUser(db: Db) {
   if (password.length < 10) {
     console.warn(
       '[seed] ADMIN_PASSWORD is shorter than the 10 characters the app enforces; ' +
-        'the account is created but you will have to pick a longer one at first login.',
+        'the account is created but the app will reject that length on a later change.',
     );
   }
 
@@ -51,8 +51,6 @@ async function seedAdminUser(db: Db) {
     email,
     passwordHash: await hashPassword(password),
     role: 'admin',
-    // Access stays blocked until this initial password is replaced.
-    mustChangePassword: true,
   });
   console.log(`[seed] users: bootstrap admin created (${email})`);
 }

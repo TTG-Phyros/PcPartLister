@@ -36,10 +36,9 @@ Aucune page ni route API n'est accessible sans session valide, à la seule excep
 `/connexion` et `/api/health`. Il n'y a pas d'inscription publique : les comptes se créent
 depuis **Comptes** (réservé aux administrateurs).
 
-Le premier démarrage crée un administrateur à partir de `ADMIN_EMAIL` / `ADMIN_PASSWORD`,
-avec changement de mot de passe obligatoire à la première connexion. Ce bootstrap ne
-s'exécute que si la table `users` est vide : modifier `ADMIN_PASSWORD` ensuite ne
-réinitialise aucun compte existant.
+Le premier démarrage crée un administrateur à partir de `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
+Ce bootstrap ne s'exécute que si la table `users` est vide : modifier `ADMIN_PASSWORD`
+ensuite ne réinitialise aucun compte existant. Le mot de passe se change depuis **Profil**.
 
 - Mots de passe hachés en Argon2id (19 Mio, 2 itérations, 1 lane — paramètres OWASP).
 - Sessions en base ; le cookie contient un jeton aléatoire dont seule une empreinte HMAC

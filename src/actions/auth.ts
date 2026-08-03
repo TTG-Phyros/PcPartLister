@@ -95,7 +95,7 @@ export async function loginAction(
   await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
 
   // redirect() throws a control-flow signal: it must stay outside any try/catch.
-  redirect(user.mustChangePassword ? '/premiere-connexion' : safeNextPath(formData.get('next')));
+  redirect(safeNextPath(formData.get('next')));
 }
 
 export async function logoutAction(): Promise<never> {
@@ -142,7 +142,6 @@ export async function changePasswordAction(
     .update(users)
     .set({
       passwordHash: await hashPassword(parsed.data.newPassword),
-      mustChangePassword: false,
       updatedAt: new Date(),
     })
     .where(eq(users.id, user.id));
@@ -151,14 +150,4 @@ export async function changePasswordAction(
   await destroyOtherUserSessions(user.id, sessionId);
 
   return { success: 'Mot de passe mis à jour. Les autres sessions ont été déconnectées.' };
-}
-
-/** Same as above but used on the forced first-login screen, which then redirects. */
-export async function firstLoginPasswordAction(
-  prev: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  const result = await changePasswordAction(prev, formData);
-  if (result.error) return result;
-  redirect('/');
 }

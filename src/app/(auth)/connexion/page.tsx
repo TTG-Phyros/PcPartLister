@@ -13,7 +13,7 @@ export default async function LoginPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const session = await getSession();
-  if (session) redirect(session.user.mustChangePassword ? '/premiere-connexion' : '/');
+  if (session) redirect('/');
 
   const { next } = await searchParams;
   const target = next?.startsWith('/') && !next.startsWith('//') ? next : '/';
