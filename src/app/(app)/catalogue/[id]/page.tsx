@@ -4,10 +4,11 @@ import { updateCatalogComponentAction } from '@/actions/catalog';
 import { CatalogDangerZone } from '@/components/catalog/catalog-danger-zone';
 import { CatalogForm } from '@/components/catalog/catalog-form';
 import { ComponentImage } from '@/components/catalog/component-image';
-import { Card } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
 import { requireUser } from '@/lib/auth/guard';
 import { formatPriceCompact, summarizeSpecs } from '@/lib/catalog/format';
 import { getCatalogComponent } from '@/lib/catalog/queries';
+import { countInStockForComponent } from '@/lib/inventory/queries';
 import { CATEGORY_LABELS } from '@/lib/specs';
 import { SPEC_FIELDS, formValueFor } from '@/lib/specs/fields';
 
@@ -23,6 +24,8 @@ export default async function CatalogComponentPage({
 
   const component = await getCatalogComponent(id);
   if (!component) notFound();
+
+  const ownedCount = await countInStockForComponent(component.id);
 
   const specValues = Object.fromEntries(
     SPEC_FIELDS[component.category].map((field) => [
@@ -57,16 +60,33 @@ export default async function CatalogComponentPage({
           alt={`${component.brand} ${component.model}`}
           className="h-40 w-full shrink-0 sm:w-56"
         />
-        <ul className="flex flex-wrap content-start gap-2">
-          {summarizeSpecs(component.specs).map((chip) => (
-            <li
-              key={chip}
-              className="h-fit rounded-md bg-surface-hover px-2 py-1 text-xs text-ink-muted"
-            >
-              {chip}
-            </li>
-          ))}
-        </ul>
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
+          <ul className="flex flex-wrap content-start gap-2">
+            {summarizeSpecs(component.specs).map((chip) => (
+              <li
+                key={chip}
+                className="h-fit rounded-md bg-surface-hover px-2 py-1 text-xs text-ink-muted"
+              >
+                {chip}
+              </li>
+            ))}
+          </ul>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href={`/stock/nouveau?modele=${component.id}`}>
+              <Button variant="secondary">Ajouter un exemplaire au stock</Button>
+            </Link>
+            {ownedCount > 0 ? (
+              <Link
+                href={`/stock?q=${encodeURIComponent(component.model)}&status=en_stock`}
+                className="text-sm text-ok underline underline-offset-4"
+              >
+                {ownedCount} exemplaire{ownedCount > 1 ? 's' : ''} possédé
+                {ownedCount > 1 ? 's' : ''}
+              </Link>
+            ) : null}
+          </div>
+        </div>
       </Card>
 
       <Card>

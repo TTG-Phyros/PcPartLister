@@ -14,6 +14,7 @@ import {
   saveImage,
   uploadPath,
 } from '@/lib/images/store';
+import { generatePlaceholderImage } from '@/lib/images/ensure';
 import { COMPONENT_CATEGORIES, type ComponentCategory } from '@/lib/specs';
 import { specsFromFormData } from '@/lib/specs/fields';
 import type { ActionState } from './auth';
@@ -124,6 +125,12 @@ export async function createCatalogComponentAction(
   );
   if (!upload.ok) return { error: upload.error, values: echoValues(formData) };
 
+  // No upload: generate the same placeholder the seed produces, so a
+  // hand-added model looks like a seeded one.
+  const imagePath =
+    upload.path ??
+    (await generatePlaceholderImage(identity.category, identity.brand, identity.model));
+
   const [created] = await db
     .insert(catalogComponents)
     .values({
@@ -131,7 +138,7 @@ export async function createCatalogComponentAction(
       brand: identity.brand,
       model: identity.model,
       specs,
-      imagePath: upload.path,
+      imagePath,
       msrpCents: identity.msrpEur,
       releaseYear: identity.releaseYear,
     })

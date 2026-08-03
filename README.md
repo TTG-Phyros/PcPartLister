@@ -77,6 +77,24 @@ SVG est généré localement. **L'application reste donc entièrement fonctionne
 réseau.** Depuis l'interface, chaque composant accepte une image uploadée (PNG, JPEG,
 WebP, GIF, SVG, 5 Mo max) qui remplace le visuel généré.
 
+## Stock
+
+Une entrée de stock est **un exemplaire physique**, rattaché à un modèle du catalogue dont
+il hérite specs et image : rien à ressaisir d'un achat à l'autre. Chaque unité porte son
+prix d'achat réel, sa date, sa plateforme, le lien de l'annonce, son état et son statut.
+
+Saisie d'un achat depuis le téléphone : `Stock → Ajouter un achat`. Le modèle se cherche
+au clavier parmi le catalogue ; s'il en est absent, l'onglet **Nouveau modèle** crée
+l'entrée catalogue et l'unité en une seule validation. Le bouton
+« Enregistrer et en ajouter un autre » enchaîne les saisies sans repasser par la liste.
+
+Statuts : `en stock`, `réservé`, `monté`, `vendu`, `HS`. Les trois du milieu seront pilotés
+par les configurations (étapes 6 et 7) mais restent modifiables à la main.
+
+La synthèse affiche la valeur du stock au prix d'achat, le montant immobilisé, la
+répartition par catégorie et les **composants dormants** — en stock depuis plus de
+`dormant_days` jours (90 par défaut, modifiable dans la table `settings`).
+
 ## Configuration
 
 Toutes les variables sont documentées dans [.env.example](.env.example). La plus sensible :
