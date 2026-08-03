@@ -1,6 +1,12 @@
 import { and, asc, desc, eq, gte, ilike, lte, or, sql, type SQL } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { catalogComponents, inventoryItems, type CatalogComponent, type InventoryItem } from '@/lib/db/schema';
+import {
+  buildItems,
+  catalogComponents,
+  inventoryItems,
+  type CatalogComponent,
+  type InventoryItem,
+} from '@/lib/db/schema';
 import type { ComponentCategory } from '@/lib/specs';
 import type { ItemCondition, ItemStatus } from './labels';
 
@@ -100,6 +106,16 @@ export async function getInventoryItem(id: string): Promise<InventoryRow | null>
     .where(eq(inventoryItems.id, id))
     .limit(1);
   return rows[0] ?? null;
+}
+
+/** Whether a unit is placed in a configuration, which pins it to its slot. */
+export async function isInventoryItemInBuild(id: string): Promise<boolean> {
+  const rows = await db
+    .select({ id: buildItems.id })
+    .from(buildItems)
+    .where(eq(buildItems.inventoryItemId, id))
+    .limit(1);
+  return rows.length > 0;
 }
 
 /* ─────────────────────────── Summary ─────────────────────────── */

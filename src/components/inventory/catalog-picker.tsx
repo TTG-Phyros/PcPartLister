@@ -14,13 +14,16 @@ import { CATEGORY_LABELS, COMPONENT_CATEGORIES, type ComponentCategory } from '@
 export function CatalogPicker({
   name,
   initialSelection,
+  initialCategory = '',
 }: {
   name: string;
   initialSelection?: CatalogSearchHit | null;
+  /** Pre-filters the list when the caller already knows the category wanted. */
+  initialCategory?: ComponentCategory | '';
 }) {
   const listId = useId();
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<ComponentCategory | ''>('');
+  const [category, setCategory] = useState<ComponentCategory | ''>(initialCategory);
   const [results, setResults] = useState<CatalogSearchHit[]>([]);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<CatalogSearchHit | null>(initialSelection ?? null);

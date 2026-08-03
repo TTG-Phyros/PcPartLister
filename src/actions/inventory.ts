@@ -272,6 +272,75 @@ export async function updateInventoryItemAction(
   return { success: 'Unité mise à jour.' };
 }
 
+const changeModelSchema = z.object({
+  id: z.string().uuid(),
+  catalogComponentId: z.string().uuid('Sélectionnez un modèle du catalogue.'),
+});
+
+/**
+ * Re-points a unit at another catalog model: a part entered under the wrong
+ * reference is corrected here rather than by deleting and re-creating it, which
+ * would lose its purchase history.
+ */
+export async function changeInventoryModelAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await assertSession();
+
+  const parsed = changeModelSchema.safeParse({
+    id: formData.get('id') ?? '',
+    catalogComponentId: formData.get('catalogComponentId') ?? '',
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]!.message };
+  const { id, catalogComponentId } = parsed.data;
+
+  const [item] = await db
+    .select({ componentId: inventoryItems.catalogComponentId })
+    .from(inventoryItems)
+    .where(eq(inventoryItems.id, id))
+    .limit(1);
+  if (!item) return { error: 'Unité introuvable.' };
+  if (item.componentId === catalogComponentId) {
+    return { error: 'C’est déjà le modèle de cette unité.' };
+  }
+
+  const [target] = await db
+    .select({ category: catalogComponents.category })
+    .from(catalogComponents)
+    .where(eq(catalogComponents.id, catalogComponentId))
+    .limit(1);
+  if (!target) return { error: 'Modèle du catalogue introuvable.' };
+
+  // A unit engaged in a configuration occupies a slot typed by its category:
+  // switching to another category would leave that slot inconsistent.
+  const [engaged] = await db
+    .select({ buildId: buildItems.buildId, slot: buildItems.slot })
+    .from(buildItems)
+    .where(eq(buildItems.inventoryItemId, id))
+    .limit(1);
+  if (engaged && engaged.slot !== target.category) {
+    return {
+      error:
+        'Cette unité est utilisée dans une configuration : le nouveau modèle doit être de la même catégorie, ou retirez-la de la configuration d’abord.',
+    };
+  }
+
+  await db
+    .update(inventoryItems)
+    .set({ catalogComponentId, updatedAt: new Date() })
+    .where(eq(inventoryItems.id, id));
+
+  revalidatePath('/stock');
+  revalidatePath(`/stock/${id}`);
+  revalidatePath('/');
+  if (engaged) {
+    revalidatePath('/configs');
+    revalidatePath(`/configs/${engaged.buildId}`);
+  }
+  return { success: 'Modèle mis à jour.' };
+}
+
 const statusSchema = z.object({
   id: z.string().uuid(),
   status: z.enum(ITEM_STATUSES),

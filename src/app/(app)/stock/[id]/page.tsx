@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { updateInventoryItemAction } from '@/actions/inventory';
 import { ComponentImage } from '@/components/catalog/component-image';
+import { ChangeInventoryModel } from '@/components/inventory/change-model';
 import { DeleteInventoryItem } from '@/components/inventory/delete-item';
 import { InventoryForm } from '@/components/inventory/inventory-form';
 import { MarkReceived } from '@/components/inventory/mark-received';
@@ -11,7 +12,7 @@ import type { InventoryItem } from '@/lib/db/schema';
 import { formatPrice, summarizeSpecs } from '@/lib/catalog/format';
 import { PLATFORM_LABELS, STATUS_LABELS, STATUS_TONES } from '@/lib/inventory/labels';
 import { CARRIER_LABELS, daysUntil, isLate, trackingLink } from '@/lib/inventory/tracking';
-import { getInventoryItem } from '@/lib/inventory/queries';
+import { getInventoryItem, isInventoryItemInBuild } from '@/lib/inventory/queries';
 import { getSettings } from '@/lib/settings-store';
 import { CATEGORY_LABELS } from '@/lib/specs';
 
@@ -41,7 +42,7 @@ export default async function InventoryItemPage({
   if (!row) notFound();
 
   const { item, component } = row;
-  const settings = await getSettings();
+  const [settings, inBuild] = await Promise.all([getSettings(), isInventoryItemInBuild(item.id)]);
   const age = daysSince(item.purchaseDate);
   const dormant = item.status === 'en_stock' && age > settings.dormant_days;
 
@@ -119,6 +120,11 @@ export default async function InventoryItemPage({
           {item.notes ? (
             <p className="text-sm whitespace-pre-line text-ink-muted">{item.notes}</p>
           ) : null}
+          <ChangeInventoryModel
+            id={item.id}
+            category={component.category}
+            lockedToCategory={inBuild}
+          />
         </div>
       </Card>
 
