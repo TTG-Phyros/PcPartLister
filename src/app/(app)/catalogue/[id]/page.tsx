@@ -4,11 +4,13 @@ import { updateCatalogComponentAction } from '@/actions/catalog';
 import { CatalogDangerZone } from '@/components/catalog/catalog-danger-zone';
 import { CatalogForm } from '@/components/catalog/catalog-form';
 import { ComponentImage } from '@/components/catalog/component-image';
+import { GpuTierBadge } from '@/components/tier-list/gpu-tier-badge';
 import { Button, Card } from '@/components/ui';
 import { requireUser } from '@/lib/auth/guard';
 import { formatPriceCompact, summarizeSpecs } from '@/lib/catalog/format';
 import { getCatalogComponent } from '@/lib/catalog/queries';
 import { countInStockForComponent } from '@/lib/inventory/queries';
+import { findTierEntryForGpu } from '@/lib/tier-list/queries';
 import { CATEGORY_LABELS } from '@/lib/specs';
 import { SPEC_FIELDS, formValueFor } from '@/lib/specs/fields';
 
@@ -26,6 +28,14 @@ export default async function CatalogComponentPage({
   if (!component) notFound();
 
   const ownedCount = await countInStockForComponent(component.id);
+  const tierEntry =
+    component.specs.category === 'gpu'
+      ? await findTierEntryForGpu({
+          model: component.model,
+          chipset: component.specs.chipset,
+          vramGb: component.specs.vramGb,
+        })
+      : null;
 
   const specValues = Object.fromEntries(
     SPEC_FIELDS[component.category].map((field) => [
@@ -61,6 +71,18 @@ export default async function CatalogComponentPage({
           className="h-40 w-full shrink-0 sm:w-56"
         />
         <div className="flex min-w-0 flex-1 flex-col gap-3">
+          {tierEntry ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <GpuTierBadge entry={tierEntry} />
+              <Link
+                href="/tier-list"
+                className="text-xs text-ink-muted underline underline-offset-4 hover:text-ink"
+              >
+                Voir la tier list
+              </Link>
+            </div>
+          ) : null}
+
           <ul className="flex flex-wrap content-start gap-2">
             {summarizeSpecs(component.specs).map((chip) => (
               <li

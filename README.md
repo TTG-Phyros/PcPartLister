@@ -76,6 +76,37 @@ SVG est généré localement. **L'application reste donc entièrement fonctionne
 réseau.** Depuis l'interface, chaque composant accepte une image uploadée (PNG, JPEG,
 WebP, GIF, SVG, 5 Mo max) qui remplace le visuel généré.
 
+## Tier list des cartes graphiques
+
+Le classement des GPU vit dans [data/tier-list/cartes-graphiques.csv](data/tier-list/cartes-graphiques.csv) :
+une ligne par carte, colonnes `Rang, Modèle, Marque, Gamme, Indice`. C'est de la donnée de
+référence, jamais écrite par l'application, donc elle reste dans un fichier plutôt qu'en base.
+Le fichier est relu au démarrage ; une ligne mal formée est signalée dans les logs et ignorée,
+sans vider le tableau. Les premières lignes peuvent laisser `Rang` vide : l'ordre du fichier
+fait foi.
+
+Le tableau est triable par colonne, filtrable par marque et par gamme, et cherchable par nom
+de modèle. Une carte présente au catalogue est un lien vers sa fiche : le rapprochement se
+fait sur la **puce** (`specs.chipset`) et la quantité de VRAM, si bien qu'une RTX 3080 12GB ne
+renvoie jamais vers la fiche d'une 10 Go. L'association est **un pour un**, parcourue dans
+l'ordre du classement : une fiche prise par une ligne mieux placée n'est plus disponible pour
+les suivantes, ce qui sépare deux variantes d'une même puce (« Arc A770 16GB » prend la fiche
+16 Go, « Arc A770 » tombe ensuite sur la 8 Go).
+
+Les 102 cartes du classement ont toutes une entrée dans `catalog.json`. Le `perfIndex` de ces
+entrées suit l'échelle du catalogue existant, soit environ 3,1 × l'indice du classement ; il
+ne sert qu'à l'avis « goulot d'étranglement » et ne remplace pas l'indice de la tier list.
+
+Il apparaît à trois endroits :
+
+| Où | Forme |
+| --- | --- |
+| `/tier-list` | Le classement complet, pleine largeur |
+| `/catalogue?category=gpu` | Panneau replié au-dessus de la grille |
+| Configurateur, emplacement « Carte graphique » | Panneau replié, plus l'indice sur chaque carte proposée |
+
+La fiche catalogue d'un GPU affiche également sa gamme, son indice et son rang.
+
 ## Stock
 
 Une entrée de stock est **un exemplaire physique**, rattaché à un modèle du catalogue dont
@@ -210,7 +241,7 @@ de l'alimentation, ports SATA et slots M.2, plus deux avis non bloquants (goulot
 d'étranglement CPU/GPU, absence de sortie vidéo).
 
 ```bash
-npm test        # 87 tests
+npm test        # 133 tests
 ```
 
 ## Configuration
@@ -237,4 +268,5 @@ npm run db:generate   # régénère les migrations après modification du schém
 | `src/lib/compat/` | Moteur de compatibilité isolé et testable |
 | `data/seed/catalog.json` | Catalogue de référence, éditable à la main |
 | `data/seed/stock.json` | Exemplaires possédés, réinjectés dans le stock au démarrage |
+| `data/tier-list/` | Classement des cartes graphiques, en CSV éditable à la main |
 | `scripts/` | Migration et seed, exécutés par l'entrypoint du conteneur |

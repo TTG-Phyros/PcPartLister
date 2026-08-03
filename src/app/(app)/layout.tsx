@@ -13,6 +13,7 @@ const LINKS: NavLink[] = [
   { href: '/configs', label: 'Configs' },
   { href: '/ventes', label: 'Ventes' },
   { href: '/catalogue', label: 'Catalogue' },
+  { href: '/tier-list', label: 'Tier list' },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {

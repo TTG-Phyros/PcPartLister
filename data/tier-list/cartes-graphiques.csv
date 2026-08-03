@@ -1,0 +1,103 @@
+Rang,Modèle,Marque,Gamme,Indice
+,GeForce RTX 5090,NVIDIA,Extrême,125.0%
+,GeForce RTX 4090,NVIDIA,Extrême,100.0%
+,GeForce RTX 4090 D,NVIDIA,Extrême,95.0%
+#4,GeForce RTX 5080,NVIDIA,Haut de gamme,89.5%
+#5,GeForce RTX 4080 Super,NVIDIA,Haut de gamme,83.3%
+#6,Radeon RX 7900 XTX,AMD,Haut de gamme,80.1%
+#7,GeForce RTX 4080,NVIDIA,Haut de gamme,77.8%
+#8,GeForce RTX 5070 Ti,NVIDIA,Haut de gamme,77.8%
+#9,Radeon RX 9070 XT,AMD,Haut de gamme,74.8%
+#10,Radeon RX 7900 XT,AMD,Haut de gamme,70.9%
+#11,GeForce RTX 4070 Ti Super,NVIDIA,Haut de gamme,70.3%
+#12,GeForce RTX 3090 Ti,NVIDIA,Haut de gamme,69.2%
+#13,Radeon RX 9070,AMD,Milieu+,66.5%
+#14,GeForce RTX 4070 Ti,NVIDIA,Milieu+,66.2%
+#15,GeForce RTX 5070,NVIDIA,Milieu+,64.2%
+#16,GeForce RTX 3090,NVIDIA,Milieu+,63.4%
+#17,GeForce RTX 4070 Super,NVIDIA,Milieu+,62.8%
+#18,Radeon RX 6950 XT,AMD,Milieu+,62.6%
+#19,Radeon RX 7900 GRE,AMD,Milieu+,62.5%
+#20,GeForce RTX 3080 Ti,NVIDIA,Milieu+,62.3%
+#21,Radeon RX 6900 XT,AMD,Milieu+,59.4%
+#22,GeForce RTX 3080 12GB,NVIDIA,Milieu+,57.7%
+#23,Radeon RX 7800 XT,AMD,Milieu+,57.6%
+#24,GeForce RTX 3080,NVIDIA,Milieu+,55.5%
+#25,Radeon RX 6800 XT,AMD,Milieu+,54.7%
+#26,GeForce RTX 4070,NVIDIA,Milieu,54.2%
+#27,Radeon RX 6800,AMD,Milieu,49.0%
+#28,Radeon RX 7700 XT,AMD,Milieu,48.7%
+#29,GeForce RTX 3070 Ti,NVIDIA,Milieu,46.1%
+#30,GeForce RTX 5060 Ti 16GB,NVIDIA,Milieu,46.0%
+#31,GeForce RTX 3070,NVIDIA,Milieu,43.2%
+#32,Radeon RX 9060 XT 16GB,AMD,Milieu,42.2%
+#33,GeForce RTX 4060 Ti,NVIDIA,Milieu,41.8%
+#34,Radeon RX 6750 XT,AMD,Milieu,41.0%
+#35,GeForce RTX 2080 Ti,NVIDIA,Milieu,40.4%
+#36,Radeon RX 6750 GRE 12GB,AMD,Milieu,39.7%
+#37,Radeon RX 6700 XT,AMD,Milieu,39.2%
+#38,GeForce RTX 5060 8GB,NVIDIA,Milieu,38.9%
+#39,GeForce RTX 3060 Ti,NVIDIA,Milieu,37.4%
+#40,GeForce RTX 2080 Super,NVIDIA,Entrée de gamme,36.2%
+#41,Radeon RX 6750 GRE 10GB,AMD,Entrée de gamme,35.7%
+#42,Radeon RX 6700,AMD,Entrée de gamme,35.5%
+#43,Intel Arc B580,Intel,Entrée de gamme,35.0%
+#44,Radeon RX 7600,AMD,Entrée de gamme,34.9%
+#45,GeForce RTX 4060,NVIDIA,Entrée de gamme,34.6%
+#46,GeForce RTX 2080,NVIDIA,Entrée de gamme,34.4%
+#47,NVIDIA TITAN Xp,NVIDIA,Entrée de gamme,33.7%
+#48,Radeon RX 6650 XT,AMD,Entrée de gamme,33.4%
+#49,Radeon RX 6600 XT,AMD,Entrée de gamme,32.8%
+#50,Intel Arc B570,Intel,Entrée de gamme,32.5%
+#51,GeForce RTX 2070 Super,NVIDIA,Entrée de gamme,32.0%
+#52,GeForce GTX 1080 Ti,NVIDIA,Entrée de gamme,31.8%
+#53,Intel Arc A770 16GB,Intel,Entrée de gamme,30.9%
+#54,NVIDIA TITAN X,NVIDIA,Entrée de gamme,30.6%
+#55,Radeon VII,AMD,Entrée de gamme,30.2%
+#56,Intel Arc A770,Intel,Entrée de gamme,30.0%
+#57,GeForce RTX 3060,NVIDIA,Entrée de gamme,29.5%
+#58,Radeon RX 5700 XT,AMD,Entrée de gamme,29.4%
+#59,GeForce RTX 2070,NVIDIA,Entrée de gamme,28.9%
+#60,GeForce RTX 2060 Super,NVIDIA,Entrée de gamme,27.9%
+#61,Intel Arc A750,Intel,Entrée de gamme,27.7%
+#62,Radeon RX 6600,AMD,Entrée de gamme,27.4%
+#63,GeForce RTX 2060 12GB,NVIDIA,Entrée de gamme,27.4%
+#64,GeForce RTX 3060 8GB,NVIDIA,Entrée de gamme,26.5%
+#65,Intel Arc A580,Intel,Budget,25.8%
+#66,Radeon RX 5700,AMD,Budget,25.8%
+#67,GeForce GTX 1080,NVIDIA,Budget,24.8%
+#68,GeForce RTX 2060,NVIDIA,Budget,24.7%
+#69,Radeon RX Vega 64,AMD,Budget,24.5%
+#70,GeForce GTX TITAN Z,NVIDIA,Budget,24.4%
+#71,Radeon RX 5600 XT,AMD,Budget,24.2%
+#72,GeForce GTX 1070 Ti,NVIDIA,Budget,23.8%
+#73,Radeon RX Vega 56,AMD,Budget,22.5%
+#74,GeForce RTX 3050,NVIDIA,Budget,21.2%
+#75,GeForce GTX 1070,NVIDIA,Budget,21.1%
+#76,GeForce GTX 1660 Ti,NVIDIA,Budget,21.0%
+#77,GeForce GTX 1660 Super,NVIDIA,Budget,20.8%
+#78,GeForce GTX Titan X,NVIDIA,Budget,19.5%
+#79,GeForce GTX 980 Ti,NVIDIA,Budget,18.9%
+#80,Radeon R9 Fury X,AMD,Budget,18.6%
+#81,Radeon R9 295X2,AMD,Budget,18.3%
+#82,GeForce GTX 1660,NVIDIA,Budget,18.2%
+#83,Radeon Pro Duo,AMD,Budget,17.7%
+#84,Radeon R9 NANO,AMD,Budget,17.5%
+#85,Radeon RX 590,AMD,Budget,17.4%
+#86,Radeon RX 590 GME,AMD,Budget,17.3%
+#87,Radeon RX 6500 XT,AMD,Budget,16.7%
+#88,GeForce GTX 1650 Super,NVIDIA,Budget,16.5%
+#89,Radeon R9 Fury,AMD,Budget,16.5%
+#90,GeForce GTX 980,NVIDIA,Budget,16.4%
+#91,Radeon RX 5500 XT,AMD,Budget,16.3%
+#92,Radeon RX 580,AMD,Budget,16.1%
+#93,GeForce GTX 1060 6GB,NVIDIA,Budget,15.7%
+#94,Radeon RX 480 8GB,AMD,Budget,15.6%
+#95,GeForce GTX 1060 3GB,NVIDIA,Budget,15.2%
+#96,Radeon RX 480 4GB,AMD,Budget,15.2%
+#97,Radeon R9 390X,AMD,Budget,15.0%
+#98,GeForce GTX TITAN BLACK,NVIDIA,Budget,14.9%
+#99,GeForce GTX 970,NVIDIA,Budget,14.4%
+#100,Radeon R9 390,AMD,Budget,14.3%
+#101,Radeon RX 570,AMD,Budget,13.9%
+#102,GeForce GTX 1650 GDDR6,NVIDIA,Budget,13.4%

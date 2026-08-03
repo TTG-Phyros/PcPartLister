@@ -10,6 +10,10 @@ import { formatPriceCompact } from '@/lib/catalog/format';
 import { checkCandidate, type BuildSelection, type CandidateVerdict } from '@/lib/compat/engine';
 import { CONDITION_LABELS } from '@/lib/inventory/labels';
 import { CATEGORY_LABELS, type ComponentCategory } from '@/lib/specs';
+import { buildGpuTierIndex, findGpuTierEntry } from '@/lib/tier-list/parse';
+import type { GpuTierEntry, GpuTierRow } from '@/lib/tier-list/types';
+import { GpuTierBadge } from '@/components/tier-list/gpu-tier-badge';
+import { GpuTierList } from '@/components/tier-list/gpu-tier-list';
 import { Alert, Button, Input, cn } from '@/components/ui';
 
 type GradedCandidate = Candidate & { verdict: CandidateVerdict };
@@ -23,11 +27,14 @@ export function SlotPicker({
   buildId,
   slot,
   selection,
+  gpuTierRows,
   onClose,
 }: {
   buildId: string;
   slot: ComponentCategory;
   selection: BuildSelection;
+  /** GPU ranking, used to badge the cards offered for the `gpu` slot. */
+  gpuTierRows: GpuTierRow[];
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -91,6 +98,18 @@ export function SlotPicker({
   const stock = useMemo(() => grade(data ? data.stock : []), [data, selection, slot]);
   const catalog = useMemo(() => grade(data ? data.catalog : []), [data, selection, slot]);
 
+  // Ranking lookups happen here rather than on the server: the candidate list is
+  // already in the browser, and matching a chip name is pure string work.
+  const tierIndex = useMemo(() => buildGpuTierIndex(gpuTierRows), [gpuTierRows]);
+  const tierEntryFor = (candidate: Candidate): GpuTierEntry | null =>
+    candidate.specs.category === 'gpu'
+      ? findGpuTierEntry(tierIndex, {
+          model: candidate.model,
+          chipset: candidate.specs.chipset,
+          vramGb: candidate.specs.vramGb,
+        })
+      : null;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-6"
@@ -131,6 +150,18 @@ export function SlotPicker({
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
           {state.error ? <Alert tone="error">{state.error}</Alert> : null}
 
+          {slot === 'gpu' && gpuTierRows.length > 0 ? (
+            <details className="mb-4 rounded-lg border border-border-subtle">
+              <summary className="cursor-pointer list-none px-3 py-2 text-sm font-medium marker:content-none">
+                Tier list des cartes graphiques{' '}
+                <span className="font-normal text-ink-muted">— comparer avant de choisir</span>
+              </summary>
+              <div className="border-t border-border-subtle p-3">
+                <GpuTierList rows={gpuTierRows} compact />
+              </div>
+            </details>
+          ) : null}
+
           <Group
             title={`En stock (${stock.length})`}
             hint="Prix d’achat réel, déjà payé."
@@ -139,6 +170,7 @@ export function SlotPicker({
             buildId={buildId}
             slot={slot}
             formAction={formAction}
+            tierEntryFor={tierEntryFor}
           />
 
           <Group
@@ -149,6 +181,7 @@ export function SlotPicker({
             buildId={buildId}
             slot={slot}
             formAction={formAction}
+            tierEntryFor={tierEntryFor}
             className="mt-6"
           />
         </div>
@@ -165,6 +198,7 @@ function Group({
   buildId,
   slot,
   formAction,
+  tierEntryFor,
   className,
 }: {
   title: string;
@@ -174,6 +208,7 @@ function Group({
   buildId: string;
   slot: ComponentCategory;
   formAction: (formData: FormData) => void;
+  tierEntryFor: (candidate: Candidate) => GpuTierEntry | null;
   className?: string;
 }) {
   return (
@@ -194,6 +229,7 @@ function Group({
                 buildId={buildId}
                 slot={slot}
                 formAction={formAction}
+                tierEntry={tierEntryFor(candidate)}
               />
             </li>
           ))}
@@ -208,11 +244,13 @@ function CandidateRow({
   buildId,
   slot,
   formAction,
+  tierEntry,
 }: {
   candidate: GradedCandidate;
   buildId: string;
   slot: ComponentCategory;
   formAction: (formData: FormData) => void;
+  tierEntry: GpuTierEntry | null;
 }) {
   const { verdict } = candidate;
   const warning = verdict.compatible && verdict.warnings.length > 0;
@@ -256,6 +294,8 @@ function CandidateRow({
           <span className="block truncate text-xs text-ink-muted">
             {candidate.summary.join(' · ')}
           </span>
+
+          {tierEntry ? <GpuTierBadge entry={tierEntry} className="mt-1" /> : null}
 
           {!verdict.compatible ? (
             <span className="mt-1 block text-xs font-medium text-danger">{verdict.reason}</span>

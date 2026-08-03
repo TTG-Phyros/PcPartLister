@@ -24,6 +24,7 @@ ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0 \
     IMAGES_DIR=/app/data/images \
     SEED_DATA_DIR=/app/data/seed \
+    TIER_LIST_DATA_DIR=/app/data/tier-list \
     MIGRATIONS_FOLDER=/app/drizzle
 
 RUN addgroup -g 1001 -S nodejs \
