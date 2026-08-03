@@ -28,6 +28,24 @@ export const purchasePlatformEnum = pgEnum('purchase_platform', [
   'leboncoin',
   'facebook',
   'autre',
+  // Appended, never inserted in the middle: Postgres enums only grow at the end
+  // unless the type is recreated. The display order lives in the UI labels.
+  'main_propre',
+  'amazon',
+]);
+
+/** Carrier of an incoming parcel, used to build the tracking link. */
+export const shippingCarrierEnum = pgEnum('shipping_carrier', [
+  'mondial_relay',
+  'colissimo',
+  'chronopost',
+  'relais_colis',
+  'dpd',
+  'gls',
+  'ups',
+  'dhl',
+  'fedex',
+  'autre',
 ]);
 
 export const itemConditionEnum = pgEnum('item_condition', [
@@ -44,6 +62,8 @@ export const itemStatusEnum = pgEnum('item_status', [
   'monte',
   'vendu',
   'hs',
+  /** Paid for, not received yet: the unit exists on paper but not on the shelf. */
+  'en_transit',
 ]);
 
 export const buildStatusEnum = pgEnum('build_status', ['brouillon', 'montee', 'vendue']);
@@ -151,6 +171,13 @@ export const inventoryItems = pgTable(
     listingUrl: text('listing_url'),
     condition: itemConditionEnum('condition').notNull().default('bon'),
     status: itemStatusEnum('status').notNull().default('en_stock'),
+    /* Parcel tracking, only meaningful while the unit is `en_transit`. */
+    shippingCarrier: shippingCarrierEnum('shipping_carrier'),
+    trackingNumber: text('tracking_number'),
+    /** Explicit tracking link; when empty the carrier + number build one. */
+    trackingUrl: text('tracking_url'),
+    expectedArrival: date('expected_arrival'),
+    receivedAt: date('received_at'),
     serialNumber: text('serial_number'),
     notes: text('notes'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -160,6 +187,7 @@ export const inventoryItems = pgTable(
     index('inventory_status_idx').on(t.status),
     index('inventory_catalog_idx').on(t.catalogComponentId),
     index('inventory_purchase_date_idx').on(t.purchaseDate),
+    index('inventory_expected_arrival_idx').on(t.expectedArrival),
     check('inventory_price_non_negative', sql`${t.purchasePriceCents} >= 0`),
   ],
 );

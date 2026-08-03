@@ -10,6 +10,7 @@ import { Alert, Button, Field, Input, Select, cn } from '@/components/ui';
 import {
   BUILD_DRIVEN_STATUSES,
   CONDITION_LABELS,
+  IN_PERSON_PLATFORMS,
   ITEM_CONDITIONS,
   ITEM_STATUSES,
   PLATFORM_LABELS,
@@ -19,6 +20,13 @@ import {
   type ItemStatus,
   type PurchasePlatform,
 } from '@/lib/inventory/labels';
+import {
+  CARRIER_LABELS,
+  SHIPPING_CARRIERS,
+  carrierHasTemplate,
+  trackingLink,
+  type ShippingCarrier,
+} from '@/lib/inventory/tracking';
 import { CATEGORY_LABELS, COMPONENT_CATEGORIES, type ComponentCategory } from '@/lib/specs';
 
 export type InventoryFormInitial = {
@@ -29,6 +37,10 @@ export type InventoryFormInitial = {
   condition: ItemCondition;
   status: ItemStatus;
   listingUrl: string;
+  shippingCarrier: ShippingCarrier | '';
+  trackingNumber: string;
+  trackingUrl: string;
+  expectedArrival: string;
   serialNumber: string;
   notes: string;
 };
@@ -66,8 +78,6 @@ export function InventoryForm({
   preselected?: CatalogSearchHit | null;
 }) {
   const [state, formAction] = useActionState<ActionState, FormData>(action, {});
-  const [source, setSource] = useState<'catalog' | 'new'>('catalog');
-  const [category, setCategory] = useState<ComponentCategory>('cpu');
 
   const echoed = state.values;
   const defaultFor = (name: string, fallback: string | string[] = ''): string | string[] => {
@@ -79,6 +89,33 @@ export function InventoryForm({
     const value = defaultFor(name, fallback);
     return Array.isArray(value) ? (value[0] ?? '') : value;
   };
+
+  const [source, setSource] = useState<'catalog' | 'new'>('catalog');
+  const [category, setCategory] = useState<ComponentCategory>('cpu');
+
+  // Mirrors of the fields the parcel section reacts to. The inputs stay
+  // uncontrolled — only what drives the preview lives in state.
+  const [status, setStatus] = useState<ItemStatus>(initial.status);
+  const [platform, setPlatform] = useState<PurchasePlatform>(initial.platform);
+  const [carrier, setCarrier] = useState<ShippingCarrier | ''>(initial.shippingCarrier);
+  const [trackingNumber, setTrackingNumber] = useState(initial.trackingNumber);
+  const [trackingUrlValue, setTrackingUrlValue] = useState(initial.trackingUrl);
+
+  const inTransit = status === 'en_transit';
+  const inPerson = IN_PERSON_PLATFORMS.includes(platform);
+  const hasTracking = Boolean(
+    initial.shippingCarrier ||
+      initial.trackingNumber ||
+      initial.trackingUrl ||
+      initial.expectedArrival,
+  );
+  const [trackingOpen, setTrackingOpen] = useState(inTransit || hasTracking);
+
+  const preview = trackingLink({
+    shippingCarrier: carrier === '' ? null : carrier,
+    trackingNumber,
+    trackingUrl: trackingUrlValue,
+  });
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
@@ -206,6 +243,7 @@ export function InventoryForm({
               id="platform"
               name="platform"
               defaultValue={text('platform', initial.platform)}
+              onChange={(e) => setPlatform(e.target.value as PurchasePlatform)}
             >
               {PURCHASE_PLATFORMS.map((value) => (
                 <option key={value} value={value}>
@@ -231,12 +269,25 @@ export function InventoryForm({
             label="Statut"
             htmlFor="status"
             hint={
-              BUILD_DRIVEN_STATUSES.includes(initial.status)
-                ? 'Ce statut est normalement piloté par une configuration.'
-                : undefined
+              inTransit
+                ? 'Colis en cours : l’unité n’est pas proposée aux configurations tant qu’elle n’est pas reçue.'
+                : BUILD_DRIVEN_STATUSES.includes(initial.status)
+                  ? 'Ce statut est normalement piloté par une configuration.'
+                  : undefined
             }
           >
-            <Select id="status" name="status" defaultValue={text('status', initial.status)}>
+            <Select
+              id="status"
+              name="status"
+              defaultValue={text('status', initial.status)}
+              onChange={(e) => {
+                const next = e.target.value as ItemStatus;
+                setStatus(next);
+                // Switching to « en transit » is exactly when the tracking
+                // fields are needed: open them rather than hide them one click away.
+                if (next === 'en_transit') setTrackingOpen(true);
+              }}
+            >
               {ITEM_STATUSES.map((value) => (
                 <option key={value} value={value}>
                   {STATUS_LABELS[value]}
@@ -255,6 +306,103 @@ export function InventoryForm({
             />
           </Field>
         </div>
+
+        <details
+          className="rounded-lg border border-border-subtle p-3"
+          open={trackingOpen}
+          onToggle={(e) => setTrackingOpen(e.currentTarget.open)}
+        >
+          <summary className="cursor-pointer text-sm text-ink-muted">
+            Suivi du colis{inTransit ? ' — en cours de livraison' : ''}
+          </summary>
+          <div className="mt-3 flex flex-col gap-4">
+            {inPerson ? (
+              <p className="text-sm text-ink-muted">
+                Achat en main propre : il n’y a normalement pas de colis à suivre.
+              </p>
+            ) : (
+              <p className="text-sm text-ink-muted">
+                Pour un achat pas encore arrivé, passez le statut en « En transit » et
+                renseignez le suivi. Le lien s’ouvre en un tap depuis la fiche.
+              </p>
+            )}
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Transporteur" htmlFor="shippingCarrier">
+                <Select
+                  id="shippingCarrier"
+                  name="shippingCarrier"
+                  defaultValue={text('shippingCarrier', initial.shippingCarrier)}
+                  onChange={(e) => setCarrier(e.target.value as ShippingCarrier | '')}
+                >
+                  <option value="">Aucun / inconnu</option>
+                  {SHIPPING_CARRIERS.map((value) => (
+                    <option key={value} value={value}>
+                      {CARRIER_LABELS[value]}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+
+              <Field
+                label="Numéro de suivi"
+                htmlFor="trackingNumber"
+                hint={
+                  carrier !== '' && !carrierHasTemplate(carrier)
+                    ? 'Ce transporteur n’a pas de page de suivi directe : collez le lien ci-dessous.'
+                    : undefined
+                }
+              >
+                <Input
+                  id="trackingNumber"
+                  name="trackingNumber"
+                  inputMode="numeric"
+                  placeholder="12345678901234"
+                  defaultValue={text('trackingNumber', initial.trackingNumber)}
+                  onChange={(e) => setTrackingNumber(e.target.value)}
+                />
+              </Field>
+
+              <Field
+                label="Lien de suivi"
+                htmlFor="trackingUrl"
+                hint={
+                  preview ? (
+                    <a
+                      href={preview}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="underline underline-offset-4 hover:text-ink"
+                    >
+                      Tester le lien de suivi
+                    </a>
+                  ) : (
+                    'Généré depuis le transporteur et le numéro, ou collé à la main.'
+                  )
+                }
+              >
+                <Input
+                  id="trackingUrl"
+                  name="trackingUrl"
+                  type="url"
+                  inputMode="url"
+                  placeholder="https://…"
+                  defaultValue={text('trackingUrl', initial.trackingUrl)}
+                  onChange={(e) => setTrackingUrlValue(e.target.value)}
+                />
+              </Field>
+
+              <Field label="Livraison prévue le" htmlFor="expectedArrival">
+                <Input
+                  id="expectedArrival"
+                  name="expectedArrival"
+                  type="date"
+                  defaultValue={text('expectedArrival', initial.expectedArrival)}
+                />
+              </Field>
+            </div>
+          </div>
+        </details>
 
         <details className="rounded-lg border border-border-subtle p-3">
           <summary className="cursor-pointer text-sm text-ink-muted">

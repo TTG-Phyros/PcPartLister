@@ -72,6 +72,10 @@ export default async function NewInventoryItemPage({
             condition: 'bon',
             status: 'en_stock',
             listingUrl: '',
+            shippingCarrier: '',
+            trackingNumber: '',
+            trackingUrl: '',
+            expectedArrival: '',
             serialNumber: '',
             notes: '',
           }}

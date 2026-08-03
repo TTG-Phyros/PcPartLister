@@ -5,6 +5,7 @@ import { InventoryFilters } from '@/components/inventory/inventory-filters';
 import { StatusSelect } from '@/components/inventory/status-select';
 import { Button, Card } from '@/components/ui';
 import { requireUser } from '@/lib/auth/guard';
+import type { InventoryItem } from '@/lib/db/schema';
 import { formatPrice, formatPriceCompact, summarizeSpecs } from '@/lib/catalog/format';
 import {
   CONDITION_LABELS,
@@ -14,6 +15,7 @@ import {
   type ItemCondition,
   type ItemStatus,
 } from '@/lib/inventory/labels';
+import { CARRIER_LABELS, daysUntil, isLate, trackingLink } from '@/lib/inventory/tracking';
 import {
   countInventory,
   getInventorySummary,
@@ -79,6 +81,7 @@ export default async function StockPage({
     minPriceCents: toCents(one('min')),
     maxPriceCents: toCents(one('max')),
     dormantDays: one('dormant') === '1' ? settings.dormant_days : undefined,
+    inTransit: one('transit') === '1' ? true : undefined,
     limit: PAGE_SIZE,
     offset: (page - 1) * PAGE_SIZE,
   };
@@ -93,7 +96,17 @@ export default async function StockPage({
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const pageHref = (targetPage: number) => {
     const next = new URLSearchParams();
-    for (const key of ['q', 'category', 'status', 'condition', 'socket', 'min', 'max', 'dormant']) {
+    for (const key of [
+      'q',
+      'category',
+      'status',
+      'condition',
+      'socket',
+      'min',
+      'max',
+      'dormant',
+      'transit',
+    ]) {
       const value = one(key);
       if (value) next.set(key, value);
     }
@@ -174,6 +187,10 @@ export default async function StockPage({
                         </span>
                       ) : null}
                     </p>
+
+                    {item.status === 'en_transit' ? (
+                      <ParcelLine item={item} />
+                    ) : null}
                   </div>
                 </Card>
               </li>
@@ -207,6 +224,41 @@ export default async function StockPage({
   );
 }
 
+/**
+ * Parcel line under an `en_transit` unit: the tracking link must be reachable
+ * from the list, not one page away.
+ */
+function ParcelLine({ item }: { item: InventoryItem }) {
+  const link = trackingLink(item);
+  const remaining = item.expectedArrival ? daysUntil(item.expectedArrival) : null;
+  const late = isLate(item);
+
+  return (
+    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+      <span className={late ? 'text-warn' : 'text-ink-muted'}>
+        {item.shippingCarrier ? CARRIER_LABELS[item.shippingCarrier] : 'Colis en cours'}
+        {remaining === null
+          ? ''
+          : late
+            ? ` · en retard de ${-remaining} j`
+            : remaining === 0
+              ? ' · livraison aujourd’hui'
+              : ` · dans ${remaining} j`}
+      </span>
+      {link ? (
+        <a
+          href={link}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="text-brand underline underline-offset-4"
+        >
+          Suivre le colis
+        </a>
+      ) : null}
+    </p>
+  );
+}
+
 function StockSummary({
   summary,
   dormantDays,
@@ -226,6 +278,18 @@ function StockSummary({
           value={formatPrice(summary.ownedValueCents)}
           hint={`${summary.ownedCount} unité(s)`}
         />
+        {summary.inTransitCount > 0 ? (
+          <Stat
+            label="Colis en cours"
+            value={String(summary.inTransitCount)}
+            hint={
+              summary.lateParcelCount > 0
+                ? `${summary.lateParcelCount} en retard · ${formatPrice(summary.inTransitValueCents)}`
+                : formatPrice(summary.inTransitValueCents)
+            }
+            tone={summary.lateParcelCount > 0 ? 'warn' : undefined}
+          />
+        ) : null}
         <Stat
           label={`Dormants (> ${dormantDays} j)`}
           value={String(summary.dormantCount)}

@@ -4,10 +4,13 @@ import { updateInventoryItemAction } from '@/actions/inventory';
 import { ComponentImage } from '@/components/catalog/component-image';
 import { DeleteInventoryItem } from '@/components/inventory/delete-item';
 import { InventoryForm } from '@/components/inventory/inventory-form';
-import { Alert, Card } from '@/components/ui';
+import { MarkReceived } from '@/components/inventory/mark-received';
+import { Alert, Button, Card } from '@/components/ui';
 import { requireUser } from '@/lib/auth/guard';
+import type { InventoryItem } from '@/lib/db/schema';
 import { formatPrice, summarizeSpecs } from '@/lib/catalog/format';
-import { STATUS_LABELS, STATUS_TONES } from '@/lib/inventory/labels';
+import { PLATFORM_LABELS, STATUS_LABELS, STATUS_TONES } from '@/lib/inventory/labels';
+import { CARRIER_LABELS, daysUntil, isLate, trackingLink } from '@/lib/inventory/tracking';
 import { getInventoryItem } from '@/lib/inventory/queries';
 import { getSettings } from '@/lib/settings-store';
 import { CATEGORY_LABELS } from '@/lib/specs';
@@ -42,6 +45,12 @@ export default async function InventoryItemPage({
   const age = daysSince(item.purchaseDate);
   const dormant = item.status === 'en_stock' && age > settings.dormant_days;
 
+  const inTransit = item.status === 'en_transit';
+  const tracking = trackingLink(item);
+  const showTracking =
+    inTransit ||
+    Boolean(item.shippingCarrier || item.trackingNumber || item.trackingUrl || item.expectedArrival);
+
   return (
     <div className="flex max-w-3xl flex-col gap-5">
       <div>
@@ -69,6 +78,8 @@ export default async function InventoryItemPage({
           En stock depuis {age} jours, au-delà du seuil de {settings.dormant_days} jours.
         </Alert>
       ) : null}
+
+      {showTracking ? <TrackingCard item={item} link={tracking} /> : null}
 
       <Card className="flex flex-col gap-4 sm:flex-row">
         <ComponentImage
@@ -125,6 +136,10 @@ export default async function InventoryItemPage({
             condition: item.condition,
             status: item.status,
             listingUrl: item.listingUrl ?? '',
+            shippingCarrier: item.shippingCarrier ?? '',
+            trackingNumber: item.trackingNumber ?? '',
+            trackingUrl: item.trackingUrl ?? '',
+            expectedArrival: item.expectedArrival ?? '',
             serialNumber: item.serialNumber ?? '',
             notes: item.notes ?? '',
           }}
@@ -139,5 +154,63 @@ export default async function InventoryItemPage({
         <DeleteInventoryItem id={item.id} label={`${component.brand} ${component.model}`} />
       </Card>
     </div>
+  );
+}
+
+/**
+ * Everything about the parcel in one block: where it is, when it is due, and
+ * the single button that turns it into stock.
+ */
+function TrackingCard({ item, link }: { item: InventoryItem; link: string | null }) {
+  const inTransit = item.status === 'en_transit';
+  const remaining = item.expectedArrival ? daysUntil(item.expectedArrival) : null;
+  const late = isLate(item);
+
+  return (
+    <Card className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="font-medium">Suivi du colis</h2>
+        <span className="text-sm text-ink-muted">
+          {PLATFORM_LABELS[item.platform]}
+          {item.shippingCarrier ? ` · ${CARRIER_LABELS[item.shippingCarrier]}` : ''}
+        </span>
+      </div>
+
+      {item.trackingNumber ? (
+        <p className="text-sm text-ink-muted">
+          N° de suivi <span className="font-mono text-ink">{item.trackingNumber}</span>
+        </p>
+      ) : null}
+
+      {item.expectedArrival ? (
+        <p className={late ? 'text-sm text-warn' : 'text-sm text-ink-muted'}>
+          Livraison prévue le {formatDay(item.expectedArrival)}
+          {inTransit && remaining !== null
+            ? remaining < 0
+              ? ` · en retard de ${-remaining} jour${remaining < -1 ? 's' : ''}`
+              : remaining === 0
+                ? ' · aujourd’hui'
+                : ` · dans ${remaining} jour${remaining > 1 ? 's' : ''}`
+            : ''}
+        </p>
+      ) : null}
+
+      {item.receivedAt ? (
+        <p className="text-sm text-ink-muted">Reçu le {formatDay(item.receivedAt)}</p>
+      ) : null}
+
+      <div className="flex flex-wrap items-center gap-3">
+        {link ? (
+          <a href={link} target="_blank" rel="noreferrer noopener">
+            <Button variant="secondary">Suivre le colis</Button>
+          </a>
+        ) : inTransit ? (
+          <p className="text-sm text-ink-muted">
+            Aucun lien de suivi : ajoutez le transporteur et le numéro ci-dessous.
+          </p>
+        ) : null}
+        {inTransit ? <MarkReceived id={item.id} /> : null}
+      </div>
+    </Card>
   );
 }

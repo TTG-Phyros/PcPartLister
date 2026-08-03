@@ -12,6 +12,7 @@ import {
   ITEM_STATUSES,
   PURCHASE_PLATFORMS,
 } from '@/lib/inventory/labels';
+import { SHIPPING_CARRIERS } from '@/lib/inventory/tracking';
 import { generatePlaceholderImage } from '@/lib/images/ensure';
 import { COMPONENT_CATEGORIES, type ComponentCategory } from '@/lib/specs';
 import { specsFromFormData } from '@/lib/specs/fields';
@@ -37,6 +38,18 @@ const optionalText = z
   .optional()
   .transform((v) => (v ? v : null));
 
+const optionalUrl = (message: string) =>
+  z
+    .union([z.string().trim().url(message), z.literal('')])
+    .optional()
+    .transform((v) => (v ? v : null));
+
+const optionalDay = (message: string) =>
+  z
+    .union([z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, message), z.literal('')])
+    .optional()
+    .transform((v) => (v ? v : null));
+
 const unitSchema = z.object({
   // Accepts "129,90" as well as "129.90": a phone keypad often produces a comma.
   purchasePriceEur: z
@@ -53,10 +66,19 @@ const unitSchema = z.object({
   platform: z.enum(PURCHASE_PLATFORMS),
   condition: z.enum(ITEM_CONDITIONS),
   status: z.enum(ITEM_STATUSES),
-  listingUrl: z
-    .union([z.string().trim().url('Lien de l’annonce invalide'), z.literal('')])
+  listingUrl: optionalUrl('Lien de l’annonce invalide'),
+  shippingCarrier: z
+    .union([z.enum(SHIPPING_CARRIERS), z.literal('')])
     .optional()
     .transform((v) => (v ? v : null)),
+  trackingNumber: z
+    .string()
+    .trim()
+    .max(64, 'Numéro de suivi trop long')
+    .optional()
+    .transform((v) => (v ? v : null)),
+  trackingUrl: optionalUrl('Lien de suivi invalide'),
+  expectedArrival: optionalDay('Date de livraison prévue invalide'),
   serialNumber: optionalText,
   notes: optionalText,
 });
@@ -69,6 +91,10 @@ function parseUnit(formData: FormData) {
     condition: formData.get('condition') ?? 'bon',
     status: formData.get('status') ?? 'en_stock',
     listingUrl: formData.get('listingUrl') ?? '',
+    shippingCarrier: formData.get('shippingCarrier') ?? '',
+    trackingNumber: formData.get('trackingNumber') ?? '',
+    trackingUrl: formData.get('trackingUrl') ?? '',
+    expectedArrival: formData.get('expectedArrival') ?? '',
     serialNumber: formData.get('serialNumber') ?? '',
     notes: formData.get('notes') ?? '',
   });
@@ -78,6 +104,16 @@ function parseUnit(formData: FormData) {
   // The form field is in euros, the column is in cents.
   const { purchasePriceEur, ...rest } = parsed.data;
   return { ok: true as const, unit: { ...rest, purchasePriceCents: purchasePriceEur } };
+}
+
+/**
+ * Reception date derived from the status: a unit leaves `en_transit` exactly
+ * when the parcel lands, and nothing should have to be ticked by hand for that.
+ * `coalesce` keeps the first arrival date across later status changes.
+ */
+function receivedAtFor(status: (typeof ITEM_STATUSES)[number]) {
+  if (status === 'en_transit') return null;
+  return sql`coalesce(${inventoryItems.receivedAt}, current_date)`;
 }
 
 const newModelSchema = z.object({
@@ -191,7 +227,12 @@ export async function createInventoryItemAction(
 
   const [created] = await db
     .insert(inventoryItems)
-    .values({ catalogComponentId: componentId, ...unit })
+    .values({
+      catalogComponentId: componentId,
+      ...unit,
+      // A unit entered as already in stock was received the day it was bought.
+      receivedAt: unit.status === 'en_transit' ? null : unit.purchaseDate,
+    })
     .returning({ id: inventoryItems.id });
 
   revalidatePath('/stock');
@@ -216,7 +257,11 @@ export async function updateInventoryItemAction(
 
   const updated = await db
     .update(inventoryItems)
-    .set({ ...parsed.unit, updatedAt: new Date() })
+    .set({
+      ...parsed.unit,
+      receivedAt: receivedAtFor(parsed.unit.status),
+      updatedAt: new Date(),
+    })
     .where(eq(inventoryItems.id, id))
     .returning({ id: inventoryItems.id });
   if (updated.length === 0) return { error: 'Unité introuvable.' };
@@ -247,7 +292,11 @@ export async function setInventoryStatusAction(
 
   await db
     .update(inventoryItems)
-    .set({ status: parsed.data.status, updatedAt: new Date() })
+    .set({
+      status: parsed.data.status,
+      receivedAt: receivedAtFor(parsed.data.status),
+      updatedAt: new Date(),
+    })
     .where(eq(inventoryItems.id, parsed.data.id));
 
   revalidatePath('/stock');

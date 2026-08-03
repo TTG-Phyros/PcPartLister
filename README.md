@@ -88,8 +88,28 @@ au clavier parmi le catalogue ; s'il en est absent, l'onglet **Nouveau modèle**
 l'entrée catalogue et l'unité en une seule validation. Le bouton
 « Enregistrer et en ajouter un autre » enchaîne les saisies sans repasser par la liste.
 
-Statuts : `en stock`, `réservé`, `monté`, `vendu`, `HS`. Les trois du milieu seront pilotés
-par les configurations (étapes 6 et 7) mais restent modifiables à la main.
+Plateformes d'achat : Vinted, Leboncoin, Facebook Marketplace, main propre, Amazon, autre.
+
+Statuts : `en transit`, `en stock`, `réservé`, `monté`, `vendu`, `HS`. `réservé`, `monté` et
+`vendu` sont pilotés par les configurations mais restent modifiables à la main.
+
+### Suivi de colis
+
+Un achat pas encore arrivé se saisit en statut **en transit** : l'argent est déjà sorti, la
+pièce n'est pas là. Elle compte donc dans l'immobilisé mais n'est proposée ni au
+configurateur ni au stock disponible, et n'est jamais comptée comme dormante.
+
+Le bloc **Suivi du colis** du formulaire prend le transporteur, le numéro de suivi, un lien
+et la date de livraison prévue. Le lien de suivi est **déduit du transporteur et du numéro**
+pour Mondial Relay, Colissimo/La Poste, Chronopost, DPD, GLS, UPS, DHL et FedEx ; pour les
+autres (Relais Colis, transporteur inconnu, page de suivi d'une marketplace) il suffit de
+coller l'URL, qui est alors prioritaire.
+
+Le colis est ensuite accessible en un tap depuis la liste du stock, la fiche de l'unité et
+le tableau de bord, avec le nombre de jours restants et un **retard** signalé dès que la date
+annoncée est passée. Le bouton « Marquer comme reçu » passe l'unité en stock et enregistre la
+date de réception ; le filtre **Colis en cours** de la page Stock ne garde que les livraisons
+en attente.
 
 La synthèse affiche la valeur du stock au prix d'achat, le montant immobilisé, la
 répartition par catégorie et les **composants dormants** — en stock depuis plus de

@@ -4,7 +4,12 @@ import { Button, Card } from '@/components/ui';
 import { requireUser } from '@/lib/auth/guard';
 import { formatPrice, formatPriceCompact } from '@/lib/catalog/format';
 import { PLATFORM_LABELS } from '@/lib/inventory/labels';
-import { getInventorySummary, searchInventory } from '@/lib/inventory/queries';
+import { CARRIER_LABELS, daysUntil, isLate, trackingLink } from '@/lib/inventory/tracking';
+import {
+  getInventorySummary,
+  listIncomingParcels,
+  searchInventory,
+} from '@/lib/inventory/queries';
 import { getSalesStats } from '@/lib/sales/queries';
 import { getSettings } from '@/lib/settings-store';
 import { CATEGORY_LABELS } from '@/lib/specs';
@@ -22,10 +27,11 @@ export default async function DashboardPage() {
   const user = await requireUser();
   const settings = await getSettings();
 
-  const [summary, recent, dormant, sales] = await Promise.all([
+  const [summary, recent, dormant, parcels, sales] = await Promise.all([
     getInventorySummary(settings.dormant_days),
     searchInventory({ limit: 5 }),
     searchInventory({ dormantDays: settings.dormant_days, limit: 5 }),
+    listIncomingParcels(5),
     getSalesStats(),
   ]);
 
@@ -56,6 +62,8 @@ export default async function DashboardPage() {
           tone={summary.dormantCount > 0 ? 'warn' : undefined}
         />
       </div>
+
+      {parcels.length > 0 ? <IncomingParcels rows={parcels} summary={summary} /> : null}
 
       {sales.count > 0 ? (
         <section className="flex flex-col gap-3">
@@ -147,6 +155,81 @@ function StatCard({
       <p className={`text-lg font-semibold ${toneClass}`}>{value}</p>
       {hint ? <p className="text-xs text-ink-muted">{hint}</p> : null}
     </Card>
+  );
+}
+
+/**
+ * Parcels bought and not received yet, soonest first: what is owed to you is
+ * as much part of the day as what sits on the shelf.
+ */
+function IncomingParcels({
+  rows,
+  summary,
+}: {
+  rows: Awaited<ReturnType<typeof listIncomingParcels>>;
+  summary: Awaited<ReturnType<typeof getInventorySummary>>;
+}) {
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="min-w-0 font-medium">
+          Colis en cours{' '}
+          <span className="text-sm font-normal text-ink-muted">
+            {summary.inTransitCount} · {formatPrice(summary.inTransitValueCents)}
+            {summary.lateParcelCount > 0 ? ` · ${summary.lateParcelCount} en retard` : ''}
+          </span>
+        </h2>
+        <Link
+          href="/stock?transit=1"
+          className="shrink-0 text-sm text-ink-muted underline underline-offset-4 hover:text-ink"
+        >
+          Tout voir
+        </Link>
+      </div>
+      <ul className="flex flex-col gap-2">
+        {rows.map(({ item, component }) => {
+          const link = trackingLink(item);
+          const remaining = item.expectedArrival ? daysUntil(item.expectedArrival) : null;
+          const late = isLate(item);
+          return (
+            <li
+              key={item.id}
+              className="flex items-center gap-3 rounded-xl border border-border-subtle bg-surface-raised p-2.5"
+            >
+              <Link href={`/stock/${item.id}`} className="shrink-0">
+                <ComponentImage imagePath={component.imagePath} alt="" className="size-12" />
+              </Link>
+              <Link href={`/stock/${item.id}`} className="min-w-0 flex-1">
+                <span className="block text-xs text-ink-muted">
+                  {item.shippingCarrier ? CARRIER_LABELS[item.shippingCarrier] : 'Transporteur ?'}{' '}
+                  · {PLATFORM_LABELS[item.platform]}
+                </span>
+                <span className="block truncate font-medium">{component.model}</span>
+                <span className={late ? 'block text-xs text-warn' : 'block text-xs text-ink-muted'}>
+                  {remaining === null
+                    ? 'Date de livraison non renseignée'
+                    : late
+                      ? `En retard de ${-remaining} jour${remaining < -1 ? 's' : ''}`
+                      : remaining === 0
+                        ? 'Livraison aujourd’hui'
+                        : `Livraison dans ${remaining} jour${remaining > 1 ? 's' : ''}`}
+                </span>
+              </Link>
+              {link ? (
+                <a
+                  href={link}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="shrink-0 text-sm text-brand underline underline-offset-4"
+                >
+                  Suivre
+                </a>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 

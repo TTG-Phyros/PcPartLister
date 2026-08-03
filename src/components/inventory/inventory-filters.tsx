@@ -12,7 +12,17 @@ import {
 } from '@/lib/inventory/labels';
 import { CATEGORY_LABELS, COMPONENT_CATEGORIES } from '@/lib/specs';
 
-const FILTER_KEYS = ['q', 'category', 'status', 'condition', 'socket', 'min', 'max', 'dormant'];
+const FILTER_KEYS = [
+  'q',
+  'category',
+  'status',
+  'condition',
+  'socket',
+  'min',
+  'max',
+  'dormant',
+  'transit',
+];
 
 /** Filters live in the URL so a view stays bookmarkable and shareable. */
 export function InventoryFilters({ sockets }: { sockets: string[] }) {
@@ -48,6 +58,7 @@ export function InventoryFilters({ sockets }: { sockets: string[] }) {
   }, [query, min, max]);
 
   const dormantOn = searchParams.get('dormant') === '1';
+  const transitOn = searchParams.get('transit') === '1';
   const hasFilters = FILTER_KEYS.some((key) => searchParams.get(key));
 
   return (
@@ -153,6 +164,20 @@ export function InventoryFilters({ sockets }: { sockets: string[] }) {
           )}
         >
           Dormants uniquement
+        </button>
+
+        <button
+          type="button"
+          onClick={() => apply({ transit: transitOn ? '' : '1', status: '' })}
+          aria-pressed={transitOn}
+          className={cn(
+            'min-h-11 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
+            transitOn
+              ? 'border-brand bg-brand/15 text-brand'
+              : 'border-border-subtle text-ink-muted hover:bg-surface-hover',
+          )}
+        >
+          Colis en cours
         </button>
 
         {hasFilters ? (

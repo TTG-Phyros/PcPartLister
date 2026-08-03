@@ -6,7 +6,7 @@ import type { ActionState } from '@/actions/auth';
 import { deleteSaleAction, recordSaleAction } from '@/actions/sales';
 import { Alert, Button, Field, Input, Select } from '@/components/ui';
 import { formatPrice } from '@/lib/catalog/format';
-import { PLATFORM_LABELS, PURCHASE_PLATFORMS } from '@/lib/inventory/labels';
+import { PLATFORM_LABELS, SALE_PLATFORMS } from '@/lib/inventory/labels';
 import type { SaleForBuild } from '@/lib/sales/queries';
 import { computeMargin, platformFeeFromPct } from '@/lib/sales/pricing';
 
@@ -100,7 +100,7 @@ export function SaleForm({
 
           <Field label="Plateforme" htmlFor="salePlatform">
             <Select id="salePlatform" name="platform" defaultValue={sale?.platform ?? 'leboncoin'}>
-              {PURCHASE_PLATFORMS.map((value) => (
+              {SALE_PLATFORMS.map((value) => (
                 <option key={value} value={value}>
                   {PLATFORM_LABELS[value]}
                 </option>

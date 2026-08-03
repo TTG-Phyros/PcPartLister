@@ -17,6 +17,8 @@ export type InventoryFilters = {
   maxPriceCents?: number;
   /** Only units in stock since more than N days. */
   dormantDays?: number;
+  /** Only parcels on their way. */
+  inTransit?: boolean;
   limit?: number;
   offset?: number;
 };
@@ -62,6 +64,8 @@ function buildWhere(filters: InventoryFilters): SQL | undefined {
       sql`${inventoryItems.purchaseDate} < current_date - make_interval(days => ${filters.dormantDays}::int)`,
     );
   }
+
+  if (filters.inTransit) clauses.push(eq(inventoryItems.status, 'en_transit'));
 
   if (clauses.length === 0) return undefined;
   return clauses.length === 1 ? clauses[0] : and(...clauses);
@@ -112,6 +116,11 @@ export type InventorySummary = {
   byCategory: Array<{ category: ComponentCategory; count: number; valueCents: number }>;
   dormantCount: number;
   dormantValueCents: number;
+  /** Parcels paid for but not delivered yet. */
+  inTransitCount: number;
+  inTransitValueCents: number;
+  /** Among those, the ones past their announced delivery date. */
+  lateParcelCount: number;
 };
 
 export async function getInventorySummary(dormantDays: number): Promise<InventorySummary> {
@@ -123,6 +132,9 @@ export async function getInventorySummary(dormantDays: number): Promise<Inventor
       inStockValueCents: sql<number>`coalesce(sum(${inventoryItems.purchasePriceCents}) filter (where ${inventoryItems.status} = 'en_stock'), 0)::int`,
       soldCount: sql<number>`count(*) filter (where ${inventoryItems.status} = 'vendu')::int`,
       deadCount: sql<number>`count(*) filter (where ${inventoryItems.status} = 'hs')::int`,
+      inTransitCount: sql<number>`count(*) filter (where ${inventoryItems.status} = 'en_transit')::int`,
+      inTransitValueCents: sql<number>`coalesce(sum(${inventoryItems.purchasePriceCents}) filter (where ${inventoryItems.status} = 'en_transit'), 0)::int`,
+      lateParcelCount: sql<number>`count(*) filter (where ${inventoryItems.status} = 'en_transit' and ${inventoryItems.expectedArrival} < current_date)::int`,
     })
     .from(inventoryItems);
 
@@ -161,7 +173,24 @@ export async function getInventorySummary(dormantDays: number): Promise<Inventor
     byCategory: byCategory as InventorySummary['byCategory'],
     dormantCount: dormant?.count ?? 0,
     dormantValueCents: dormant?.valueCents ?? 0,
+    inTransitCount: totals?.inTransitCount ?? 0,
+    inTransitValueCents: totals?.inTransitValueCents ?? 0,
+    lateParcelCount: totals?.lateParcelCount ?? 0,
   };
+}
+
+/**
+ * Parcels on their way, soonest first. A unit without an announced date lands
+ * at the end rather than being hidden.
+ */
+export async function listIncomingParcels(limit = 10): Promise<InventoryRow[]> {
+  return db
+    .select({ item: inventoryItems, component: catalogComponents })
+    .from(inventoryItems)
+    .innerJoin(catalogComponents, eq(catalogComponents.id, inventoryItems.catalogComponentId))
+    .where(eq(inventoryItems.status, 'en_transit'))
+    .orderBy(sql`${inventoryItems.expectedArrival} asc nulls last`, asc(inventoryItems.purchaseDate))
+    .limit(limit);
 }
 
 /** Sockets actually present in stock, for the filter dropdown. */
