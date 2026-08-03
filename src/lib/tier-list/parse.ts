@@ -1,20 +1,34 @@
-import { GPU_TIERS, GPU_TIER_LABELS, type GpuTier, type GpuTierEntry } from '@/lib/tier-list/types';
+import {
+  TIER_LIST_CONFIG,
+  tierForIndex,
+  type TierListKind,
+} from '@/lib/tier-list/kinds';
+import { TIERS, TIER_LABELS, type Tier, type TierEntry } from '@/lib/tier-list/types';
 
 /**
- * Shape of data/tier-list/cartes-graphiques.csv, and the name matching that ties
- * a ranked chip to a catalog model.
+ * Shape of the files in data/tier-list/, and the name matching that ties a
+ * ranked part to a catalog model. What differs between two rankings — columns,
+ * where the tier comes from — lives in `kinds.ts`; this file is the same code
+ * for all of them.
  *
  * Pure functions only: no filesystem, no database, no React. The same matcher
  * therefore runs on the server (to resolve product links) and in the browser
  * (to badge a candidate in the configurator).
  */
 
-export const GPU_TIER_CSV_COLUMNS = ['Rang', 'Modèle', 'Marque', 'Gamme', 'Indice'] as const;
-
-export type GpuTierParseResult = {
-  entries: GpuTierEntry[];
+export type TierParseResult = {
+  entries: TierEntry[];
   errors: string[];
 };
+
+/** Columns a given ranking's file must declare. */
+export function tierCsvColumns(kind: TierListKind): string[] {
+  const config = TIER_LIST_CONFIG[kind];
+  const { rank, model, brand, index } = config.columns;
+  return config.tierSource.from === 'column'
+    ? [rank, model, brand, config.tierSource.column, index]
+    : [rank, model, brand, index];
+}
 
 /** Splits one CSV line, honouring double-quoted fields. */
 function splitCsvLine(line: string): string[] {
@@ -50,8 +64,8 @@ function splitCsvLine(line: string): string[] {
   return fields.map((field) => field.trim());
 }
 
-const TIER_BY_LABEL = new Map<string, GpuTier>(
-  GPU_TIERS.map((tier) => [normalizeLabel(GPU_TIER_LABELS[tier]), tier]),
+const TIER_BY_LABEL = new Map<string, Tier>(
+  TIERS.map((tier) => [normalizeLabel(TIER_LABELS[tier]), tier]),
 );
 
 function normalizeLabel(value: string): string {
@@ -63,10 +77,12 @@ function normalizeLabel(value: string): string {
 }
 
 /**
- * Parses the ranking file. A malformed row is reported and skipped rather than
+ * Parses a ranking file. A malformed row is reported and skipped rather than
  * aborting: one bad hand-edit must not empty the whole table.
  */
-export function parseGpuTierCsv(raw: string): GpuTierParseResult {
+export function parseTierCsv(kind: TierListKind, raw: string): TierParseResult {
+  const config = TIER_LIST_CONFIG[kind];
+
   // Strips a BOM: spreadsheets add one, and it would poison the first header.
   const lines = raw
     .replace(/^\uFEFF/, '')
@@ -76,24 +92,29 @@ export function parseGpuTierCsv(raw: string): GpuTierParseResult {
   if (lines.length === 0) return { entries: [], errors: ['fichier vide'] };
 
   const header = splitCsvLine(lines[0]!);
-  const missing = GPU_TIER_CSV_COLUMNS.filter((column) => !header.includes(column));
+  const missing = tierCsvColumns(kind).filter((column) => !header.includes(column));
   if (missing.length > 0) {
     return { entries: [], errors: [`colonnes manquantes : ${missing.join(', ')}`] };
   }
-  const columnAt = Object.fromEntries(
-    GPU_TIER_CSV_COLUMNS.map((column) => [column, header.indexOf(column)]),
-  ) as Record<(typeof GPU_TIER_CSV_COLUMNS)[number], number>;
 
-  const entries: GpuTierEntry[] = [];
+  const at = {
+    rank: header.indexOf(config.columns.rank),
+    model: header.indexOf(config.columns.model),
+    brand: header.indexOf(config.columns.brand),
+    index: header.indexOf(config.columns.index),
+    tier: config.tierSource.from === 'column' ? header.indexOf(config.tierSource.column) : -1,
+  };
+
+  const entries: TierEntry[] = [];
   const errors: string[] = [];
 
   for (const [offset, line] of lines.slice(1).entries()) {
     const row = offset + 2; // 1-based, header included: matches what an editor shows.
     const fields = splitCsvLine(line);
-    const model = fields[columnAt['Modèle']]?.trim() ?? '';
-    const brand = fields[columnAt.Marque]?.trim() ?? '';
-    const tier = TIER_BY_LABEL.get(normalizeLabel(fields[columnAt.Gamme] ?? ''));
-    const index = Number.parseFloat((fields[columnAt.Indice] ?? '').replace('%', '').replace(',', '.'));
+    const model = fields[at.model]?.trim() ?? '';
+    const brand = fields[at.brand]?.trim() ?? '';
+    const rawIndex = fields[at.index] ?? '';
+    const index = Number.parseFloat(rawIndex.replace('%', '').replace(',', '.'));
 
     if (model === '') {
       errors.push(`ligne ${row} : modèle manquant`);
@@ -103,19 +124,27 @@ export function parseGpuTierCsv(raw: string): GpuTierParseResult {
       errors.push(`ligne ${row} : marque manquante`);
       continue;
     }
-    if (!tier) {
-      errors.push(`ligne ${row} (${model}) : gamme inconnue « ${fields[columnAt.Gamme] ?? ''} »`);
-      continue;
-    }
     if (!Number.isFinite(index) || index <= 0) {
-      errors.push(`ligne ${row} (${model}) : indice illisible « ${fields[columnAt.Indice] ?? ''} »`);
+      errors.push(`ligne ${row} (${model}) : indice illisible « ${rawIndex} »`);
       continue;
     }
 
-    // The top rows of the source leave `Rang` blank; the file order is the ranking.
-    const declared = Number.parseInt((fields[columnAt.Rang] ?? '').replace('#', ''), 10);
+    let tier: Tier;
+    if (config.tierSource.from === 'thresholds') {
+      tier = tierForIndex(config.tierSource.steps, index);
+    } else {
+      const declared = TIER_BY_LABEL.get(normalizeLabel(fields[at.tier] ?? ''));
+      if (!declared) {
+        errors.push(`ligne ${row} (${model}) : gamme inconnue « ${fields[at.tier] ?? ''} »`);
+        continue;
+      }
+      tier = declared;
+    }
+
+    // The top rows of the GPU file leave `Rang` blank; the file order is the ranking.
+    const declaredRank = Number.parseInt((fields[at.rank] ?? '').replace('#', ''), 10);
     entries.push({
-      rank: Number.isFinite(declared) ? declared : entries.length + 1,
+      rank: Number.isFinite(declaredRank) ? declaredRank : entries.length + 1,
       model,
       brand,
       tier,
@@ -127,11 +156,11 @@ export function parseGpuTierCsv(raw: string): GpuTierParseResult {
 }
 
 /**
- * Comparable form of a card name. Accents, case and punctuation go away, and the
+ * Comparable form of a part name. Accents, case and punctuation go away, and the
  * memory size is unified — the catalog writes « 8 Go » where the ranking writes
  * « 8GB ».
  */
-export function normalizeGpuName(value: string): string {
+export function normalizeModelName(value: string): string {
   return value
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -147,8 +176,11 @@ export function withoutMemorySize(normalized: string): string {
   return normalized.replace(/\s*\b\d+gb\b/g, '').replace(/\s+/g, ' ').trim();
 }
 
-/** What a GPU is called on the catalog side. `chipset` is the reliable field. */
-export type GpuNaming = {
+/**
+ * What a part is called on the catalog side. `chipset` and `vramGb` only exist
+ * for graphics cards; a CPU answers to its model name alone.
+ */
+export type ComponentNaming = {
   model: string;
   chipset?: string | null;
   vramGb?: number | null;
@@ -184,35 +216,35 @@ function indexByLevel<T>(items: T[], keysOf: (item: T) => Array<string | null>):
   );
 }
 
-/** Keys a ranked card answers to, most specific first. */
-function tierEntryKeys(entry: GpuTierEntry): string[] {
-  const normalized = normalizeGpuName(entry.model);
+/** Keys a ranked part answers to, most specific first. */
+function tierEntryKeys(entry: TierEntry): string[] {
+  const normalized = normalizeModelName(entry.model);
   const base = withoutMemorySize(normalized);
   return base === normalized ? [normalized] : [normalized, base];
 }
 
-/** Keys a catalog GPU answers to, most specific first. */
-function catalogKeys(naming: GpuNaming): Array<string | null> {
-  const chipset = naming.chipset ? normalizeGpuName(naming.chipset) : null;
+/** Keys a catalog part answers to, most specific first. */
+function catalogKeys(naming: ComponentNaming): Array<string | null> {
+  const chipset = naming.chipset ? normalizeModelName(naming.chipset) : null;
   return [
     chipset && naming.vramGb ? `${chipset} ${naming.vramGb}gb` : null,
     chipset,
-    normalizeGpuName(naming.model),
+    normalizeModelName(naming.model),
   ];
 }
 
-export type GpuTierIndex = Map<string, GpuTierEntry>;
+export type TierIndex = Map<string, TierEntry>;
 
-export function buildGpuTierIndex(entries: GpuTierEntry[]): GpuTierIndex {
+export function buildTierIndex(entries: TierEntry[]): TierIndex {
   return indexByLevel(entries, tierEntryKeys);
 }
 
 /**
- * The ranked card a catalog GPU corresponds to, or null when the ranking does
- * not cover it. Tries « chip + memory » first so that a GTX 1060 6 Go never
+ * The ranked part a catalog component corresponds to, or null when the ranking
+ * does not cover it. Tries « chip + memory » first so that a GTX 1060 6 Go never
  * lands on the 3 Go row.
  */
-export function findGpuTierEntry(index: GpuTierIndex, naming: GpuNaming): GpuTierEntry | null {
+export function findTierEntry(index: TierIndex, naming: ComponentNaming): TierEntry | null {
   for (const key of catalogKeys(naming)) {
     if (!key) continue;
     const found = index.get(key);
@@ -222,7 +254,7 @@ export function findGpuTierEntry(index: GpuTierIndex, naming: GpuNaming): GpuTie
 }
 
 /**
- * Reverse direction: for each ranked card, the id of the catalog model that is
+ * Reverse direction: for each ranked part, the id of the catalog model that is
  * exactly it, keyed by rank. A row naming a memory size only ever matches a
  * catalog card of that size, so « RTX 3080 12GB » never links to a 10 Go sheet.
  *
@@ -232,8 +264,8 @@ export function findGpuTierEntry(index: GpuTierIndex, naming: GpuNaming): GpuTie
  * plain « Arc A770 » then falls on the 8 Go one — and what keeps a duplicated row
  * from pointing a second time at the same model.
  */
-export function matchCatalogIds<T extends GpuNaming & { id: string }>(
-  entries: GpuTierEntry[],
+export function matchCatalogIds<T extends ComponentNaming & { id: string }>(
+  entries: TierEntry[],
   components: T[],
 ): Map<number, string> {
   const index = groupByLevel(components, catalogKeys);
@@ -241,7 +273,7 @@ export function matchCatalogIds<T extends GpuNaming & { id: string }>(
   const claimed = new Set<string>();
 
   for (const entry of [...entries].sort((a, b) => a.rank - b.rank)) {
-    const candidates = index.get(normalizeGpuName(entry.model)) ?? [];
+    const candidates = index.get(normalizeModelName(entry.model)) ?? [];
     const free = candidates.find((candidate) => !claimed.has(candidate.id));
     if (!free) continue;
 

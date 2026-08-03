@@ -76,36 +76,62 @@ SVG est généré localement. **L'application reste donc entièrement fonctionne
 réseau.** Depuis l'interface, chaque composant accepte une image uploadée (PNG, JPEG,
 WebP, GIF, SVG, 5 Mo max) qui remplace le visuel généré.
 
-## Tier list des cartes graphiques
+## Tier lists
 
-Le classement des GPU vit dans [data/tier-list/cartes-graphiques.csv](data/tier-list/cartes-graphiques.csv) :
-une ligne par carte, colonnes `Rang, Modèle, Marque, Gamme, Indice`. C'est de la donnée de
-référence, jamais écrite par l'application, donc elle reste dans un fichier plutôt qu'en base.
-Le fichier est relu au démarrage ; une ligne mal formée est signalée dans les logs et ignorée,
-sans vider le tableau. Les premières lignes peuvent laisser `Rang` vide : l'ordre du fichier
-fait foi.
+Deux classements vivent dans [data/tier-list/](data/tier-list/), une ligne par composant :
+
+| Fichier | Colonnes | Gamme |
+| --- | --- | --- |
+| [cartes-graphiques.csv](data/tier-list/cartes-graphiques.csv) | `Rang, Modèle, Marque, Gamme, Indice` | Donnée par le fichier |
+| [processeurs.csv](data/tier-list/processeurs.csv) | `Rang, Processeur, Marque, Indice720p` | **Calculée** depuis l'indice |
+
+C'est de la donnée de référence, jamais écrite par l'application, donc elle reste dans un
+fichier plutôt qu'en base. Un fichier est relu au démarrage ; une ligne mal formée est signalée
+dans les logs et ignorée, sans vider le tableau. Les premières lignes peuvent laisser `Rang`
+vide : l'ordre du fichier fait foi.
+
+Le fichier CPU n'a pas de colonne `Gamme` : la gamme est déduite de `Indice720p` par des
+seuils, avec les mêmes six libellés que les GPU, si bien qu'un processeur « Milieu+ » et une
+carte « Milieu+ » portent le même badge et la même couleur. Les seuils sont le seul réglage du
+classement CPU et se modifient dans [src/lib/tier-list/kinds.ts](src/lib/tier-list/kinds.ts) :
+
+| Gamme | Indice 720p | Actuellement |
+| --- | --- | --- |
+| Extrême | ≥ 100 | 16 CPU |
+| Haut de gamme | ≥ 92 | 13 |
+| Milieu+ | ≥ 80 | 7 |
+| Milieu | ≥ 70 | 11 |
+| Entrée de gamme | ≥ 60 | 7 |
+| Budget | < 60 | 4 |
+
+Tout le reste — parsing, rapprochement au catalogue, tableau — est le **même code** pour les
+deux classements : `kinds.ts` porte ce qui les distingue (fichier, noms de colonnes, origine de
+la gamme, unité de l'indice, libellés), et ajouter un troisième classement revient à y ajouter
+une entrée.
 
 Le tableau est triable par colonne, filtrable par marque et par gamme, et cherchable par nom
-de modèle. Une carte présente au catalogue est un lien vers sa fiche : le rapprochement se
-fait sur la **puce** (`specs.chipset`) et la quantité de VRAM, si bien qu'une RTX 3080 12GB ne
-renvoie jamais vers la fiche d'une 10 Go. L'association est **un pour un**, parcourue dans
-l'ordre du classement : une fiche prise par une ligne mieux placée n'est plus disponible pour
-les suivantes, ce qui sépare deux variantes d'une même puce (« Arc A770 16GB » prend la fiche
-16 Go, « Arc A770 » tombe ensuite sur la 8 Go).
+de modèle. Un composant présent au catalogue est un lien vers sa fiche. Côté GPU le
+rapprochement se fait sur la **puce** (`specs.chipset`) et la quantité de VRAM, si bien qu'une
+RTX 3080 12GB ne renvoie jamais vers la fiche d'une 10 Go ; côté CPU, sur le nom du modèle.
+L'association est **un pour un**, parcourue dans l'ordre du classement : une fiche prise par une
+ligne mieux placée n'est plus disponible pour les suivantes, ce qui sépare deux variantes d'une
+même puce (« Arc A770 16GB » prend la fiche 16 Go, « Arc A770 » tombe ensuite sur la 8 Go).
 
-Les 102 cartes du classement ont toutes une entrée dans `catalog.json`. Le `perfIndex` de ces
-entrées suit l'échelle du catalogue existant, soit environ 3,1 × l'indice du classement ; il
-ne sert qu'à l'avis « goulot d'étranglement » et ne remplace pas l'indice de la tier list.
+Les 102 cartes et 57 des 58 processeurs du classement ont une entrée dans `catalog.json` (le
+`Core i5-13500F` du fichier CPU n'existe pas chez Intel ; c'est le `Core i5-13500` qui est au
+catalogue). Le `perfIndex` de ces entrées suit l'échelle du catalogue existant — environ
+3,1 × l'indice côté GPU — ; il ne sert qu'à l'avis « goulot d'étranglement » et ne remplace pas
+l'indice de la tier list.
 
-Il apparaît à trois endroits :
+Chaque classement apparaît à trois endroits :
 
 | Où | Forme |
 | --- | --- |
-| `/tier-list` | Le classement complet, pleine largeur |
-| `/catalogue?category=gpu` | Panneau replié au-dessus de la grille |
-| Configurateur, emplacement « Carte graphique » | Panneau replié, plus l'indice sur chaque carte proposée |
+| `/tier-list?type=gpu` et `?type=cpu` | Le classement complet, pleine largeur, un onglet par type |
+| `/catalogue?category=gpu` ou `=cpu` | Panneau replié au-dessus de la grille |
+| Configurateur, emplacement « Carte graphique » ou « Processeur » | Panneau replié, plus l'indice sur chaque candidat proposé |
 
-La fiche catalogue d'un GPU affiche également sa gamme, son indice et son rang.
+La fiche catalogue d'un GPU ou d'un CPU affiche également sa gamme, son indice et son rang.
 
 ## Stock
 
@@ -268,5 +294,5 @@ npm run db:generate   # régénère les migrations après modification du schém
 | `src/lib/compat/` | Moteur de compatibilité isolé et testable |
 | `data/seed/catalog.json` | Catalogue de référence, éditable à la main |
 | `data/seed/stock.json` | Exemplaires possédés, réinjectés dans le stock au démarrage |
-| `data/tier-list/` | Classement des cartes graphiques, en CSV éditable à la main |
+| `data/tier-list/` | Classements des cartes graphiques et des processeurs, en CSV éditables à la main |
 | `scripts/` | Migration et seed, exécutés par l'entrypoint du conteneur |

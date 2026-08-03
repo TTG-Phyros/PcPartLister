@@ -227,6 +227,132 @@
       "specs": { "socket": "LGA1700", "cores": 14, "threads": 20, "baseClockGhz": 3.5, "boostClockGhz": 5.3, "tdpW": 125, "integratedGraphics": true, "perfIndex": 160, "supportedChipsets": ["Z790", "B760", "H770", "Z690", "B660"] }
     },
     {
+      "key": "cpu-intel-core-i5-11600k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i5-11600K",
+      "releaseYear": 2021,
+      "msrpEur": 280,
+      "specs": { "socket": "LGA1200", "cores": 6, "threads": 12, "baseClockGhz": 3.9, "boostClockGhz": 4.9, "tdpW": 125, "integratedGraphics": true, "perfIndex": 100, "supportedChipsets": ["Z590", "B560", "H570", "Z490", "H470"] }
+    },
+    {
+      "key": "cpu-intel-core-i9-11900k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i9-11900K",
+      "releaseYear": 2021,
+      "msrpEur": 570,
+      "specs": { "socket": "LGA1200", "cores": 8, "threads": 16, "baseClockGhz": 3.5, "boostClockGhz": 5.3, "tdpW": 125, "integratedGraphics": true, "perfIndex": 120, "supportedChipsets": ["Z590", "B560", "H570", "Z490", "H470"] }
+    },
+    {
+      "key": "cpu-intel-core-i3-12300",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i3-12300",
+      "releaseYear": 2022,
+      "msrpEur": 160,
+      "specs": { "socket": "LGA1700", "cores": 4, "threads": 8, "baseClockGhz": 3.5, "boostClockGhz": 4.4, "tdpW": 60, "integratedGraphics": true, "perfIndex": 85, "supportedChipsets": ["Z690", "B660", "H670", "Z790", "B760", "H770", "H610"] }
+    },
+    {
+      "key": "cpu-intel-core-i5-12600",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i5-12600",
+      "releaseYear": 2022,
+      "msrpEur": 240,
+      "specs": { "socket": "LGA1700", "cores": 6, "threads": 12, "baseClockGhz": 3.3, "boostClockGhz": 4.8, "tdpW": 65, "integratedGraphics": true, "perfIndex": 110, "supportedChipsets": ["Z690", "B660", "H670", "Z790", "B760", "H770", "H610"] }
+    },
+    {
+      "key": "cpu-intel-core-i9-12900k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i9-12900K",
+      "releaseYear": 2021,
+      "msrpEur": 620,
+      "specs": { "socket": "LGA1700", "cores": 16, "threads": 24, "baseClockGhz": 3.2, "boostClockGhz": 5.2, "tdpW": 125, "integratedGraphics": true, "perfIndex": 165, "supportedChipsets": ["Z690", "B660", "H670", "Z790", "B760", "H770", "H610"] }
+    },
+    {
+      "key": "cpu-intel-core-i5-13500",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i5-13500",
+      "releaseYear": 2023,
+      "msrpEur": 250,
+      "specs": { "socket": "LGA1700", "cores": 14, "threads": 20, "baseClockGhz": 2.5, "boostClockGhz": 4.8, "tdpW": 65, "integratedGraphics": true, "perfIndex": 125, "supportedChipsets": ["Z790", "B760", "H770", "Z690", "B660", "H670", "H610"] }
+    },
+    {
+      "key": "cpu-intel-core-i9-13900k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i9-13900K",
+      "releaseYear": 2022,
+      "msrpEur": 620,
+      "specs": { "socket": "LGA1700", "cores": 24, "threads": 32, "baseClockGhz": 3.0, "boostClockGhz": 5.8, "tdpW": 125, "integratedGraphics": true, "perfIndex": 200, "supportedChipsets": ["Z790", "B760", "H770", "Z690", "B660", "H670", "H610"] }
+    },
+    {
+      "key": "cpu-intel-core-i7-14700k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i7-14700K",
+      "releaseYear": 2023,
+      "msrpEur": 440,
+      "specs": { "socket": "LGA1700", "cores": 20, "threads": 28, "baseClockGhz": 3.4, "boostClockGhz": 5.6, "tdpW": 125, "integratedGraphics": true, "perfIndex": 195, "supportedChipsets": ["Z790", "B760", "H770", "Z690", "B660", "H670", "H610"] }
+    },
+    {
+      "key": "cpu-intel-core-i9-14900k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core i9-14900K",
+      "releaseYear": 2023,
+      "msrpEur": 620,
+      "specs": { "socket": "LGA1700", "cores": 24, "threads": 32, "baseClockGhz": 3.2, "boostClockGhz": 6.0, "tdpW": 125, "integratedGraphics": true, "perfIndex": 210, "supportedChipsets": ["Z790", "B760", "H770", "Z690", "B660", "H670", "H610"] }
+    },
+    {
+      "key": "cpu-intel-core-ultra-5-245k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core Ultra 5 245K",
+      "releaseYear": 2024,
+      "msrpEur": 330,
+      "specs": { "socket": "LGA1851", "cores": 14, "threads": 14, "baseClockGhz": 4.2, "boostClockGhz": 5.2, "tdpW": 125, "integratedGraphics": true, "perfIndex": 150, "supportedChipsets": ["Z890", "B860", "H810"] }
+    },
+    {
+      "key": "cpu-intel-core-ultra-7-265k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core Ultra 7 265K",
+      "releaseYear": 2024,
+      "msrpEur": 420,
+      "specs": { "socket": "LGA1851", "cores": 20, "threads": 20, "baseClockGhz": 3.9, "boostClockGhz": 5.5, "tdpW": 125, "integratedGraphics": true, "perfIndex": 185, "supportedChipsets": ["Z890", "B860", "H810"] }
+    },
+    {
+      "key": "cpu-intel-core-ultra-9-285k",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core Ultra 9 285K",
+      "releaseYear": 2024,
+      "msrpEur": 620,
+      "specs": { "socket": "LGA1851", "cores": 24, "threads": 24, "baseClockGhz": 3.7, "boostClockGhz": 5.7, "tdpW": 125, "integratedGraphics": true, "perfIndex": 205, "supportedChipsets": ["Z890", "B860", "H810"] }
+    },
+    {
+      "key": "cpu-intel-core-ultra-5-250k-plus",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core Ultra 5 250K Plus",
+      "releaseYear": 2026,
+      "msrpEur": 220,
+      "specs": { "socket": "LGA1851", "cores": 18, "threads": 18, "baseClockGhz": 4.2, "boostClockGhz": 5.3, "tdpW": 125, "integratedGraphics": true, "perfIndex": 165, "supportedChipsets": ["Z890", "B860", "H810"] }
+    },
+    {
+      "key": "cpu-intel-core-ultra-7-270k-plus",
+      "category": "cpu",
+      "brand": "Intel",
+      "model": "Core Ultra 7 270K Plus",
+      "releaseYear": 2026,
+      "msrpEur": 320,
+      "specs": { "socket": "LGA1851", "cores": 24, "threads": 24, "baseClockGhz": 3.7, "boostClockGhz": 5.5, "tdpW": 125, "integratedGraphics": true, "perfIndex": 200, "supportedChipsets": ["Z890", "B860", "H810"] }
+    },
+    {
       "key": "cpu-amd-ryzen-3-1200",
       "category": "cpu",
       "brand": "AMD",
@@ -360,6 +486,177 @@
       "releaseYear": 2023,
       "msrpEur": 480,
       "specs": { "socket": "AM5", "cores": 8, "threads": 16, "baseClockGhz": 4.2, "boostClockGhz": 5.0, "tdpW": 120, "integratedGraphics": true, "perfIndex": 165, "supportedChipsets": ["B650", "B650E", "X670", "X670E", "A620"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-3-3300x",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 3 3300X",
+      "releaseYear": 2020,
+      "msrpEur": 130,
+      "specs": { "socket": "AM4", "cores": 4, "threads": 8, "baseClockGhz": 3.8, "boostClockGhz": 4.3, "tdpW": 65, "integratedGraphics": false, "perfIndex": 65, "supportedChipsets": ["B450", "X470", "A520", "B550", "X570"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-7-5700g",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 7 5700G",
+      "releaseYear": 2021,
+      "msrpEur": 370,
+      "specs": { "socket": "AM4", "cores": 8, "threads": 16, "baseClockGhz": 3.8, "boostClockGhz": 4.6, "tdpW": 65, "integratedGraphics": true, "perfIndex": 105, "supportedChipsets": ["B550", "X570", "A520", "B450", "X470"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-7-5800x",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 7 5800X",
+      "releaseYear": 2020,
+      "msrpEur": 470,
+      "specs": { "socket": "AM4", "cores": 8, "threads": 16, "baseClockGhz": 3.8, "boostClockGhz": 4.7, "tdpW": 105, "integratedGraphics": false, "perfIndex": 120, "supportedChipsets": ["B550", "X570", "A520", "B450", "X470"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-9-5950x",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 9 5950X",
+      "releaseYear": 2020,
+      "msrpEur": 800,
+      "specs": { "socket": "AM4", "cores": 16, "threads": 32, "baseClockGhz": 3.4, "boostClockGhz": 4.9, "tdpW": 105, "integratedGraphics": false, "perfIndex": 155, "supportedChipsets": ["B550", "X570", "A520", "B450", "X470"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-5-7600x",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 5 7600X",
+      "releaseYear": 2022,
+      "msrpEur": 320,
+      "specs": { "socket": "AM5", "cores": 6, "threads": 12, "baseClockGhz": 4.7, "boostClockGhz": 5.3, "tdpW": 105, "integratedGraphics": true, "perfIndex": 135, "supportedChipsets": ["A620", "B650", "B650E", "X670", "X670E"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-7-7700",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 7 7700",
+      "releaseYear": 2023,
+      "msrpEur": 350,
+      "specs": { "socket": "AM5", "cores": 8, "threads": 16, "baseClockGhz": 3.8, "boostClockGhz": 5.3, "tdpW": 65, "integratedGraphics": true, "perfIndex": 145, "supportedChipsets": ["A620", "B650", "B650E", "X670", "X670E"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-7-7700x",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 7 7700X",
+      "releaseYear": 2022,
+      "msrpEur": 430,
+      "specs": { "socket": "AM5", "cores": 8, "threads": 16, "baseClockGhz": 4.5, "boostClockGhz": 5.4, "tdpW": 105, "integratedGraphics": true, "perfIndex": 150, "supportedChipsets": ["A620", "B650", "B650E", "X670", "X670E"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-9-7900",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 9 7900",
+      "releaseYear": 2023,
+      "msrpEur": 450,
+      "specs": { "socket": "AM5", "cores": 12, "threads": 24, "baseClockGhz": 3.7, "boostClockGhz": 5.4, "tdpW": 65, "integratedGraphics": true, "perfIndex": 165, "supportedChipsets": ["A620", "B650", "B650E", "X670", "X670E"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-9-7900x",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 9 7900X",
+      "releaseYear": 2022,
+      "msrpEur": 580,
+      "specs": { "socket": "AM5", "cores": 12, "threads": 24, "baseClockGhz": 4.7, "boostClockGhz": 5.6, "tdpW": 170, "integratedGraphics": true, "perfIndex": 175, "supportedChipsets": ["A620", "B650", "B650E", "X670", "X670E"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-9-7950x",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 9 7950X",
+      "releaseYear": 2022,
+      "msrpEur": 740,
+      "specs": { "socket": "AM5", "cores": 16, "threads": 32, "baseClockGhz": 4.5, "boostClockGhz": 5.7, "tdpW": 170, "integratedGraphics": true, "perfIndex": 195, "supportedChipsets": ["A620", "B650", "B650E", "X670", "X670E"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-9-7950x3d",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 9 7950X3D",
+      "releaseYear": 2023,
+      "msrpEur": 740,
+      "specs": { "socket": "AM5", "cores": 16, "threads": 32, "baseClockGhz": 4.2, "boostClockGhz": 5.7, "tdpW": 120, "integratedGraphics": true, "perfIndex": 205, "supportedChipsets": ["A620", "B650", "B650E", "X670", "X670E"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-5-9600x",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 5 9600X",
+      "releaseYear": 2024,
+      "msrpEur": 300,
+      "specs": { "socket": "AM5", "cores": 6, "threads": 12, "baseClockGhz": 3.9, "boostClockGhz": 5.4, "tdpW": 65, "integratedGraphics": true, "perfIndex": 145, "supportedChipsets": ["A620", "B650", "B650E", "X670", "X670E", "B840", "B850", "X870", "X870E"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-7-9700x",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 7 9700X",
+      "releaseYear": 2024,
+      "msrpEur": 380,
+      "specs": { "socket": "AM5", "cores": 8, "threads": 16, "baseClockGhz": 3.8, "boostClockGhz": 5.5, "tdpW": 65, "integratedGraphics": true, "perfIndex": 160, "supportedChipsets": ["A620", "B650", "B650E", "X670", "X670E", "B840", "B850", "X870", "X870E"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-9-9900x",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 9 9900X",
+      "releaseYear": 2024,
+      "msrpEur": 520,
+      "specs": { "socket": "AM5", "cores": 12, "threads": 24, "baseClockGhz": 4.4, "boostClockGhz": 5.6, "tdpW": 120, "integratedGraphics": true, "perfIndex": 185, "supportedChipsets": ["A620", "B650", "B650E", "X670", "X670E", "B840", "B850", "X870", "X870E"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-9-9950x",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 9 9950X",
+      "releaseYear": 2024,
+      "msrpEur": 680,
+      "specs": { "socket": "AM5", "cores": 16, "threads": 32, "baseClockGhz": 4.3, "boostClockGhz": 5.7, "tdpW": 170, "integratedGraphics": true, "perfIndex": 210, "supportedChipsets": ["A620", "B650", "B650E", "X670", "X670E", "B840", "B850", "X870", "X870E"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-7-9800x3d",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 7 9800X3D",
+      "releaseYear": 2024,
+      "msrpEur": 510,
+      "specs": { "socket": "AM5", "cores": 8, "threads": 16, "baseClockGhz": 4.7, "boostClockGhz": 5.2, "tdpW": 120, "integratedGraphics": true, "perfIndex": 185, "supportedChipsets": ["A620", "B650", "B650E", "X670", "X670E", "B840", "B850", "X870", "X870E"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-7-9850x3d",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 7 9850X3D",
+      "releaseYear": 2026,
+      "msrpEur": 530,
+      "specs": { "socket": "AM5", "cores": 8, "threads": 16, "baseClockGhz": 4.7, "boostClockGhz": 5.6, "tdpW": 120, "integratedGraphics": true, "perfIndex": 190, "supportedChipsets": ["A620", "B650", "B650E", "X670", "X670E", "B840", "B850", "X870", "X870E"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-9-9900x3d",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 9 9900X3D",
+      "releaseYear": 2025,
+      "msrpEur": 630,
+      "specs": { "socket": "AM5", "cores": 12, "threads": 24, "baseClockGhz": 4.4, "boostClockGhz": 5.5, "tdpW": 120, "integratedGraphics": true, "perfIndex": 200, "supportedChipsets": ["A620", "B650", "B650E", "X670", "X670E", "B840", "B850", "X870", "X870E"] }
+    },
+    {
+      "key": "cpu-amd-ryzen-9-9950x3d",
+      "category": "cpu",
+      "brand": "AMD",
+      "model": "Ryzen 9 9950X3D",
+      "releaseYear": 2025,
+      "msrpEur": 730,
+      "specs": { "socket": "AM5", "cores": 16, "threads": 32, "baseClockGhz": 4.3, "boostClockGhz": 5.7, "tdpW": 170, "integratedGraphics": true, "perfIndex": 220, "supportedChipsets": ["A620", "B650", "B650E", "X670", "X670E", "B840", "B850", "X870", "X870E"] }
     },
 
     {

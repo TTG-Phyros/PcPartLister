@@ -13,7 +13,8 @@ import { formatPrice, formatPriceCompact } from '@/lib/catalog/format';
 import { blockingIssues, evaluate, warnings } from '@/lib/compat/engine';
 import { CONDITION_LABELS } from '@/lib/inventory/labels';
 import { CATEGORY_LABELS, MULTI_SLOT_CATEGORIES, type ComponentCategory } from '@/lib/specs';
-import type { GpuTierRow } from '@/lib/tier-list/types';
+import type { TierListKind } from '@/lib/tier-list/kinds';
+import type { TierRow } from '@/lib/tier-list/types';
 
 const MULTI = new Set<ComponentCategory>(MULTI_SLOT_CATEGORIES);
 
@@ -21,13 +22,13 @@ export function Configurator({
   build,
   targetMarginPct,
   editable,
-  gpuTierRows,
+  tierRows,
 }: {
   build: BuildDetail;
   targetMarginPct: number;
   editable: boolean;
-  /** Handed straight to the slot picker, which needs it when choosing a GPU. */
-  gpuTierRows: GpuTierRow[];
+  /** Handed straight to the slot picker, which needs the ranking of the slot it opens. */
+  tierRows: Record<TierListKind, TierRow[]>;
 }) {
   const [openSlot, setOpenSlot] = useState<ComponentCategory | null>(null);
 
@@ -157,7 +158,7 @@ export function Configurator({
           buildId={build.id}
           slot={openSlot}
           selection={selection}
-          gpuTierRows={gpuTierRows}
+          tierRows={tierRows}
           onClose={() => setOpenSlot(null)}
         />
       ) : null}

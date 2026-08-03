@@ -3,64 +3,82 @@ import path from 'node:path';
 import { asc, eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { catalogComponents } from '@/lib/db/schema';
+import { TIER_LIST_CONFIG, TIER_LIST_KINDS, type TierListKind } from '@/lib/tier-list/kinds';
 import {
-  buildGpuTierIndex,
-  findGpuTierEntry,
+  buildTierIndex,
+  findTierEntry,
   matchCatalogIds,
-  parseGpuTierCsv,
-  type GpuNaming,
-  type GpuTierIndex,
+  parseTierCsv,
+  type ComponentNaming,
+  type TierIndex,
 } from '@/lib/tier-list/parse';
-import type { GpuTierEntry, GpuTierRow } from '@/lib/tier-list/types';
+import type { TierEntry, TierRow } from '@/lib/tier-list/types';
 
 /**
- * Loads data/tier-list/cartes-graphiques.csv and ties it to the catalog.
+ * Loads the files of data/tier-list/ and ties them to the catalog.
  *
- * The ranking is reference data, hand-editable like the seed files, and never
- * stored in the database: nothing in the app writes to it, and a new column in
- * the file would only mean a new column in the table.
+ * The rankings are reference data, hand-editable like the seed files, and never
+ * stored in the database: nothing in the app writes to them, and a new column in
+ * a file would only mean a new column in the table.
  */
-
-const TIER_LIST_FILE = 'cartes-graphiques.csv';
 
 /** Same convention as the seed scripts: overridable, with a working default. */
 function tierListDir(): string {
   return process.env.TIER_LIST_DATA_DIR ?? path.resolve('data/tier-list');
 }
 
-let cached: GpuTierEntry[] | null = null;
+const cachedEntries = new Map<TierListKind, TierEntry[]>();
 
-export async function getGpuTierEntries(): Promise<GpuTierEntry[]> {
-  // The file cannot change while the server runs, so one read is enough.
-  if (cached) return cached;
+export async function getTierEntries(kind: TierListKind): Promise<TierEntry[]> {
+  // A file cannot change while the server runs, so one read each is enough.
+  const known = cachedEntries.get(kind);
+  if (known) return known;
+
+  const { file } = TIER_LIST_CONFIG[kind];
+  let entries: TierEntry[];
 
   try {
-    const raw = await readFile(path.join(tierListDir(), TIER_LIST_FILE), 'utf8');
-    const { entries, errors } = parseGpuTierCsv(raw);
-    for (const error of errors) console.warn(`[tier-list] ${error}`);
-    cached = entries;
+    const raw = await readFile(path.join(tierListDir(), file), 'utf8');
+    const parsed = parseTierCsv(kind, raw);
+    for (const error of parsed.errors) console.warn(`[tier-list] ${file} : ${error}`);
+    entries = parsed.entries;
   } catch (error) {
     // A missing or unreadable file must not take a page down: the table simply
     // reports that it has nothing to show.
-    console.warn(`[tier-list] ${TIER_LIST_FILE} illisible : ${(error as Error).message}`);
-    cached = [];
+    console.warn(`[tier-list] ${file} illisible : ${(error as Error).message}`);
+    entries = [];
   }
 
-  return cached;
+  cachedEntries.set(kind, entries);
+  return entries;
 }
 
-let cachedIndex: GpuTierIndex | null = null;
+const cachedIndexes = new Map<TierListKind, TierIndex>();
 
-/** Where a single GPU sits in the ranking, for the badge on its sheet. */
-export async function findTierEntryForGpu(naming: GpuNaming): Promise<GpuTierEntry | null> {
-  const entries = await getGpuTierEntries();
-  cachedIndex ??= buildGpuTierIndex(entries);
-  return findGpuTierEntry(cachedIndex, naming);
+/** Where a single component sits in its ranking, for the badge on its sheet. */
+export async function findTierEntryFor(
+  kind: TierListKind,
+  naming: ComponentNaming,
+): Promise<TierEntry | null> {
+  const entries = await getTierEntries(kind);
+  let index = cachedIndexes.get(kind);
+  if (!index) {
+    index = buildTierIndex(entries);
+    cachedIndexes.set(kind, index);
+  }
+  return findTierEntry(index, naming);
 }
 
-/** Catalog GPUs, reference brands first so a ranked chip links to the plain model
- *  rather than to an AIB variant that happens to share the chip. */
-async function listCatalogGpus(): Promise<Array<GpuNaming & { id: string }>> {
+/**
+ * Catalog components of the ranked category, reference brands first so a ranked
+ * chip links to the plain model rather than to an AIB variant that happens to
+ * share it.
+ */
+async function listCatalogComponents(
+  kind: TierListKind,
+): Promise<Array<ComponentNaming & { id: string }>> {
+  const { category } = TIER_LIST_CONFIG[kind];
+
   const rows = await db
     .select({
       id: catalogComponents.id,
@@ -69,38 +87,44 @@ async function listCatalogGpus(): Promise<Array<GpuNaming & { id: string }>> {
       specs: catalogComponents.specs,
     })
     .from(catalogComponents)
-    .where(eq(catalogComponents.category, 'gpu'))
+    .where(eq(catalogComponents.category, category))
     .orderBy(asc(catalogComponents.model));
 
-  const gpus = rows.flatMap((row) =>
-    row.specs.category === 'gpu'
-      ? [
-          {
-            id: row.id,
-            brand: row.brand,
-            model: row.model,
-            chipset: row.specs.chipset,
-            vramGb: row.specs.vramGb,
-          },
-        ]
-      : [],
-  );
+  // Only graphics cards name a chipset; a processor is matched on its model.
+  const components = rows.map((row) => ({
+    id: row.id,
+    brand: row.brand,
+    model: row.model,
+    chipset: row.specs.category === 'gpu' ? row.specs.chipset : null,
+    vramGb: row.specs.category === 'gpu' ? row.specs.vramGb : null,
+  }));
 
   const isReferenceBrand = (brand: string) =>
     ['nvidia', 'amd', 'intel'].includes(brand.trim().toLowerCase());
 
   // Stable sort: alphabetical order survives inside each group.
-  return gpus.sort((a, b) => Number(isReferenceBrand(b.brand)) - Number(isReferenceBrand(a.brand)));
+  return components.sort(
+    (a, b) => Number(isReferenceBrand(b.brand)) - Number(isReferenceBrand(a.brand)),
+  );
 }
 
-/** The ranking, each row carrying the catalog model it matches when there is one. */
-export async function getGpuTierRows(): Promise<GpuTierRow[]> {
-  const entries = await getGpuTierEntries();
+/** A ranking, each row carrying the catalog model it matches when there is one. */
+export async function getTierRows(kind: TierListKind): Promise<TierRow[]> {
+  const entries = await getTierEntries(kind);
   if (entries.length === 0) return [];
 
-  const matches = matchCatalogIds(entries, await listCatalogGpus());
+  const matches = matchCatalogIds(entries, await listCatalogComponents(kind));
   return entries.map((entry) => ({
     ...entry,
     catalogComponentId: matches.get(entry.rank) ?? null,
   }));
+}
+
+/** Every ranking at once, for the configurator: it may open any slot. */
+export async function getAllTierRows(): Promise<Record<TierListKind, TierRow[]>> {
+  const rankings = await Promise.all(TIER_LIST_KINDS.map((kind) => getTierRows(kind)));
+  return Object.fromEntries(TIER_LIST_KINDS.map((kind, position) => [kind, rankings[position]!])) as Record<
+    TierListKind,
+    TierRow[]
+  >;
 }

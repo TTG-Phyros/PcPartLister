@@ -1,0 +1,59 @@
+Rang,Processeur,Marque,Indice720p
+1,Ryzen 7 9850X3D,AMD,125
+2,Ryzen 7 9800X3D,AMD,120
+3,Ryzen 9 9950X3D,AMD,114
+4,Ryzen 7 7800X3D,AMD,110.4
+5,Core Ultra 7 270K Plus,Intel,105.0
+6,Core i9-14900K,Intel,104.6
+7,Core i7-14700K,Intel,104.0
+8,Ryzen 9 9900X3D,AMD,104.0
+9,Core i9-13900K,Intel,103.6
+10,Ryzen 9 7950X3D,AMD,103.0
+11,Ryzen 9 9950X,AMD,102.0
+12,Core Ultra 5 250K Plus,Intel,102.0
+13,Core i7-13700K,Intel,100.7
+14,Ryzen 7 9700X,AMD,100.0
+15,Core Ultra 9 285K,Intel,100.0
+16,Ryzen 9 9900X,AMD,100.0
+17,Ryzen 5 9600X,AMD,98.0
+18,Ryzen 9 7950X,AMD,96.9
+19,Core i5-14600K,Intel,96.5
+20,Ryzen 7 7700X,AMD,96.3
+21,Core Ultra 7 265K,Intel,96.0
+22,Ryzen 9 7900X,AMD,95.9
+23,Ryzen 7 7700,AMD,94.9
+24,Core Ultra 5 245K,Intel,94.0
+25,Ryzen 5 7600X,AMD,93.0
+26,Core i5-13600K,Intel,92.9
+27,Core i9-12900K,Intel,92.4
+28,Ryzen 9 7900,AMD,92.3
+29,Ryzen 7 5800X3D,AMD,92.3
+30,Ryzen 5 7600,AMD,91.0
+31,Core i7-12700K,Intel,89.3
+32,Core i5-12600K,Intel,82.4
+33,Ryzen 9 5950X,AMD,82.3
+34,Ryzen 9 5900X,AMD,81.5
+35,Core i5-12600,Intel,80.5
+36,Core i5-13500F,Intel,80.0
+37,Core i9-11900K,Intel,78.0
+38,Core i7-11700K,Intel,76.8
+39,Ryzen 7 5800X,AMD,76.6
+40,Core i5-12400F,Intel,76.5
+41,Ryzen 5 5600X,AMD,75.5
+42,Ryzen 7 5700X,AMD,75.4
+43,Ryzen 5 5600,AMD,74.5
+44,Core i5-11600K,Intel,73.2
+45,Core i7-10700K,Intel,72.5
+46,Core i3-12300,Intel,70.5
+47,Core i9-10900K,Intel,70.0
+48,Ryzen 7 5700G,AMD,67.6
+49,Core i3-12100F,Intel,67.5
+50,Core i5-10400F,Intel,65.5
+51,Ryzen 9 3900X,AMD,65.2
+52,Ryzen 7 3700X,AMD,63.9
+53,Core i5-11400F,Intel,60.6
+54,Ryzen 5 3600,AMD,60.0
+55,Ryzen 3 3300X,AMD,57.6
+56,Core i3-10100,Intel,55.0
+57,Ryzen 7 2700X,AMD,47.6
+58,Ryzen 5 2600,AMD,45.0

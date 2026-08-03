@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildGpuTierIndex,
-  findGpuTierEntry,
+  buildTierIndex,
+  findTierEntry,
   matchCatalogIds,
-  normalizeGpuName,
-  parseGpuTierCsv,
+  normalizeModelName,
+  parseTierCsv,
   withoutMemorySize,
 } from '@/lib/tier-list/parse';
+import type { TierEntry } from '@/lib/tier-list/types';
 
 const HEADER = 'Rang,Modèle,Marque,Gamme,Indice';
 
@@ -24,9 +25,9 @@ const CSV = [
   '#9,Intel Arc A770,Intel,Entrée de gamme,30.0%',
 ].join('\n');
 
-describe('parseGpuTierCsv', () => {
+describe('parseTierCsv (gpu)', () => {
   it('reads every column and maps the tier label to its slug', () => {
-    const { entries, errors } = parseGpuTierCsv(CSV);
+    const { entries, errors } = parseTierCsv('gpu', CSV);
 
     expect(errors).toEqual([]);
     expect(entries).toHaveLength(9);
@@ -42,12 +43,13 @@ describe('parseGpuTierCsv', () => {
   });
 
   it('numbers the leading rows the source leaves blank', () => {
-    const { entries } = parseGpuTierCsv(CSV);
-    expect(entries.slice(0, 3).map((entry) => entry.rank)).toEqual([1, 2, 3]);
+    const { entries } = parseTierCsv('gpu', CSV);
+    expect(entries.slice(0, 3).map((entry: TierEntry) => entry.rank)).toEqual([1, 2, 3]);
   });
 
   it('tolerates a BOM, CRLF line endings and quoted fields', () => {
-    const { entries, errors } = parseGpuTierCsv(
+    const { entries, errors } = parseTierCsv(
+      'gpu',
       `﻿${HEADER}\r\n#1,"GeForce RTX 4090, édition test",NVIDIA,Extrême,100.0%\r\n`,
     );
 
@@ -56,7 +58,8 @@ describe('parseGpuTierCsv', () => {
   });
 
   it('skips a malformed row and reports it, keeping the rest', () => {
-    const { entries, errors } = parseGpuTierCsv(
+    const { entries, errors } = parseTierCsv(
+      'gpu',
       [HEADER, '#1,GeForce RTX 4090,NVIDIA,Gamme inventée,100.0%', '#2,Radeon RX 7600,AMD,Budget,34.9%'].join(
         '\n',
       ),
@@ -68,52 +71,120 @@ describe('parseGpuTierCsv', () => {
   });
 
   it('reports a header that lost a column instead of guessing', () => {
-    const { entries, errors } = parseGpuTierCsv('Rang,Modèle,Marque\n#1,GeForce RTX 4090,NVIDIA');
+    const { entries, errors } = parseTierCsv('gpu', 'Rang,Modèle,Marque\n#1,GeForce RTX 4090,NVIDIA');
 
     expect(entries).toEqual([]);
     expect(errors[0]).toContain('Gamme');
   });
 });
 
-describe('normalizeGpuName', () => {
-  it('unifies the two ways of writing memory', () => {
-    expect(normalizeGpuName('GeForce RTX 3070 8 Go')).toBe('geforce rtx 3070 8gb');
-    expect(normalizeGpuName('GeForce RTX 3070 8GB')).toBe('geforce rtx 3070 8gb');
+describe('parseTierCsv (cpu)', () => {
+  const CPU_HEADER = 'Rang,Processeur,Marque,Indice720p';
+
+  const CPU_CSV = [
+    CPU_HEADER,
+    '1,Ryzen 7 9800X3D,AMD,120',
+    '2,Core i9-14900K,Intel,104.6',
+    // Exactly on a threshold: the step is inclusive, so this is still « Extrême ».
+    '3,Ryzen 7 9700X,AMD,100.0',
+    '4,Ryzen 5 9600X,AMD,98.0',
+    '5,Core i5-12600K,Intel,82.4',
+    '6,Core i7-10700K,Intel,72.5',
+    '7,Ryzen 5 3600,AMD,60.0',
+    '8,Ryzen 5 2600,AMD,45.0',
+  ].join('\n');
+
+  it('reads the processor columns, which are named differently', () => {
+    const { entries, errors } = parseTierCsv('cpu', CPU_CSV);
+
+    expect(errors).toEqual([]);
+    expect(entries).toHaveLength(8);
+    expect(entries[1]).toMatchObject({ rank: 2, model: 'Core i9-14900K', brand: 'Intel', index: 104.6 });
   });
 
-  it('ignores case, accents and punctuation', () => {
-    expect(normalizeGpuName('GeForce GTX 1650 SUPER')).toBe(normalizeGpuName('GeForce GTX 1650 Super'));
+  it('derives the tier from the index, the file having no « Gamme » column', () => {
+    const { entries } = parseTierCsv('cpu', CPU_CSV);
+
+    expect(entries.map((entry: TierEntry) => entry.tier)).toEqual([
+      'extreme',
+      'extreme',
+      'extreme',
+      'haut-de-gamme',
+      'milieu-plus',
+      'milieu',
+      'entree-de-gamme',
+      'budget',
+    ]);
   });
 
-  it('strips the memory size on demand', () => {
-    expect(withoutMemorySize(normalizeGpuName('GeForce GTX 1060 6GB'))).toBe('geforce gtx 1060');
+  it('puts an index just under a threshold in the step below', () => {
+    const { entries } = parseTierCsv('cpu', [CPU_HEADER, '1,Test,AMD,99.9'].join('\n'));
+    expect(entries[0]!.tier).toBe('haut-de-gamme');
+  });
+
+  it('reports the processor header it expects, not the graphics one', () => {
+    const { entries, errors } = parseTierCsv('cpu', 'Rang,Modèle,Marque,Indice\n1,Ryzen 5 7600,AMD,91');
+
+    expect(entries).toEqual([]);
+    expect(errors[0]).toContain('Processeur');
+    expect(errors[0]).toContain('Indice720p');
+  });
+
+  it('reports an unreadable index and keeps the other rows', () => {
+    const { entries, errors } = parseTierCsv(
+      'cpu',
+      [CPU_HEADER, '1,Ryzen 7 9800X3D,AMD,rapide', '2,Ryzen 5 2600,AMD,45.0'].join('\n'),
+    );
+
+    expect(entries).toHaveLength(1);
+    expect(errors[0]).toContain('indice illisible');
   });
 });
 
-describe('findGpuTierEntry', () => {
-  const index = buildGpuTierIndex(parseGpuTierCsv(CSV).entries);
+describe('normalizeModelName', () => {
+  it('unifies the two ways of writing memory', () => {
+    expect(normalizeModelName('GeForce RTX 3070 8 Go')).toBe('geforce rtx 3070 8gb');
+    expect(normalizeModelName('GeForce RTX 3070 8GB')).toBe('geforce rtx 3070 8gb');
+  });
+
+  it('ignores case, accents and punctuation', () => {
+    expect(normalizeModelName('GeForce GTX 1650 SUPER')).toBe(normalizeModelName('GeForce GTX 1650 Super'));
+  });
+
+  it('strips the memory size on demand', () => {
+    expect(withoutMemorySize(normalizeModelName('GeForce GTX 1060 6GB'))).toBe('geforce gtx 1060');
+  });
+
+  it('leaves a processor name alone apart from its case', () => {
+    expect(normalizeModelName('Core Ultra 7 270K Plus')).toBe('core ultra 7 270k plus');
+    expect(normalizeModelName('Ryzen 7 9800X3D')).toBe('ryzen 7 9800x3d');
+  });
+});
+
+describe('findTierEntry', () => {
+  const index = buildTierIndex(parseTierCsv('gpu', CSV).entries);
 
   it('picks the variant matching the memory the card actually has', () => {
     expect(
-      findGpuTierEntry(index, { model: 'GeForce GTX 1060 6 Go', chipset: 'GeForce GTX 1060', vramGb: 6 })
+      findTierEntry(index, { model: 'GeForce GTX 1060 6 Go', chipset: 'GeForce GTX 1060', vramGb: 6 })
         ?.rank,
     ).toBe(7);
     expect(
-      findGpuTierEntry(index, { model: 'GeForce GTX 1060 3 Go', chipset: 'GeForce GTX 1060', vramGb: 3 })
+      findTierEntry(index, { model: 'GeForce GTX 1060 3 Go', chipset: 'GeForce GTX 1060', vramGb: 3 })
         ?.rank,
     ).toBe(8);
   });
 
   it('prefers the plain row over a memory-qualified one for the base card', () => {
     expect(
-      findGpuTierEntry(index, { model: 'GeForce RTX 3080 10 Go', chipset: 'GeForce RTX 3080', vramGb: 10 })
+      findTierEntry(index, { model: 'GeForce RTX 3080 10 Go', chipset: 'GeForce RTX 3080', vramGb: 10 })
         ?.rank,
     ).toBe(5);
   });
 
   it('matches an AIB card through its chipset', () => {
     expect(
-      findGpuTierEntry(index, {
+      findTierEntry(index, {
         model: 'GeForce RTX 3080 Gaming OC 10G',
         chipset: 'GeForce RTX 3080',
         vramGb: 10,
@@ -123,13 +194,23 @@ describe('findGpuTierEntry', () => {
 
   it('returns null for a card the ranking does not cover', () => {
     expect(
-      findGpuTierEntry(index, { model: 'GeForce GTX 950 2 Go', chipset: 'GeForce GTX 950', vramGb: 2 }),
+      findTierEntry(index, { model: 'GeForce GTX 950 2 Go', chipset: 'GeForce GTX 950', vramGb: 2 }),
     ).toBeNull();
+  });
+
+  it('matches a processor on its model name alone', () => {
+    const cpuIndex = buildTierIndex(
+      parseTierCsv('cpu', ['Rang,Processeur,Marque,Indice720p', '1,Ryzen 7 9800X3D,AMD,120'].join('\n'))
+        .entries,
+    );
+
+    expect(findTierEntry(cpuIndex, { model: 'Ryzen 7 9800X3D' })?.rank).toBe(1);
+    expect(findTierEntry(cpuIndex, { model: 'Ryzen 7 9700X' })).toBeNull();
   });
 });
 
 describe('matchCatalogIds', () => {
-  const { entries } = parseGpuTierCsv(CSV);
+  const { entries } = parseTierCsv('gpu', CSV);
 
   it('links a ranked card to the catalog model that is exactly it', () => {
     const matches = matchCatalogIds(entries, [
@@ -191,5 +272,22 @@ describe('matchCatalogIds', () => {
     ]);
 
     expect(matches.get(1)).toBe('reference');
+  });
+
+  it('links ranked processors to their catalog sheets by name', () => {
+    const cpus = parseTierCsv(
+      'cpu',
+      ['Rang,Processeur,Marque,Indice720p', '1,Ryzen 7 9800X3D,AMD,120', '2,Core i9-14900K,Intel,104.6'].join(
+        '\n',
+      ),
+    ).entries;
+
+    const matches = matchCatalogIds(cpus, [
+      { id: 'ryzen', model: 'Ryzen 7 9800X3D' },
+      { id: 'intel', model: 'Core i9-14900K' },
+    ]);
+
+    expect(matches.get(1)).toBe('ryzen');
+    expect(matches.get(2)).toBe('intel');
   });
 });

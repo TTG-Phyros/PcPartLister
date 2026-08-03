@@ -15,7 +15,7 @@ import { BUILD_STATUS_LABELS, BUILD_STATUS_TONES } from '@/lib/builds/types';
 import { formatPrice } from '@/lib/catalog/format';
 import { getSaleForBuild } from '@/lib/sales/queries';
 import { getSettings } from '@/lib/settings-store';
-import { getGpuTierRows } from '@/lib/tier-list/queries';
+import { getAllTierRows } from '@/lib/tier-list/queries';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,10 +26,10 @@ export default async function BuildPage({ params }: { params: Promise<{ id: stri
   const build = await getBuildDetail(id);
   if (!build) notFound();
 
-  const [settings, sale, gpuTierRows] = await Promise.all([
+  const [settings, sale, tierRows] = await Promise.all([
     getSettings(),
     getSaleForBuild(build.id),
-    getGpuTierRows(),
+    getAllTierRows(),
   ]);
   const cost = computeBuildCost(build.lines, build.consumablesCents);
   // A sold configuration is a record: its lines stay as they were.
@@ -60,7 +60,7 @@ export default async function BuildPage({ params }: { params: Promise<{ id: stri
         build={build}
         targetMarginPct={settings.target_margin_pct}
         editable={editable}
-        gpuTierRows={gpuTierRows}
+        tierRows={tierRows}
       />
 
       {build.status === 'brouillon' ? null : (

@@ -10,10 +10,11 @@ import { formatPriceCompact } from '@/lib/catalog/format';
 import { checkCandidate, type BuildSelection, type CandidateVerdict } from '@/lib/compat/engine';
 import { CONDITION_LABELS } from '@/lib/inventory/labels';
 import { CATEGORY_LABELS, type ComponentCategory } from '@/lib/specs';
-import { buildGpuTierIndex, findGpuTierEntry } from '@/lib/tier-list/parse';
-import type { GpuTierEntry, GpuTierRow } from '@/lib/tier-list/types';
-import { GpuTierBadge } from '@/components/tier-list/gpu-tier-badge';
-import { GpuTierList } from '@/components/tier-list/gpu-tier-list';
+import { TIER_LIST_CONFIG, tierListKindFor, type TierListKind } from '@/lib/tier-list/kinds';
+import { buildTierIndex, findTierEntry } from '@/lib/tier-list/parse';
+import type { TierEntry, TierRow } from '@/lib/tier-list/types';
+import { TierEntryBadge } from '@/components/tier-list/tier-badge';
+import { TierList } from '@/components/tier-list/tier-list';
 import { Alert, Button, Input, cn } from '@/components/ui';
 
 type GradedCandidate = Candidate & { verdict: CandidateVerdict };
@@ -27,14 +28,14 @@ export function SlotPicker({
   buildId,
   slot,
   selection,
-  gpuTierRows,
+  tierRows,
   onClose,
 }: {
   buildId: string;
   slot: ComponentCategory;
   selection: BuildSelection;
-  /** GPU ranking, used to badge the cards offered for the `gpu` slot. */
-  gpuTierRows: GpuTierRow[];
+  /** Every ranking, so the picker can badge whichever ranked slot it opens. */
+  tierRows: Record<TierListKind, TierRow[]>;
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -99,14 +100,16 @@ export function SlotPicker({
   const catalog = useMemo(() => grade(data ? data.catalog : []), [data, selection, slot]);
 
   // Ranking lookups happen here rather than on the server: the candidate list is
-  // already in the browser, and matching a chip name is pure string work.
-  const tierIndex = useMemo(() => buildGpuTierIndex(gpuTierRows), [gpuTierRows]);
-  const tierEntryFor = (candidate: Candidate): GpuTierEntry | null =>
-    candidate.specs.category === 'gpu'
-      ? findGpuTierEntry(tierIndex, {
+  // already in the browser, and matching a part name is pure string work.
+  const tierKind = tierListKindFor(slot);
+  const ranking = tierKind ? tierRows[tierKind] : [];
+  const tierIndex = useMemo(() => buildTierIndex(ranking), [ranking]);
+  const tierEntryFor = (candidate: Candidate): TierEntry | null =>
+    tierKind
+      ? findTierEntry(tierIndex, {
           model: candidate.model,
-          chipset: candidate.specs.chipset,
-          vramGb: candidate.specs.vramGb,
+          chipset: candidate.specs.category === 'gpu' ? candidate.specs.chipset : null,
+          vramGb: candidate.specs.category === 'gpu' ? candidate.specs.vramGb : null,
         })
       : null;
 
@@ -150,14 +153,14 @@ export function SlotPicker({
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
           {state.error ? <Alert tone="error">{state.error}</Alert> : null}
 
-          {slot === 'gpu' && gpuTierRows.length > 0 ? (
+          {tierKind && ranking.length > 0 ? (
             <details className="mb-4 rounded-lg border border-border-subtle">
               <summary className="cursor-pointer list-none px-3 py-2 text-sm font-medium marker:content-none">
-                Tier list des cartes graphiques{' '}
+                {TIER_LIST_CONFIG[tierKind].labels.panel}{' '}
                 <span className="font-normal text-ink-muted">— comparer avant de choisir</span>
               </summary>
               <div className="border-t border-border-subtle p-3">
-                <GpuTierList rows={gpuTierRows} compact />
+                <TierList kind={tierKind} rows={ranking} compact />
               </div>
             </details>
           ) : null}
@@ -208,7 +211,7 @@ function Group({
   buildId: string;
   slot: ComponentCategory;
   formAction: (formData: FormData) => void;
-  tierEntryFor: (candidate: Candidate) => GpuTierEntry | null;
+  tierEntryFor: (candidate: Candidate) => TierEntry | null;
   className?: string;
 }) {
   return (
@@ -250,10 +253,11 @@ function CandidateRow({
   buildId: string;
   slot: ComponentCategory;
   formAction: (formData: FormData) => void;
-  tierEntry: GpuTierEntry | null;
+  tierEntry: TierEntry | null;
 }) {
   const { verdict } = candidate;
   const warning = verdict.compatible && verdict.warnings.length > 0;
+  const tierKind = tierListKindFor(slot);
 
   return (
     <form action={formAction}>
@@ -295,7 +299,9 @@ function CandidateRow({
             {candidate.summary.join(' · ')}
           </span>
 
-          {tierEntry ? <GpuTierBadge entry={tierEntry} className="mt-1" /> : null}
+          {tierKind && tierEntry ? (
+            <TierEntryBadge kind={tierKind} entry={tierEntry} className="mt-1" />
+          ) : null}
 
           {!verdict.compatible ? (
             <span className="mt-1 block text-xs font-medium text-danger">{verdict.reason}</span>

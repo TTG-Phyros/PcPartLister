@@ -2,12 +2,13 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { CatalogFilters } from '@/components/catalog/catalog-filters';
 import { ComponentImage } from '@/components/catalog/component-image';
-import { GpuTierList } from '@/components/tier-list/gpu-tier-list';
+import { TierList } from '@/components/tier-list/tier-list';
 import { Button, Card } from '@/components/ui';
 import { requireUser } from '@/lib/auth/guard';
 import { formatPriceCompact, summarizeSpecs } from '@/lib/catalog/format';
 import { countCatalog, listBrands, listSockets, searchCatalog } from '@/lib/catalog/queries';
-import { getGpuTierRows } from '@/lib/tier-list/queries';
+import { TIER_LIST_CONFIG, tierListKindFor } from '@/lib/tier-list/kinds';
+import { getTierRows } from '@/lib/tier-list/queries';
 import { CATEGORY_LABELS, COMPONENT_CATEGORIES, type ComponentCategory } from '@/lib/specs';
 
 export const dynamic = 'force-dynamic';
@@ -45,13 +46,15 @@ export default async function CatalogPage({
     offset: (page - 1) * PAGE_SIZE,
   };
 
-  // The ranking is only fetched for the category it describes.
-  const [components, total, brands, sockets, gpuTierRows] = await Promise.all([
+  // A ranking is only fetched for the category it describes.
+  const tierKind = filters.category ? tierListKindFor(filters.category) : null;
+
+  const [components, total, brands, sockets, tierRows] = await Promise.all([
     searchCatalog(filters),
     countCatalog(filters),
     listBrands(),
     listSockets(),
-    filters.category === 'gpu' ? getGpuTierRows() : Promise.resolve([]),
+    tierKind ? getTierRows(tierKind) : Promise.resolve([]),
   ]);
 
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -85,20 +88,23 @@ export default async function CatalogPage({
         <CatalogFilters brands={brands} sockets={sockets} />
       </Suspense>
 
-      {gpuTierRows.length > 0 ? (
+      {tierKind && tierRows.length > 0 ? (
         // Collapsed by default: the ranking is a reference to open when a choice
         // needs arbitrating, not something to scroll past on every visit.
         <details className="rounded-xl border border-border-subtle bg-surface-raised">
           <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium marker:content-none">
-            Tier list des cartes graphiques{' '}
+            {TIER_LIST_CONFIG[tierKind].labels.panel}{' '}
             <span className="font-normal text-ink-muted">
-              — {gpuTierRows.length} modèles classés par performance
+              — {tierRows.length} modèles classés par performance
             </span>
           </summary>
           <div className="border-t border-border-subtle p-4">
-            <GpuTierList rows={gpuTierRows} compact />
+            <TierList kind={tierKind} rows={tierRows} compact />
             <p className="mt-3 text-xs text-ink-muted">
-              <Link href="/tier-list" className="underline underline-offset-4 hover:text-ink">
+              <Link
+                href={`/tier-list?type=${tierKind}`}
+                className="underline underline-offset-4 hover:text-ink"
+              >
                 Ouvrir le classement complet
               </Link>
             </p>

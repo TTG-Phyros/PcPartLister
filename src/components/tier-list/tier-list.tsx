@@ -2,46 +2,37 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { TierBadge } from '@/components/tier-list/gpu-tier-badge';
+import { TierBadge } from '@/components/tier-list/tier-badge';
 import { Input, Select, cn } from '@/components/ui';
-import { formatGpuIndex } from '@/lib/tier-list/format';
-import { GPU_TIERS, GPU_TIER_LABELS, GPU_TIER_STYLES, type GpuTierRow } from '@/lib/tier-list/types';
+import { formatTierIndex } from '@/lib/tier-list/format';
+import { TIER_LIST_CONFIG, type TierListKind } from '@/lib/tier-list/kinds';
+import { TIERS, TIER_LABELS, TIER_STYLES, type TierRow } from '@/lib/tier-list/types';
 
 /**
- * Sortable, filterable GPU ranking. State is local rather than in the URL: the
- * table also shows up inside the catalog page and the configurator modal, which
- * already own the query string.
+ * Sortable, filterable ranking, shared by every tier list: `kind` carries the
+ * wording and the index unit, the rows carry the data. State is local rather
+ * than in the URL — the table also shows up inside the catalog page and the
+ * configurator modal, which already own the query string.
  */
 
 type SortKey = 'rank' | 'model' | 'brand' | 'tier' | 'index';
 type Direction = 'asc' | 'desc';
 
-const COLUMNS: Array<{
-  key: SortKey;
-  label: string;
-  /** Marque and Gamme fold into the model cell on a phone. */
-  className?: string;
-  numeric?: boolean;
-}> = [
-  { key: 'rank', label: 'Rang', numeric: true },
-  { key: 'model', label: 'Modèle' },
-  { key: 'brand', label: 'Marque', className: 'hidden sm:table-cell' },
-  { key: 'tier', label: 'Gamme', className: 'hidden md:table-cell' },
-  { key: 'index', label: 'Indice', numeric: true },
-];
+const TIER_RANK = new Map(TIERS.map((tier, position) => [tier, position]));
 
-const TIER_RANK = new Map(GPU_TIERS.map((tier, position) => [tier, position]));
-
-export function GpuTierList({
+export function TierList({
+  kind,
   rows,
   /** Denser rows and a scroll area, for the catalog panel and the configurator. */
   compact = false,
   className,
 }: {
-  rows: GpuTierRow[];
+  kind: TierListKind;
+  rows: TierRow[];
   compact?: boolean;
   className?: string;
 }) {
+  const { labels } = TIER_LIST_CONFIG[kind];
   const [query, setQuery] = useState('');
   const [brand, setBrand] = useState('');
   const [tier, setTier] = useState('');
@@ -50,13 +41,27 @@ export function GpuTierList({
     direction: 'asc',
   });
 
+  const columns: Array<{
+    key: SortKey;
+    label: string;
+    /** Marque and Gamme fold into the model cell on a phone. */
+    className?: string;
+    numeric?: boolean;
+  }> = [
+    { key: 'rank', label: 'Rang', numeric: true },
+    { key: 'model', label: 'Modèle' },
+    { key: 'brand', label: 'Marque', className: 'hidden sm:table-cell' },
+    { key: 'tier', label: 'Gamme', className: 'hidden md:table-cell' },
+    { key: 'index', label: labels.indexColumn, numeric: true },
+  ];
+
   const brands = useMemo(
     () => [...new Set(rows.map((row) => row.brand))].sort((a, b) => a.localeCompare(b, 'fr')),
     [rows],
   );
 
-  // The bar is relative to the best card of the whole ranking, not of the
-  // filtered view: filtering must not make a mid-range card look like a flagship.
+  // The bar is relative to the best part of the whole ranking, not of the
+  // filtered view: filtering must not make a mid-range part look like a flagship.
   const maxIndex = useMemo(() => Math.max(1, ...rows.map((row) => row.index)), [rows]);
 
   const visible = useMemo(() => {
@@ -99,7 +104,7 @@ export function GpuTierList({
   if (rows.length === 0) {
     return (
       <p className="rounded-lg border border-border-subtle px-3 py-4 text-sm text-ink-muted">
-        Le classement des cartes graphiques est indisponible.
+        {labels.unavailable}
       </p>
     );
   }
@@ -109,10 +114,10 @@ export function GpuTierList({
       <div className="flex flex-col gap-2 sm:flex-row">
         <Input
           type="search"
-          placeholder="Rechercher un modèle…"
+          placeholder={labels.searchPlaceholder}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          aria-label="Rechercher un modèle de carte graphique"
+          aria-label={labels.searchLabel}
         />
         <div className="grid shrink-0 grid-cols-2 gap-2 sm:w-96">
           <Select value={brand} onChange={(event) => setBrand(event.target.value)} aria-label="Marque">
@@ -125,9 +130,9 @@ export function GpuTierList({
           </Select>
           <Select value={tier} onChange={(event) => setTier(event.target.value)} aria-label="Gamme">
             <option value="">Toutes gammes</option>
-            {GPU_TIERS.map((value) => (
+            {TIERS.map((value) => (
               <option key={value} value={value}>
-                {GPU_TIER_LABELS[value]}
+                {TIER_LABELS[value]}
               </option>
             ))}
           </Select>
@@ -136,7 +141,7 @@ export function GpuTierList({
 
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-xs text-ink-muted" aria-live="polite">
-          {visible.length} carte{visible.length > 1 ? 's' : ''} sur {rows.length}
+          {labels.count(visible.length)} sur {rows.length}
         </p>
         {hasFilters ? (
           <button
@@ -160,9 +165,7 @@ export function GpuTierList({
         )}
       >
         <table className="w-full border-collapse text-sm">
-          <caption className="sr-only">
-            Classement des cartes graphiques par indice de performance
-          </caption>
+          <caption className="sr-only">{labels.heading}</caption>
           {/* Sticky only inside the scrollable compact box: on a full page the
               app header already owns the top of the viewport. */}
           <thead
@@ -172,7 +175,7 @@ export function GpuTierList({
             )}
           >
             <tr>
-              {COLUMNS.map((column) => {
+              {columns.map((column) => {
                 const active = sort.key === column.key;
                 return (
                   <th
@@ -207,27 +210,27 @@ export function GpuTierList({
 
           <tbody className="divide-y divide-border-subtle">
             {visible.map((row) => (
-              <TierRow key={row.rank} row={row} maxIndex={maxIndex} compact={compact} />
+              <Row key={row.rank} kind={kind} row={row} maxIndex={maxIndex} compact={compact} />
             ))}
           </tbody>
         </table>
 
         {visible.length === 0 ? (
-          <p className="px-3 py-4 text-sm text-ink-muted">
-            Aucune carte ne correspond à cette recherche.
-          </p>
+          <p className="px-3 py-4 text-sm text-ink-muted">{labels.noMatch}</p>
         ) : null}
       </div>
     </div>
   );
 }
 
-function TierRow({
+function Row({
+  kind,
   row,
   maxIndex,
   compact,
 }: {
-  row: GpuTierRow;
+  kind: TierListKind;
+  row: TierRow;
   maxIndex: number;
   compact: boolean;
 }) {
@@ -268,12 +271,12 @@ function TierRow({
         <div className="flex items-center justify-end gap-2">
           <span className="hidden h-1.5 w-16 overflow-hidden rounded-full bg-surface-hover sm:block lg:w-24">
             <span
-              className={cn('block h-full rounded-full', GPU_TIER_STYLES[row.tier].bar)}
+              className={cn('block h-full rounded-full', TIER_STYLES[row.tier].bar)}
               style={{ width: `${Math.round((row.index / maxIndex) * 100)}%` }}
             />
           </span>
           <span className="w-14 text-right font-medium tabular-nums">
-            {formatGpuIndex(row.index)}
+            {formatTierIndex(kind, row.index)}
           </span>
         </div>
       </td>
