@@ -1,13 +1,13 @@
+import { bottleneckMessage, readBottleneck } from '../bottleneck';
 import { ok, warning, type Rule } from '../types';
-
-/** Below this CPU/GPU index ratio, the processor holds the card back. */
-const CPU_LIMITS_BELOW = 0.6;
-/** Above it, the card is the one being wasted. */
-const GPU_LIMITS_ABOVE = 1.7;
 
 /**
  * Purely advisory: a bottleneck is a judgement call on a use case, never an
  * assembly problem, so it must never remove a part from the list.
+ *
+ * Only a marked imbalance is reported. The finer readings of the same model are
+ * the configurator gauge's business: an alert that fires on a merely imperfect
+ * pairing would drown the ones that matter.
  */
 export const cpuGpuBottleneckRule: Rule = {
   id: 'cpu-gpu-bottleneck',
@@ -22,20 +22,10 @@ export const cpuGpuBottleneckRule: Rule = {
     const gpuIndex = gpu.specs.perfIndex;
     if (!cpuIndex || !gpuIndex) return null;
 
-    const ratio = cpuIndex / gpuIndex;
+    const reading = readBottleneck(cpuIndex, gpuIndex);
+    if (!reading.marked) return ok('Processeur et carte graphique équilibrés.');
 
-    if (ratio < CPU_LIMITS_BELOW) {
-      return warning(
-        `le processeur ${cpu.label} risque de brider la ${gpu.label} en jeu — goulot d’étranglement probable`,
-      );
-    }
-    if (ratio > GPU_LIMITS_ABOVE) {
-      return warning(
-        `la carte graphique ${gpu.label} est nettement en retrait du processeur ${cpu.label} — le CPU sera sous-exploité`,
-      );
-    }
-
-    return ok('Processeur et carte graphique équilibrés.');
+    return warning(bottleneckMessage(reading, { cpu: cpu.label, gpu: gpu.label }));
   },
 };
 

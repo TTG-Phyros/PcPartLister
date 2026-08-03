@@ -4,6 +4,7 @@ import { useActionState, useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { ActionState } from '@/actions/auth';
 import { removeBuildItemAction, updateLineEstimateAction } from '@/actions/builds';
+import { BottleneckIndicator } from '@/components/builds/bottleneck-indicator';
 import { SlotPicker } from '@/components/builds/slot-picker';
 import { Alert, Button, Card, Input, cn } from '@/components/ui';
 import { computeBuildCost, suggestedSalePriceCents } from '@/lib/builds/pricing';
@@ -11,6 +12,7 @@ import { selectionFromLines } from '@/lib/builds/selection';
 import { SLOT_ORDER, type BuildDetail, type BuildLine } from '@/lib/builds/types';
 import { formatPrice, formatPriceCompact } from '@/lib/catalog/format';
 import { blockingIssues, evaluate, warnings } from '@/lib/compat/engine';
+import { cpuGpuBottleneckRule } from '@/lib/compat/rules/advisory';
 import { CONDITION_LABELS } from '@/lib/inventory/labels';
 import { CATEGORY_LABELS, MULTI_SLOT_CATEGORIES, type ComponentCategory } from '@/lib/specs';
 import type { TierListKind } from '@/lib/tier-list/kinds';
@@ -37,7 +39,11 @@ export function Configurator({
   const selection = useMemo(() => selectionFromLines(build.lines), [build.lines]);
   const results = useMemo(() => evaluate(selection), [selection]);
   const blocking = blockingIssues(results);
-  const advisories = warnings(results);
+  // The bottleneck has its own panel, which says more than a bullet point ever
+  // could — leaving it here too would only say the same thing twice.
+  const advisories = warnings(results).filter(
+    (issue) => issue.ruleId !== cpuGpuBottleneckRule.id,
+  );
 
   const cost = computeBuildCost(build.lines, build.consumablesCents);
   const suggested = suggestedSalePriceCents(cost.totalCents, targetMarginPct);
@@ -119,7 +125,7 @@ export function Configurator({
         </ul>
       </div>
 
-      <aside className="w-full shrink-0 lg:sticky lg:top-24 lg:w-80">
+      <aside className="flex w-full shrink-0 flex-col gap-3 lg:sticky lg:top-24 lg:w-80">
         <Card className="flex flex-col gap-3">
           <h2 className="font-medium">Coût de la configuration</h2>
 
@@ -151,6 +157,8 @@ export function Configurator({
             {build.lines.filter((l) => l.source === 'a_acheter').length} à acheter.
           </p>
         </Card>
+
+        <BottleneckIndicator selection={selection} />
       </aside>
 
       {openSlot ? (
