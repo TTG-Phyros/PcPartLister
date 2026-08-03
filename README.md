@@ -95,6 +95,33 @@ La synthèse affiche la valeur du stock au prix d'achat, le montant immobilisé,
 répartition par catégorie et les **composants dormants** — en stock depuis plus de
 `dormant_days` jours (90 par défaut, modifiable dans la table `settings`).
 
+## Configurateur
+
+`Configs → Nouvelle configuration`, puis un emplacement à la fois. Pour chaque catégorie,
+**les unités que vous possédez apparaissent en tête** avec leur prix d'achat réel, suivies
+des modèles du catalogue marqués « à acheter » au prix neuf indicatif.
+
+Les composants incompatibles restent visibles mais grisés, **avec la raison** (« socket
+AM4 ≠ LGA1700 »). Le moteur tourne dans le navigateur : changer un emplacement re-évalue
+la liste ouverte instantanément, sans aller-retour serveur. Les avertissements
+(goulot d'étranglement, alimentation juste, refroidissement limite) n'empêchent jamais de
+sélectionner une pièce.
+
+Le panneau de coût sépare ce qui est déjà payé de ce qui reste à acheter, ajoute les
+consommables et propose un prix de vente atteignant l'objectif de marge (`target_margin_pct`).
+
+### Cycle de vie et effet sur le stock
+
+| État de la config | Statut des unités |
+| --- | --- |
+| `brouillon` | `réservé` — la pièce n'est plus proposée aux autres configs |
+| `montée` | `monté` |
+| `vendue` | `vendu` |
+
+Retirer une ligne, revenir en arrière ou supprimer la configuration rend les unités au
+stock. Une unité ne peut jamais être réservée par deux configurations : un index unique en
+base le garantit, en plus du filtrage à la sélection.
+
 ## Moteur de compatibilité
 
 Isolé dans [src/lib/compat/](src/lib/compat/) : fonctions pures, aucun import de base de

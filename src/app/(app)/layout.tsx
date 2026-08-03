@@ -11,6 +11,7 @@ export const dynamic = 'force-dynamic';
 const LINKS: NavLink[] = [
   { href: '/', label: 'Tableau de bord' },
   { href: '/stock', label: 'Stock' },
+  { href: '/configs', label: 'Configs' },
   { href: '/catalogue', label: 'Catalogue' },
 ];
 
