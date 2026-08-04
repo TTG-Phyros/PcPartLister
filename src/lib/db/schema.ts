@@ -64,9 +64,31 @@ export const itemStatusEnum = pgEnum('item_status', [
   'hs',
   /** Paid for, not received yet: the unit exists on paper but not on the shelf. */
   'en_transit',
+  /** Listed somewhere, still owned: the sale is not concluded yet. */
+  'en_vente',
 ]);
 
-export const buildStatusEnum = pgEnum('build_status', ['brouillon', 'montee', 'vendue']);
+export const buildStatusEnum = pgEnum('build_status', [
+  'brouillon',
+  'montee',
+  'vendue',
+  'en_vente',
+]);
+
+/** A lot is assembled, then announced, then sold — no assembly step to it. */
+export const lotStatusEnum = pgEnum('lot_status', ['brouillon', 'en_vente', 'vendu']);
+
+/** How a sold item leaves: by hand, or with the carrier that took the parcel. */
+export const saleShippingEnum = pgEnum('sale_shipping_method', [
+  'main_propre',
+  'mondial_relay',
+  'colissimo',
+  'chronopost',
+  'relais_colis',
+  'shop2shop',
+  'lettre_suivie',
+  'autre',
+]);
 
 /* ─────────────────────────── Auth ─────────────────────────── */
 
@@ -177,6 +199,10 @@ export const inventoryItems = pgTable(
     trackingUrl: text('tracking_url'),
     expectedArrival: date('expected_arrival'),
     receivedAt: date('received_at'),
+    /* Listing, only meaningful while the unit is `en_vente`. */
+    listedAt: date('listed_at'),
+    /** Price asked in the listing; the sale may well conclude at another one. */
+    askingPriceCents: integer('asking_price_cents'),
     serialNumber: text('serial_number'),
     notes: text('notes'),
     /** Stable key from data/seed/stock.json; NULL for units created in the app. */
@@ -204,6 +230,9 @@ export const builds = pgTable(
     status: buildStatusEnum('status').notNull().default('brouillon'),
     /** Thermal paste, screws, cable ties... */
     consumablesCents: integer('consumables_cents').notNull().default(0),
+    /* Listing, only meaningful while the configuration is `en_vente`. */
+    listedAt: date('listed_at'),
+    askingPriceCents: integer('asking_price_cents'),
     notes: text('notes'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -245,27 +274,86 @@ export const buildItems = pgTable(
   ],
 );
 
+/* ─────────────────────────── Lots ─────────────────────────── */
+
+/**
+ * A bundle of units sold in one go to one buyer. Same idea as a configuration
+ * — several units leaving together — without the slots and the compatibility:
+ * a lot takes anything, in any quantity.
+ */
+export const lots = pgTable(
+  'lots',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    status: lotStatusEnum('status').notNull().default('brouillon'),
+    listedAt: date('listed_at'),
+    askingPriceCents: integer('asking_price_cents'),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('lots_status_idx').on(t.status)],
+);
+
+/** One unit in a lot. A unit belongs to at most one lot, hence the unique index. */
+export const lotItems = pgTable(
+  'lot_items',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    lotId: uuid('lot_id')
+      .notNull()
+      .references(() => lots.id, { onDelete: 'cascade' }),
+    inventoryItemId: uuid('inventory_item_id')
+      .notNull()
+      .references(() => inventoryItems.id, { onDelete: 'restrict' }),
+    position: integer('position').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('lot_items_lot_idx').on(t.lotId),
+    uniqueIndex('lot_items_inventory_idx').on(t.inventoryItemId),
+  ],
+);
+
 /* ─────────────────────────── Sales ─────────────────────────── */
 
+/**
+ * One concluded sale. Its subject is a whole configuration, a lot, or a single
+ * unit sold on its own — exactly one of the three, enforced below.
+ */
 export const sales = pgTable(
   'sales',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    buildId: uuid('build_id')
-      .notNull()
-      .references(() => builds.id, { onDelete: 'cascade' }),
+    buildId: uuid('build_id').references(() => builds.id, { onDelete: 'cascade' }),
+    lotId: uuid('lot_id').references(() => lots.id, { onDelete: 'cascade' }),
+    inventoryItemId: uuid('inventory_item_id').references(() => inventoryItems.id, {
+      onDelete: 'cascade',
+    }),
     salePriceCents: integer('sale_price_cents').notNull(),
     saleDate: date('sale_date').notNull(),
     platform: purchasePlatformEnum('platform').notNull().default('autre'),
+    shippingMethod: saleShippingEnum('shipping_method').notNull().default('main_propre'),
     shippingCostCents: integer('shipping_cost_cents').notNull().default(0),
     platformFeeCents: integer('platform_fee_cents').notNull().default(0),
+    /** Parcel sent to the buyer, to answer « où en est mon colis ? ». */
+    trackingNumber: text('tracking_number'),
     buyerNotes: text('buyer_notes'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
+    // Postgres counts NULLs as distinct, so each index only constrains the
+    // subject it applies to: one sale per configuration, per lot, per unit.
     uniqueIndex('sales_build_idx').on(t.buildId),
+    uniqueIndex('sales_lot_idx').on(t.lotId),
+    uniqueIndex('sales_inventory_idx').on(t.inventoryItemId),
     index('sales_date_idx').on(t.saleDate),
     check('sales_price_non_negative', sql`${t.salePriceCents} >= 0`),
+    check(
+      'sales_one_subject',
+      sql`num_nonnulls(${t.buildId}, ${t.lotId}, ${t.inventoryItemId}) = 1`,
+    ),
   ],
 );
 
@@ -280,4 +368,6 @@ export type InventoryItem = typeof inventoryItems.$inferSelect;
 export type NewInventoryItem = typeof inventoryItems.$inferInsert;
 export type Build = typeof builds.$inferSelect;
 export type BuildItem = typeof buildItems.$inferSelect;
+export type Lot = typeof lots.$inferSelect;
+export type LotItem = typeof lotItems.$inferSelect;
 export type Sale = typeof sales.$inferSelect;

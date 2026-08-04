@@ -6,13 +6,19 @@ import { ChangeInventoryModel } from '@/components/inventory/change-model';
 import { DeleteInventoryItem } from '@/components/inventory/delete-item';
 import { InventoryForm } from '@/components/inventory/inventory-form';
 import { MarkReceived } from '@/components/inventory/mark-received';
+import { ListForSale, Unlist } from '@/components/sales/listing-actions';
+import { SaleForm } from '@/components/sales/sale-form';
 import { Alert, Button, Card } from '@/components/ui';
 import { requireUser } from '@/lib/auth/guard';
+import { suggestedSalePriceCents } from '@/lib/builds/pricing';
 import type { InventoryItem } from '@/lib/db/schema';
 import { formatPrice, summarizeSpecs } from '@/lib/catalog/format';
 import { PLATFORM_LABELS, STATUS_LABELS, STATUS_TONES } from '@/lib/inventory/labels';
 import { CARRIER_LABELS, daysUntil, isLate, trackingLink } from '@/lib/inventory/tracking';
 import { getInventoryItem, isInventoryItemInBuild } from '@/lib/inventory/queries';
+import { getLotOfItem } from '@/lib/lots/queries';
+import type { SaleSubject } from '@/lib/sales/labels';
+import { getSaleFor, type SaleRecord } from '@/lib/sales/queries';
 import { getSettings } from '@/lib/settings-store';
 import { CATEGORY_LABELS } from '@/lib/specs';
 
@@ -42,7 +48,12 @@ export default async function InventoryItemPage({
   if (!row) notFound();
 
   const { item, component } = row;
-  const [settings, inBuild] = await Promise.all([getSettings(), isInventoryItemInBuild(item.id)]);
+  const [settings, inBuild, lot, sale] = await Promise.all([
+    getSettings(),
+    isInventoryItemInBuild(item.id),
+    getLotOfItem(item.id),
+    getSaleFor('item', item.id),
+  ]);
   const age = daysSince(item.purchaseDate);
   const dormant = item.status === 'en_stock' && age > settings.dormant_days;
 
@@ -128,6 +139,16 @@ export default async function InventoryItemPage({
         </div>
       </Card>
 
+      <SaleCard
+        item={item}
+        name={`${component.brand} ${component.model}`}
+        inBuild={inBuild}
+        lot={lot}
+        sale={sale}
+        targetMarginPct={settings.target_margin_pct}
+        defaultPlatformFeePct={settings.default_platform_fee_pct}
+      />
+
       <Card>
         <h2 className="mb-4 font-medium">Modifier l’unité</h2>
         <InventoryForm
@@ -160,6 +181,99 @@ export default async function InventoryItemPage({
         <DeleteInventoryItem id={item.id} label={`${component.brand} ${component.model}`} />
       </Card>
     </div>
+  );
+}
+
+/**
+ * Selling the unit on its own. A part engaged in a configuration or in a lot is
+ * sold with it, so the card sends you there instead of offering a second,
+ * contradictory way out.
+ */
+function SaleCard({
+  item,
+  name,
+  inBuild,
+  lot,
+  sale,
+  targetMarginPct,
+  defaultPlatformFeePct,
+}: {
+  item: InventoryItem;
+  name: string;
+  inBuild: boolean;
+  lot: Awaited<ReturnType<typeof getLotOfItem>>;
+  sale: SaleRecord | null;
+  targetMarginPct: number;
+  defaultPlatformFeePct: number;
+}) {
+  const subject: SaleSubject = { kind: 'item', id: item.id, name };
+  const listed = item.status === 'en_vente';
+  const costCents = item.purchasePriceCents;
+  const suggestedPrice = suggestedSalePriceCents(costCents, targetMarginPct);
+  // A unit marked sold by hand has no figures yet: offer the form so the sale
+  // can be filled in after the fact.
+  const concluding = sale !== null || listed || item.status === 'vendu';
+
+  // A part engaged in a configuration or in a lot is sold with it, whatever its
+  // status: no second sale is recorded here, or the same unit would be counted
+  // twice.
+  if ((inBuild || lot) && !sale) {
+    return (
+      <Card className="flex flex-col gap-2">
+        <h2 className="font-medium">Vente</h2>
+        {lot ? (
+          <p className="text-sm text-ink-muted">
+            Cette unité fait partie du lot{' '}
+            <Link href={`/lots/${lot.id}`} className="text-ink underline underline-offset-4">
+              {lot.name}
+            </Link>{' '}
+            : elle se vend avec lui. Retirez-la du lot pour la vendre séparément.
+          </p>
+        ) : (
+          <p className="text-sm text-ink-muted">
+            Cette unité fait partie d’une configuration : elle se vend avec elle. Retirez-la de la
+            configuration pour la vendre séparément.
+          </p>
+        )}
+      </Card>
+    );
+  }
+
+  // Nothing to offer while the parcel is still travelling.
+  if (!concluding && item.status === 'en_transit') return null;
+
+  return (
+    <Card className="flex flex-col gap-4">
+      <div>
+        <h2 className="font-medium">Vente</h2>
+        <p className="mt-1 text-sm text-ink-muted">
+          Prix d’achat : {formatPrice(costCents)}.
+          {listed && item.listedAt ? ` En vente depuis le ${formatDay(item.listedAt)}.` : ''}
+        </p>
+      </div>
+
+      {concluding ? (
+        <SaleForm
+          subject={subject}
+          costCents={costCents}
+          suggestedPriceCents={suggestedPrice}
+          askingPriceCents={item.askingPriceCents}
+          targetMarginPct={targetMarginPct}
+          defaultPlatformFeePct={defaultPlatformFeePct}
+          sale={sale}
+        />
+      ) : (
+        <ListForSale
+          subject={subject}
+          costCents={costCents}
+          suggestedPriceCents={suggestedPrice}
+          askingPriceCents={item.askingPriceCents}
+          targetMarginPct={targetMarginPct}
+        />
+      )}
+
+      {listed && !sale ? <Unlist subject={subject} /> : null}
+    </Card>
   );
 }
 

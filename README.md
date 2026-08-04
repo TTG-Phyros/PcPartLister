@@ -160,8 +160,9 @@ recréée (volume neuf, nouveau serveur) revient donc avec le stock réel, et pa
 le catalogue. Retirer une entrée du fichier ne supprime rien en base ; c'est la fiche de
 l'unité qui fait foi une fois l'import passé.
 
-Statuts : `en transit`, `en stock`, `réservé`, `monté`, `vendu`, `HS`. `réservé`, `monté` et
-`vendu` sont pilotés par les configurations mais restent modifiables à la main.
+Statuts : `en transit`, `en stock`, `réservé`, `monté`, `en vente`, `vendu`, `HS`. `réservé`,
+`monté` et `vendu` sont pilotés par les configurations mais restent modifiables à la main.
+`en vente` est posé par le bouton « Mettre en vente » (voir [Ventes](#ventes-et-rentabilité)).
 
 ### Suivi de colis
 
@@ -206,6 +207,7 @@ consommables et propose un prix de vente atteignant l'objectif de marge (`target
 | --- | --- |
 | `brouillon` | `réservé` — la pièce n'est plus proposée aux autres configs |
 | `montée` | `monté` |
+| `en vente` | `en vente` |
 | `vendue` | `vendu` |
 
 Retirer une ligne, revenir en arrière ou supprimer la configuration rend les unités au
@@ -214,24 +216,72 @@ base le garantit, en plus du filtrage à la sélection.
 
 ## Ventes et rentabilité
 
-Une configuration passée en « montée » ouvre son formulaire de vente. La marge se recalcule
-**à chaque frappe**, avant même d'enregistrer :
+Une vente se fait en deux temps, parce que c'est ainsi qu'elle se passe : on annonce, puis
+un jour quelqu'un achète. Trois choses peuvent se vendre : une **configuration**, un **lot**,
+ou un **composant** seul.
+
+### 1. Mettre en vente
+
+Le bouton **Mettre en vente** est sur la fiche d'une unité du stock, sur celle d'une
+configuration montée et sur celle d'un lot. Il demande un prix — pré-rempli à l'objectif de
+marge, et facultatif si le prix n'est pas encore fixé — puis passe le sujet en `en vente`
+avec la date du jour.
+
+Une unité engagée dans une configuration ou dans un lot ne se met pas en vente seule : c'est
+le paquet qui part, avec toutes ses unités. La fiche de l'unité le dit et renvoie vers la
+config ou le lot. **Retirer de la vente** annule l'annonce sans rien enregistrer.
+
+### Lots
+
+Un lot, c'est plusieurs pièces qui partent ensemble à un seul acheteur — un vrai lot annoncé
+comme tel, ou trois pièces qu'un même acheteur finit par prendre d'un coup. Il se crée depuis
+l'onglet **Ventes** (« Nouveau lot »), puis se remplit une unité à la fois : le sélecteur ne
+propose que les unités **libres** — en stock, retenues par aucune configuration et par aucun
+autre lot.
+
+| État du lot | Statut des unités |
+| --- | --- |
+| `en préparation` | `réservé` — la pièce n'est plus proposée aux configurations |
+| `en vente` | `en vente` |
+| `vendu` | `vendu` |
+
+Le coût de revient du lot est la somme des prix d'achat de ses unités ; la marge se calcule
+sur le prix global, sans jamais répartir quoi que ce soit ligne par ligne. Retirer une unité
+la rend au stock, supprimer le lot rend toutes les siennes.
+
+Tout ce qui est en vente se retrouve en tête de l'onglet **Ventes** : depuis combien de temps,
+pour combien, le coût de revient en face et la marge que le prix demandé laisserait.
+
+### 2. Conclure la vente
+
+Le bouton **Conclure la vente** ouvre le formulaire réel : prix de vente, date, plateforme,
+**type d'envoi** (main propre, Mondial Relay, Colissimo, Chronopost, Relais Colis, Shop2Shop,
+lettre suivie), frais de port, numéro de suivi, commission et notes. En main propre, le port
+et le suivi disparaissent du formulaire — il n'y a pas de colis.
+
+La marge se recalcule **à chaque frappe**, avant même d'enregistrer :
 
 ```
 marge = prix de vente − frais de port − commission − (composants + consommables)
 marge % = marge / prix de vente
 ```
 
-Les composants sont comptés à leur **prix d'achat réel** pour les unités du stock, à leur
-estimation pour celles restant à acheter. Un bouton applique la commission par défaut
-(`default_platform_fee_pct`) au prix saisi.
+Le coût d'une configuration compte ses composants à leur **prix d'achat réel** pour les unités
+du stock, à leur estimation pour celles restant à acheter, plus les consommables ; celui d'un
+lot est la somme de ses unités ; celui d'un composant vendu seul est simplement son prix
+d'achat. Un bouton applique la commission par défaut (`default_platform_fee_pct`) au prix
+saisi.
 
-Enregistrer la vente bascule la configuration et toutes ses unités en `vendu`, dans une
-seule transaction. Annuler une vente ramène le tout en « montée ».
+Enregistrer la vente bascule le sujet — et, pour une configuration ou un lot, toutes ses
+unités — en `vendu`, dans une seule transaction. Annuler une vente le remet `en vente`.
 
-La page **Ventes** cumule : chiffre d'affaires, marge cumulée, marge moyenne en € et en %,
-meilleure et pire vente, et le détail de chaque vente (prix, port, commission, composants,
-consommables).
+L'historique de la page **Ventes** cumule configurations, lots et composants seuls : chiffre
+d'affaires, marge cumulée, marge moyenne en € et en %, meilleure et pire vente, et le détail
+de chaque vente (prix, port, commission, composants, consommables).
+
+En base, une ligne de `sales` pointe vers **exactement un** des trois sujets (`build_id`,
+`lot_id`, `inventory_item_id`) — une contrainte `num_nonnulls(...) = 1` l'impose, et un index
+unique par colonne garantit une seule vente par sujet.
 
 ## Moteur de compatibilité
 

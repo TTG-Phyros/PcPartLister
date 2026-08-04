@@ -29,6 +29,20 @@
       "when": 1785774001040,
       "tag": "0003_abandoned_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785832973079,
+      "tag": "0004_adorable_revanche",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785842622248,
+      "tag": "0005_lovely_golden_guardian",
+      "breakpoints": true
     }
   ]
 }

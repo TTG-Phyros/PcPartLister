@@ -7,7 +7,14 @@ import { deleteSaleAction, recordSaleAction } from '@/actions/sales';
 import { Alert, Button, Field, Input, Select } from '@/components/ui';
 import { formatPrice } from '@/lib/catalog/format';
 import { PLATFORM_LABELS, SALE_PLATFORMS } from '@/lib/inventory/labels';
-import type { SaleForBuild } from '@/lib/sales/queries';
+import {
+  IN_PERSON_SHIPPING,
+  SALE_SHIPPING_METHODS,
+  SHIPPING_METHOD_LABELS,
+  type SaleShippingMethod,
+  type SaleSubject,
+} from '@/lib/sales/labels';
+import type { SaleRecord } from '@/lib/sales/queries';
 import { computeMargin, platformFeeFromPct } from '@/lib/sales/pricing';
 
 function Submit({ label }: { label: string }) {
@@ -30,35 +37,47 @@ function toEuros(cents: number): string {
 
 /**
  * Sale form with the margin recomputed as you type: the number that decides
- * whether the build was worth it should never be one submit away.
+ * whether the deal was worth it should never be one submit away. It concludes
+ * the sale of a configuration or of a single unit alike.
  */
 export function SaleForm({
-  buildId,
+  subject,
   costCents,
   suggestedPriceCents,
+  askingPriceCents,
   targetMarginPct,
   defaultPlatformFeePct,
   sale,
 }: {
-  buildId: string;
+  subject: SaleSubject;
   costCents: number;
   suggestedPriceCents: number;
+  /** Price of the listing, if one was set: the sale usually concludes there. */
+  askingPriceCents?: number | null;
   targetMarginPct: number;
   defaultPlatformFeePct: number;
-  sale: SaleForBuild | null;
+  sale: SaleRecord | null;
 }) {
   const [state, formAction] = useActionState<ActionState, FormData>(recordSaleAction, {});
   const [deleteState, deleteAction] = useActionState<ActionState, FormData>(deleteSaleAction, {});
 
   const [salePrice, setSalePrice] = useState(
-    sale ? toEuros(sale.salePriceCents) : toEuros(suggestedPriceCents),
+    toEuros(sale?.salePriceCents ?? askingPriceCents ?? suggestedPriceCents),
   );
   const [shipping, setShipping] = useState(sale ? toEuros(sale.shippingCostCents) : '0');
   const [fee, setFee] = useState(sale ? toEuros(sale.platformFeeCents) : '0');
+  const [shippingMethod, setShippingMethod] = useState<SaleShippingMethod>(
+    sale?.shippingMethod ?? 'main_propre',
+  );
+
+  // Nothing travels when the buyer takes it away himself: no parcel, no price.
+  const shipped = !IN_PERSON_SHIPPING.includes(shippingMethod);
 
   const margin = computeMargin({
     salePriceCents: toCents(salePrice),
-    shippingCostCents: toCents(shipping),
+    // Mirrors what the form submits, so the figure never claims a cost that
+    // the hidden field has already zeroed.
+    shippingCostCents: shipped ? toCents(shipping) : 0,
     platformFeeCents: toCents(fee),
     costCents,
   });
@@ -66,16 +85,23 @@ export function SaleForm({
   const today = new Date();
   const isoToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
+  const subjectLabel = subject.kind === 'build' ? 'la configuration' : 'l’unité';
+
   return (
     <div className="flex flex-col gap-4">
       <form action={formAction} className="flex flex-col gap-4">
-        <input type="hidden" name="buildId" value={buildId} />
+        <input type="hidden" name="subjectKind" value={subject.kind} />
+        <input type="hidden" name="subjectId" value={subject.id} />
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
             label="Prix de vente (€)"
             htmlFor="salePriceEur"
-            hint={`Suggestion à ${targetMarginPct} % de marge : ${formatPrice(suggestedPriceCents)}`}
+            hint={
+              askingPriceCents
+                ? `Prix demandé : ${formatPrice(askingPriceCents)} · suggestion à ${targetMarginPct} % de marge : ${formatPrice(suggestedPriceCents)}`
+                : `Suggestion à ${targetMarginPct} % de marge : ${formatPrice(suggestedPriceCents)}`
+            }
           >
             <Input
               id="salePriceEur"
@@ -108,16 +134,52 @@ export function SaleForm({
             </Select>
           </Field>
 
-          <Field label="Frais de port (€)" htmlFor="shippingCostEur">
-            <Input
-              id="shippingCostEur"
-              name="shippingCostEur"
-              type="text"
-              inputMode="decimal"
-              value={shipping}
-              onChange={(event) => setShipping(event.target.value)}
-            />
+          <Field label="Type d’envoi" htmlFor="shippingMethod">
+            <Select
+              id="shippingMethod"
+              name="shippingMethod"
+              value={shippingMethod}
+              onChange={(event) =>
+                setShippingMethod(event.target.value as SaleShippingMethod)
+              }
+            >
+              {SALE_SHIPPING_METHODS.map((value) => (
+                <option key={value} value={value}>
+                  {SHIPPING_METHOD_LABELS[value]}
+                </option>
+              ))}
+            </Select>
           </Field>
+
+          {shipped ? (
+            <>
+              <Field
+                label="Frais de port (€)"
+                htmlFor="shippingCostEur"
+                hint="Ce que l’envoi vous coûte, pas ce que l’acheteur paie."
+              >
+                <Input
+                  id="shippingCostEur"
+                  name="shippingCostEur"
+                  type="text"
+                  inputMode="decimal"
+                  value={shipping}
+                  onChange={(event) => setShipping(event.target.value)}
+                />
+              </Field>
+
+              <Field label="N° de suivi" htmlFor="trackingNumber">
+                <Input
+                  id="trackingNumber"
+                  name="trackingNumber"
+                  defaultValue={sale?.trackingNumber ?? ''}
+                  placeholder="Facultatif"
+                />
+              </Field>
+            </>
+          ) : (
+            <input type="hidden" name="shippingCostEur" value="0" />
+          )}
 
           <Field label="Commission plateforme (€)" htmlFor="platformFeeEur">
             <div className="flex gap-2">
@@ -181,7 +243,7 @@ export function SaleForm({
         {state.success ? <Alert tone="success">{state.success}</Alert> : null}
 
         <div>
-          <Submit label={sale ? 'Mettre à jour la vente' : 'Enregistrer la vente'} />
+          <Submit label={sale ? 'Mettre à jour la vente' : 'Conclure la vente'} />
         </div>
       </form>
 
@@ -189,16 +251,20 @@ export function SaleForm({
         <form
           action={deleteAction}
           onSubmit={(event) => {
-            if (!confirm('Annuler cette vente ? La configuration repassera en « montée ».')) {
+            if (!confirm(`Annuler cette vente ? ${subject.name} repassera en vente.`)) {
               event.preventDefault();
             }
           }}
         >
-          <input type="hidden" name="buildId" value={buildId} />
+          <input type="hidden" name="subjectKind" value={subject.kind} />
+          <input type="hidden" name="subjectId" value={subject.id} />
           <Button type="submit" variant="ghost" className="min-h-10 text-sm">
             Annuler la vente
           </Button>
           {deleteState.error ? <Alert tone="error">{deleteState.error}</Alert> : null}
+          <p className="mt-1 text-xs text-ink-muted">
+            La vente est effacée et {subjectLabel} redevient disponible.
+          </p>
         </form>
       ) : null}
     </div>

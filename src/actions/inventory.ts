@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { assertSession } from '@/lib/auth/guard';
 import { db } from '@/lib/db';
-import { buildItems, catalogComponents, inventoryItems } from '@/lib/db/schema';
+import { buildItems, catalogComponents, inventoryItems, lotItems } from '@/lib/db/schema';
 import {
   ITEM_CONDITIONS,
   ITEM_STATUSES,
@@ -114,6 +114,15 @@ function parseUnit(formData: FormData) {
 function receivedAtFor(status: (typeof ITEM_STATUSES)[number]) {
   if (status === 'en_transit') return null;
   return sql`coalesce(${inventoryItems.receivedAt}, current_date)`;
+}
+
+/**
+ * Listing date, same idea in the other direction: a unit switched to `en_vente`
+ * by hand is listed today, and leaving that status closes the listing.
+ */
+function listedAtFor(status: (typeof ITEM_STATUSES)[number]) {
+  if (status !== 'en_vente') return null;
+  return sql`coalesce(${inventoryItems.listedAt}, current_date)`;
 }
 
 const newModelSchema = z.object({
@@ -260,6 +269,7 @@ export async function updateInventoryItemAction(
     .set({
       ...parsed.unit,
       receivedAt: receivedAtFor(parsed.unit.status),
+      listedAt: listedAtFor(parsed.unit.status),
       updatedAt: new Date(),
     })
     .where(eq(inventoryItems.id, id))
@@ -268,6 +278,7 @@ export async function updateInventoryItemAction(
 
   revalidatePath('/stock');
   revalidatePath(`/stock/${id}`);
+  revalidatePath('/ventes');
   revalidatePath('/');
   return { success: 'Unité mise à jour.' };
 }
@@ -364,12 +375,14 @@ export async function setInventoryStatusAction(
     .set({
       status: parsed.data.status,
       receivedAt: receivedAtFor(parsed.data.status),
+      listedAt: listedAtFor(parsed.data.status),
       updatedAt: new Date(),
     })
     .where(eq(inventoryItems.id, parsed.data.id));
 
   revalidatePath('/stock');
   revalidatePath(`/stock/${parsed.data.id}`);
+  revalidatePath('/ventes');
   revalidatePath('/');
   return { success: 'Statut mis à jour.' };
 }
@@ -383,14 +396,22 @@ export async function deleteInventoryItemAction(
   const id = String(formData.get('id') ?? '');
   if (!id) return { error: 'Unité introuvable.' };
 
-  // build_items references inventory with ON DELETE RESTRICT; explain rather
-  // than let the database raise.
+  // build_items and lot_items reference inventory with ON DELETE RESTRICT;
+  // explain rather than let the database raise.
   const [{ count }] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(buildItems)
     .where(eq(buildItems.inventoryItemId, id));
   if (count > 0) {
     return { error: 'Cette unité est utilisée dans une configuration : retirez-la d’abord.' };
+  }
+
+  const [{ lotCount }] = await db
+    .select({ lotCount: sql<number>`count(*)::int` })
+    .from(lotItems)
+    .where(eq(lotItems.inventoryItemId, id));
+  if (lotCount > 0) {
+    return { error: 'Cette unité fait partie d’un lot : retirez-la du lot d’abord.' };
   }
 
   await db.delete(inventoryItems).where(eq(inventoryItems.id, id));

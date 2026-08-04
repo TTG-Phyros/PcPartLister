@@ -9,13 +9,20 @@ import {
   updateBuildMetaAction,
 } from '@/actions/builds';
 import { Alert, Button, Field, Input, cn } from '@/components/ui';
-import { BUILD_STATUS_LABELS, type BuildDetail, type BuildStatus } from '@/lib/builds/types';
+import {
+  BUILD_STATUSES,
+  BUILD_STATUS_LABELS,
+  type BuildDetail,
+  type BuildStatus,
+} from '@/lib/builds/types';
 
-const FLOW: BuildStatus[] = ['brouillon', 'montee', 'vendue'];
+const FLOW: BuildStatus[] = [...BUILD_STATUSES];
 
 const STATUS_HINTS: Record<BuildStatus, string> = {
   brouillon: 'Les unités du stock sont réservées pour cette configuration.',
   montee: 'Les unités sont marquées « montées » dans le stock.',
+  en_vente:
+    'La configuration est annoncée : ses unités sont « en vente » et la fiche propose de conclure la vente.',
   vendue: 'Les unités sont marquées « vendues ».',
 };
 

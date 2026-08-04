@@ -33,6 +33,9 @@ export type BuildDetail = {
   name: string;
   status: BuildStatus;
   consumablesCents: number;
+  /** Day the configuration was listed, and the price asked in the listing. */
+  listedAt: string | null;
+  askingPriceCents: number | null;
   notes: string | null;
   createdAt: string;
   lines: BuildLine[];
@@ -67,15 +70,21 @@ export type Candidate = {
   purchaseDate: string | null;
 };
 
+/** The lifecycle of a configuration, in the order the flow shows it. */
+export const BUILD_STATUSES = ['brouillon', 'montee', 'en_vente', 'vendue'] as const;
+
 export const BUILD_STATUS_LABELS: Record<BuildStatus, string> = {
   brouillon: 'Brouillon',
   montee: 'Montée',
+  en_vente: 'En vente',
   vendue: 'Vendue',
 };
 
 export const BUILD_STATUS_TONES: Record<BuildStatus, string> = {
   brouillon: 'bg-surface-hover text-ink-muted',
   montee: 'bg-brand/15 text-brand',
+  // Outlined: still owned, already promised to someone else.
+  en_vente: 'border border-ok/50 text-ok',
   vendue: 'bg-ok/15 text-ok',
 };
 

@@ -78,6 +78,8 @@ export async function getBuildDetail(id: string): Promise<BuildDetail | null> {
     name: build.name,
     status: build.status,
     consumablesCents: build.consumablesCents,
+    listedAt: build.listedAt,
+    askingPriceCents: build.askingPriceCents,
     notes: build.notes,
     createdAt: build.createdAt.toISOString(),
     lines,

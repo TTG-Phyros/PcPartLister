@@ -5,7 +5,15 @@ export type ItemCondition = InventoryItem['condition'];
 export type PurchasePlatform = InventoryItem['platform'];
 
 /** Ordered for the dropdowns, from « pas encore là » to « fin de vie ». */
-export const ITEM_STATUSES = ['en_transit', 'en_stock', 'reserve', 'monte', 'vendu', 'hs'] as const;
+export const ITEM_STATUSES = [
+  'en_transit',
+  'en_stock',
+  'reserve',
+  'monte',
+  'en_vente',
+  'vendu',
+  'hs',
+] as const;
 export const ITEM_CONDITIONS = ['neuf', 'tres_bon', 'bon', 'defectueux', 'a_tester'] as const;
 export const PURCHASE_PLATFORMS = [
   'vinted',
@@ -30,6 +38,7 @@ export const STATUS_LABELS: Record<ItemStatus, string> = {
   en_stock: 'En stock',
   reserve: 'Réservé',
   monte: 'Monté',
+  en_vente: 'En vente',
   vendu: 'Vendu',
   hs: 'HS',
 };
@@ -61,6 +70,9 @@ export const STATUS_TONES: Record<ItemStatus, string> = {
   en_stock: 'bg-ok/15 text-ok',
   reserve: 'bg-warn/15 text-warn',
   monte: 'bg-brand/15 text-brand',
+  // Outlined like `en_transit`, the other status where the unit is on its way:
+  // owned today, gone tomorrow.
+  en_vente: 'border border-ok/50 text-ok',
   vendu: 'bg-surface-hover text-ink-muted',
   hs: 'bg-danger/15 text-danger',
 };

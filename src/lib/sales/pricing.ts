@@ -40,12 +40,13 @@ export type SalesStats = {
   averageMarginCents: number;
   /** Average of the per-sale percentages, not the ratio of the totals. */
   averageMarginPct: number;
-  best: { id: string; buildName: string; marginCents: number } | null;
-  worst: { id: string; buildName: string; marginCents: number } | null;
+  best: { id: string; name: string; marginCents: number } | null;
+  worst: { id: string; name: string; marginCents: number } | null;
 };
 
+/** A configuration and a lone component weigh the same in the totals. */
 export function computeSalesStats(
-  sales: Array<{ id: string; buildName: string; margin: Margin }>,
+  sales: Array<{ id: string; subject: { name: string }; margin: Margin }>,
 ): SalesStats {
   if (sales.length === 0) {
     return {
@@ -65,7 +66,7 @@ export function computeSalesStats(
 
   const asExtreme = (entry: (typeof sales)[number]) => ({
     id: entry.id,
-    buildName: entry.buildName,
+    name: entry.subject.name,
     marginCents: entry.margin.marginCents,
   });
 

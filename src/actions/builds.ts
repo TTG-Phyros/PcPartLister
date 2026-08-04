@@ -5,9 +5,9 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { assertSession } from '@/lib/auth/guard';
-import type { BuildStatus } from '@/lib/builds/types';
+import { BUILD_STATUSES, type BuildStatus } from '@/lib/builds/types';
 import { db } from '@/lib/db';
-import { buildItems, builds, catalogComponents, inventoryItems } from '@/lib/db/schema';
+import { buildItems, builds, catalogComponents, inventoryItems, lotItems } from '@/lib/db/schema';
 import type { ItemStatus } from '@/lib/inventory/labels';
 import { COMPONENT_CATEGORIES, MULTI_SLOT_CATEGORIES, type ComponentCategory } from '@/lib/specs';
 import type { ActionState } from './auth';
@@ -20,6 +20,7 @@ import type { ActionState } from './auth';
 const UNIT_STATUS_FOR_BUILD: Record<BuildStatus, ItemStatus> = {
   brouillon: 'reserve',
   montee: 'monte',
+  en_vente: 'en_vente',
   vendue: 'vendu',
 };
 
@@ -45,6 +46,7 @@ function revalidateBuild(buildId: string) {
   revalidatePath('/configs');
   revalidatePath(`/configs/${buildId}`);
   revalidatePath('/stock');
+  revalidatePath('/ventes');
   revalidatePath('/');
 }
 
@@ -114,12 +116,23 @@ export async function setBuildStatusAction(
 
   const id = String(formData.get('id') ?? '');
   const status = String(formData.get('status') ?? '') as BuildStatus;
-  if (!id || !['brouillon', 'montee', 'vendue'].includes(status)) {
+  if (!id || !BUILD_STATUSES.includes(status)) {
     return { error: 'Statut invalide.' };
   }
 
   await db.transaction(async (tx) => {
-    await tx.update(builds).set({ status, updatedAt: new Date() }).where(eq(builds.id, id));
+    await tx
+      .update(builds)
+      .set({
+        status,
+        // Stamp the day it went on sale; other transitions leave the date alone,
+        // it is only read while the configuration is `en_vente`.
+        ...(status === 'en_vente'
+          ? { listedAt: sql`coalesce(${builds.listedAt}, current_date)` }
+          : {}),
+        updatedAt: new Date(),
+      })
+      .where(eq(builds.id, id));
 
     // Carry the whole configuration's units to the matching stock status.
     const units = await tx
@@ -190,6 +203,17 @@ export async function addBuildItemAction(
 
   const status = await currentStatus(buildId);
   if (!status) return { error: 'Configuration introuvable.' };
+
+  // A unit promised to a lot cannot also be promised to a configuration, or the
+  // same part would be sold twice.
+  if (inventoryItemId) {
+    const [inLot] = await db
+      .select({ id: lotItems.id })
+      .from(lotItems)
+      .where(eq(lotItems.inventoryItemId, inventoryItemId))
+      .limit(1);
+    if (inLot) return { error: 'Cette unité fait partie d’un lot : retirez-la du lot d’abord.' };
+  }
 
   try {
     await db.transaction(async (tx) => {

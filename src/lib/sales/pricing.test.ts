@@ -65,9 +65,15 @@ describe('platformFeeFromPct', () => {
 });
 
 describe('computeSalesStats', () => {
-  const sale = (id: string, buildName: string, salePriceCents: number, costCents: number) => ({
+  const sale = (
+    id: string,
+    name: string,
+    salePriceCents: number,
+    costCents: number,
+    kind: 'build' | 'item' = 'build',
+  ) => ({
     id,
-    buildName,
+    subject: { kind, id, name },
     margin: computeMargin({
       salePriceCents,
       shippingCostCents: 0,
@@ -92,8 +98,8 @@ describe('computeSalesStats', () => {
     expect(stats.totalRevenueCents).toBe(150000);
     expect(stats.totalMarginCents).toBe(52000);
     expect(stats.averageMarginCents).toBe(17333);
-    expect(stats.best?.buildName).toBe('Config C');
-    expect(stats.worst?.buildName).toBe('Config B');
+    expect(stats.best?.name).toBe('Config C');
+    expect(stats.worst?.name).toBe('Config B');
   });
 
   it('picks the loss as the worst sale', () => {
@@ -102,9 +108,21 @@ describe('computeSalesStats', () => {
       sale('2', 'Config B', 20000, 30000),
     ]);
 
-    expect(stats.worst?.buildName).toBe('Config B');
+    expect(stats.worst?.name).toBe('Config B');
     expect(stats.worst?.marginCents).toBe(-10000);
     expect(stats.totalMarginCents).toBe(10000);
+  });
+
+  it('counts a lone component sold on its own like a configuration', () => {
+    const stats = computeSalesStats([
+      sale('1', 'Config A', 50000, 30000), // +200 €
+      sale('2', 'RTX 3060', 25000, 15000, 'item'), // +100 €
+    ]);
+
+    expect(stats.count).toBe(2);
+    expect(stats.totalRevenueCents).toBe(75000);
+    expect(stats.totalMarginCents).toBe(30000);
+    expect(stats.worst?.name).toBe('RTX 3060');
   });
 
   it('averages the per-sale percentages rather than the ratio of the totals', () => {
