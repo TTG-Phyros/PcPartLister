@@ -1,4 +1,5 @@
-import { desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
+import { summarizeSpecs } from '@/lib/catalog/format';
 import { db } from '@/lib/db';
 import {
   buildItems,
@@ -9,7 +10,8 @@ import {
   lots,
   sales,
 } from '@/lib/db/schema';
-import type { PurchasePlatform } from '@/lib/inventory/labels';
+import { imageUrl } from '@/lib/images/store';
+import { CONDITION_LABELS, type PurchasePlatform } from '@/lib/inventory/labels';
 import { CATEGORY_LABELS } from '@/lib/specs';
 import type { SaleShippingMethod, SaleSubject, SaleSubjectKind } from './labels';
 import { computeMargin, computeSalesStats, type Margin, type SalesStats } from './pricing';
@@ -190,6 +192,25 @@ export async function getSaleFor(
 
 /* ─────────────────────────── Listings ─────────────────────────── */
 
+/**
+ * One thing inside a listing: a component of a configuration, a unit of a lot,
+ * or the lone unit itself. What the card reveals when it is opened.
+ */
+export type ListingLine = {
+  key: string;
+  /** Category of the part, so the detail reads like a spec sheet. */
+  label: string;
+  name: string;
+  /** Specs and condition, joined for the small line under the name. */
+  detail: string;
+  imageUrl: string;
+  priceCents: number | null;
+  /** Its own page: the unit in stock, or the model in the catalog. */
+  href: string;
+  /** Owned already, or still to be bought — configurations mix the two. */
+  source: 'stock' | 'a_acheter';
+};
+
 /** Something offered for sale, waiting for a buyer. */
 export type ListingRow = {
   subject: SaleSubject;
@@ -200,7 +221,12 @@ export type ListingRow = {
   costCents: number;
   /** Second line of the card: the parts count, or the category and brand. */
   detail: string;
-  imagePath: string | null;
+  /** Thumbnail: the lone component, or the first pictured part of the bundle. */
+  imageUrl: string | null;
+  /** What the listing holds, revealed when the card is opened. */
+  lines: ListingLine[];
+  /** Consumables of a configuration, absent from the lines but paid for. */
+  consumablesCents: number;
 };
 
 export type ListingsSummary = {
@@ -211,10 +237,94 @@ export type ListingsSummary = {
   askingCents: number;
 };
 
+/** The parts of every listed configuration, grouped by configuration. */
+async function buildLines(ids: string[]): Promise<Map<string, ListingLine[]>> {
+  const grouped = new Map<string, ListingLine[]>();
+  if (ids.length === 0) return grouped;
+
+  // Same join as the configurator: the model is reached directly for a part to
+  // buy, through the owned unit otherwise.
+  const rows = await db
+    .select({ item: buildItems, inventory: inventoryItems, component: catalogComponents })
+    .from(buildItems)
+    .leftJoin(inventoryItems, eq(inventoryItems.id, buildItems.inventoryItemId))
+    .innerJoin(
+      catalogComponents,
+      or(
+        eq(catalogComponents.id, buildItems.catalogComponentId),
+        eq(catalogComponents.id, inventoryItems.catalogComponentId),
+      )!,
+    )
+    .where(inArray(buildItems.buildId, ids))
+    .orderBy(asc(buildItems.position), asc(buildItems.createdAt));
+
+  for (const { item, inventory, component } of rows) {
+    const lines = grouped.get(item.buildId) ?? [];
+    lines.push({
+      key: item.id,
+      label: CATEGORY_LABELS[item.slot],
+      name: `${component.brand} ${component.model}`,
+      detail: [
+        ...(inventory ? [CONDITION_LABELS[inventory.condition]] : []),
+        ...summarizeSpecs(component.specs),
+      ].join(' · '),
+      imageUrl: imageUrl(component.imagePath),
+      priceCents: inventory ? inventory.purchasePriceCents : item.estimatedPriceCents,
+      href: inventory ? `/stock/${inventory.id}` : `/catalogue/${component.id}`,
+      source: inventory ? 'stock' : 'a_acheter',
+    });
+    grouped.set(item.buildId, lines);
+  }
+
+  return grouped;
+}
+
+/** The units of every listed lot, grouped by lot. */
+async function lotLines(ids: string[]): Promise<Map<string, ListingLine[]>> {
+  const grouped = new Map<string, ListingLine[]>();
+  if (ids.length === 0) return grouped;
+
+  const rows = await db
+    .select({ line: lotItems, item: inventoryItems, component: catalogComponents })
+    .from(lotItems)
+    .innerJoin(inventoryItems, eq(inventoryItems.id, lotItems.inventoryItemId))
+    .innerJoin(catalogComponents, eq(catalogComponents.id, inventoryItems.catalogComponentId))
+    .where(inArray(lotItems.lotId, ids))
+    .orderBy(asc(lotItems.position), asc(lotItems.createdAt));
+
+  for (const { line, item, component } of rows) {
+    const lines = grouped.get(line.lotId) ?? [];
+    lines.push({
+      key: line.id,
+      label: CATEGORY_LABELS[component.category],
+      name: `${component.brand} ${component.model}`,
+      detail: [CONDITION_LABELS[item.condition], ...summarizeSpecs(component.specs)].join(' · '),
+      imageUrl: imageUrl(component.imagePath),
+      priceCents: item.purchasePriceCents,
+      href: `/stock/${item.id}`,
+      source: 'stock',
+    });
+    grouped.set(line.lotId, lines);
+  }
+
+  return grouped;
+}
+
+/** What `imageUrl` answers for a part with no picture of its own. */
+const NO_PICTURE = imageUrl(null);
+
+/** Thumbnail of a bundle: the first part that actually has a picture. */
+function firstPicture(lines: ListingLine[]): string | null {
+  return lines.find((line) => line.imageUrl !== NO_PICTURE)?.imageUrl ?? null;
+}
+
 /**
  * Everything currently for sale, configurations and lone components together,
  * most recently listed first. A listing without a date lands at the end rather
  * than being hidden.
+ *
+ * A configuration and a lot each count as one listing: the units they carry are
+ * `en_vente` too, but they leave as part of the bundle, not on their own.
  */
 export async function listListings(): Promise<ListingRow[]> {
   const buildCostQuery = buildCostSubquery();
@@ -247,35 +357,57 @@ export async function listListings(): Promise<ListingRow[]> {
     .leftJoin(buildCostQuery, eq(buildCostQuery.buildId, builds.id))
     .where(eq(builds.status, 'en_vente'));
 
+  // A unit held by a configuration or a lot is announced through it, never on
+  // its own: leaving it here would show the same hardware twice.
   const itemRows = await db
     .select({ item: inventoryItems, component: catalogComponents })
     .from(inventoryItems)
     .innerJoin(catalogComponents, eq(catalogComponents.id, inventoryItems.catalogComponentId))
-    .where(eq(inventoryItems.status, 'en_vente'));
+    .leftJoin(buildItems, eq(buildItems.inventoryItemId, inventoryItems.id))
+    .leftJoin(lotItems, eq(lotItems.inventoryItemId, inventoryItems.id))
+    .where(
+      and(
+        eq(inventoryItems.status, 'en_vente'),
+        isNull(buildItems.id),
+        isNull(lotItems.id),
+      ),
+    );
+
+  const [linesByBuild, linesByLot] = await Promise.all([
+    buildLines(buildRows.map((row) => row.id)),
+    lotLines(lotRows.map((row) => row.id)),
+  ]);
 
   const rows: ListingRow[] = [
     ...buildRows.map((row) => {
       const count = row.lineCount ?? 0;
+      const lines = linesByBuild.get(row.id) ?? [];
       return {
         subject: { kind: 'build' as const, id: row.id, name: row.name },
         listedAt: row.listedAt,
         askingPriceCents: row.askingPriceCents,
         costCents: (row.componentsCents ?? 0) + row.consumablesCents,
         detail: `Configuration · ${count} composant${count > 1 ? 's' : ''}`,
-        imagePath: null,
+        imageUrl: firstPicture(lines),
+        lines,
+        consumablesCents: row.consumablesCents,
       };
     }),
     ...lotRows.map((row) => {
       const count = row.lineCount ?? 0;
+      const lines = linesByLot.get(row.id) ?? [];
       return {
         subject: { kind: 'lot' as const, id: row.id, name: row.name },
         listedAt: row.listedAt,
         askingPriceCents: row.askingPriceCents,
         costCents: row.costCents ?? 0,
         detail: `Lot · ${count} unité${count > 1 ? 's' : ''}`,
-        imagePath: null,
+        imageUrl: firstPicture(lines),
+        lines,
+        consumablesCents: 0,
       };
     }),
+    // A lone unit is its own content: the detail panel then reads as its sheet.
     ...itemRows.map(({ item, component }) => ({
       subject: {
         kind: 'item' as const,
@@ -286,7 +418,23 @@ export async function listListings(): Promise<ListingRow[]> {
       askingPriceCents: item.askingPriceCents,
       costCents: item.purchasePriceCents,
       detail: `${CATEGORY_LABELS[component.category]} · ${component.brand}`,
-      imagePath: component.imagePath,
+      imageUrl: component.imagePath ? imageUrl(component.imagePath) : null,
+      lines: [
+        {
+          key: item.id,
+          label: CATEGORY_LABELS[component.category],
+          name: `${component.brand} ${component.model}`,
+          detail: [
+            CONDITION_LABELS[item.condition],
+            ...summarizeSpecs(component.specs),
+          ].join(' · '),
+          imageUrl: imageUrl(component.imagePath),
+          priceCents: item.purchasePriceCents,
+          href: `/stock/${item.id}`,
+          source: 'stock' as const,
+        },
+      ],
+      consumablesCents: 0,
     })),
   ];
 

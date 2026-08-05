@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import { ComponentImage } from '@/components/catalog/component-image';
 import { CreateLotForm } from '@/components/lots/lot-header';
-import { ConcludeSale } from '@/components/sales/conclude-sale';
+import { ListingCard } from '@/components/sales/listing-card';
 import { Card } from '@/components/ui';
 import { requireUser } from '@/lib/auth/guard';
 import { suggestedSalePriceCents } from '@/lib/builds/pricing';
@@ -9,13 +8,8 @@ import { formatPrice } from '@/lib/catalog/format';
 import { PLATFORM_LABELS } from '@/lib/inventory/labels';
 import { listLots } from '@/lib/lots/queries';
 import { SHIPPING_METHOD_LABELS, SUBJECT_LABELS, subjectHref } from '@/lib/sales/labels';
-import { computeMargin, computeSalesStats } from '@/lib/sales/pricing';
-import {
-  listListings,
-  listSales,
-  summarizeListings,
-  type ListingRow,
-} from '@/lib/sales/queries';
+import { computeSalesStats } from '@/lib/sales/pricing';
+import { listListings, listSales, summarizeListings } from '@/lib/sales/queries';
 import { getSettings } from '@/lib/settings-store';
 
 export const dynamic = 'force-dynamic';
@@ -27,11 +21,6 @@ const dateFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium' });
 function formatDay(value: string): string {
   const [year, month, day] = value.split('-').map(Number);
   return dateFormat.format(new Date(year!, month! - 1, day!));
-}
-
-function daysSince(value: string): number {
-  const [year, month, day] = value.split('-').map(Number);
-  return Math.floor((Date.now() - new Date(year!, month! - 1, day!).getTime()) / 86_400_000);
 }
 
 export default async function SalesPage() {
@@ -113,6 +102,9 @@ export default async function SalesPage() {
                 {listed.askingCents > 0 ? ` · ${formatPrice(listed.askingCents)} demandés` : ''}
               </span>
             </h2>
+            <p className="text-xs text-ink-muted">
+              Une annonce = une carte. Cliquez dessus pour voir ce qu’elle contient.
+            </p>
           </div>
           <ul className="flex flex-col gap-3">
             {listings.map((listing) => (
@@ -121,6 +113,10 @@ export default async function SalesPage() {
                   listing={listing}
                   targetMarginPct={settings.target_margin_pct}
                   defaultPlatformFeePct={settings.default_platform_fee_pct}
+                  suggestedPriceCents={suggestedSalePriceCents(
+                    listing.costCents,
+                    settings.target_margin_pct,
+                  )}
                 />
               </li>
             ))}
@@ -210,86 +206,6 @@ export default async function SalesPage() {
         </>
       ) : null}
     </div>
-  );
-}
-
-/**
- * One thing waiting for a buyer: what it cost, what is being asked, and the
- * margin that price would leave — then the button that closes the deal.
- */
-function ListingCard({
-  listing,
-  targetMarginPct,
-  defaultPlatformFeePct,
-}: {
-  listing: ListingRow;
-  targetMarginPct: number;
-  defaultPlatformFeePct: number;
-}) {
-  const suggested = suggestedSalePriceCents(listing.costCents, targetMarginPct);
-  const age = listing.listedAt ? daysSince(listing.listedAt) : null;
-  // Before any fee: the buyer has not chosen his shipping method yet.
-  const expected = listing.askingPriceCents
-    ? computeMargin({
-        salePriceCents: listing.askingPriceCents,
-        shippingCostCents: 0,
-        platformFeeCents: 0,
-        costCents: listing.costCents,
-      })
-    : null;
-
-  return (
-    <Card className="flex flex-col gap-3 p-4">
-      <div className="flex gap-3">
-        {listing.imagePath !== null ? (
-          <Link href={subjectHref(listing.subject)} className="shrink-0">
-            <ComponentImage imagePath={listing.imagePath} alt="" className="size-16" />
-          </Link>
-        ) : null}
-
-        <div className="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs text-ink-muted">{listing.detail}</p>
-            <Link
-              href={subjectHref(listing.subject)}
-              className="font-medium break-words hover:underline"
-            >
-              {listing.subject.name}
-            </Link>
-            <p className="mt-1 text-xs text-ink-muted">
-              {age === null
-                ? 'En vente'
-                : age === 0
-                  ? 'En vente depuis aujourd’hui'
-                  : `En vente depuis ${age} jour${age > 1 ? 's' : ''}`}{' '}
-              · coût de revient {formatPrice(listing.costCents)}
-            </p>
-          </div>
-
-          <div className="text-right">
-            <p className="text-lg font-semibold">
-              {listing.askingPriceCents === null
-                ? 'Prix libre'
-                : formatPrice(listing.askingPriceCents)}
-            </p>
-            <p className="text-xs text-ink-muted">
-              {expected
-                ? `marge ${formatPrice(expected.marginCents)} (${expected.marginPct.toFixed(0)} %)`
-                : `suggestion ${formatPrice(suggested)}`}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <ConcludeSale
-        subject={listing.subject}
-        costCents={listing.costCents}
-        suggestedPriceCents={suggested}
-        askingPriceCents={listing.askingPriceCents}
-        targetMarginPct={targetMarginPct}
-        defaultPlatformFeePct={defaultPlatformFeePct}
-      />
-    </Card>
   );
 }
 
