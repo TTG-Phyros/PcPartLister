@@ -1,8 +1,9 @@
-import { and, asc, desc, eq, ilike, isNull, or, sql, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, inArray, isNull, or, sql, type SQL } from 'drizzle-orm';
 import { summarizeSpecs } from '@/lib/catalog/format';
 import { db } from '@/lib/db';
 import { buildItems, builds, catalogComponents, inventoryItems } from '@/lib/db/schema';
 import { imageUrl } from '@/lib/images/store';
+import { AVAILABLE_STATUSES } from '@/lib/inventory/labels';
 import type { ComponentCategory } from '@/lib/specs';
 import type { BuildDetail, BuildLine, BuildSummaryRow, Candidate } from './types';
 
@@ -107,7 +108,9 @@ export async function candidatesForSlot(
     );
   };
 
-  // Only units that are free: anything already placed in a build is reserved.
+  // Every unit still on hand and free: on the shelf, reserved, assembled or on
+  // its way, all of it can go into a configuration. Only what is promised to a
+  // buyer stays out, and anything already placed in a build is taken.
   const stockRows = await db
     .select({ item: inventoryItems, component: catalogComponents })
     .from(inventoryItems)
@@ -116,12 +119,18 @@ export async function candidatesForSlot(
     .where(
       and(
         eq(catalogComponents.category, slot),
-        eq(inventoryItems.status, 'en_stock'),
+        inArray(inventoryItems.status, AVAILABLE_STATUSES),
         isNull(buildItems.id),
         textMatch(),
       ),
     )
-    .orderBy(asc(catalogComponents.brand), asc(catalogComponents.model))
+    // Units ready to use first, the ones still travelling last: all usable, not
+    // all right away.
+    .orderBy(
+      sql`case ${inventoryItems.status} when 'en_stock' then 0 when 'en_transit' then 2 else 1 end`,
+      asc(catalogComponents.brand),
+      asc(catalogComponents.model),
+    )
     .limit(limit);
 
   const catalogRows = await db
@@ -144,6 +153,7 @@ export async function candidatesForSlot(
       specs: component.specs,
       priceCents: item.purchasePriceCents,
       condition: item.condition,
+      status: item.status,
       purchaseDate: item.purchaseDate,
     })),
     catalog: catalogRows.map((component) => ({
@@ -158,6 +168,7 @@ export async function candidatesForSlot(
       specs: component.specs,
       priceCents: component.msrpCents,
       condition: null,
+      status: null,
       purchaseDate: null,
     })),
   };

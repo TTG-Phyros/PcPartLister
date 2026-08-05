@@ -83,5 +83,10 @@ export const STATUS_TONES: Record<ItemStatus, string> = {
  */
 export const BUILD_DRIVEN_STATUSES: ItemStatus[] = ['reserve', 'monte', 'vendu'];
 
-/** Statuses that still represent owned, usable hardware. */
-export const AVAILABLE_STATUSES: ItemStatus[] = ['en_stock'];
+/**
+ * Statuses a unit can still be engaged from — owned hardware that is not
+ * already promised to a buyer. A parcel on its way counts: a configuration is
+ * planned well before it is assembled. Out: `en_vente` and `vendu`, promised or
+ * gone, and `hs`, which no configuration should be built on.
+ */
+export const AVAILABLE_STATUSES: ItemStatus[] = ['en_stock', 'reserve', 'monte', 'en_transit'];

@@ -1,6 +1,6 @@
 'use server';
 
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql, type SQL } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -23,6 +23,28 @@ const UNIT_STATUS_FOR_BUILD: Record<BuildStatus, ItemStatus> = {
   en_vente: 'en_vente',
   vendue: 'vendu',
 };
+
+/**
+ * A parcel does not land because a configuration claims it: a unit still
+ * `en_transit` keeps that status instead of the one asked for.
+ */
+function keepingTransit(otherwise: ItemStatus): SQL {
+  return sql`(case when ${inventoryItems.status} = 'en_transit' then 'en_transit' else ${otherwise} end)::item_status`;
+}
+
+/**
+ * What a unit becomes when a configuration takes it. Reserving leaves a parcel
+ * on the road; the other statuses all mean the part is in hand, so they double
+ * as its reception — `coalesce` keeps the first arrival date.
+ */
+function engagedUnit(build: BuildStatus): { status: ItemStatus | SQL; receivedAt?: SQL } {
+  const status = UNIT_STATUS_FOR_BUILD[build];
+  if (status === 'reserve') return { status: keepingTransit('reserve') };
+  return { status, receivedAt: sql`coalesce(${inventoryItems.receivedAt}, current_date)` };
+}
+
+/** Freed from a configuration: back on the shelf, or back to waiting for it. */
+const freedUnit = { status: keepingTransit('en_stock') };
 
 const MULTI = new Set<ComponentCategory>(MULTI_SLOT_CATEGORIES);
 
@@ -144,7 +166,7 @@ export async function setBuildStatusAction(
     if (ids.length > 0) {
       await tx
         .update(inventoryItems)
-        .set({ status: UNIT_STATUS_FOR_BUILD[status], updatedAt: new Date() })
+        .set({ ...engagedUnit(status), updatedAt: new Date() })
         .where(inArray(inventoryItems.id, ids));
     }
   });
@@ -173,7 +195,7 @@ export async function deleteBuildAction(
     if (ids.length > 0) {
       await tx
         .update(inventoryItems)
-        .set({ status: 'en_stock', updatedAt: new Date() })
+        .set({ ...freedUnit, updatedAt: new Date() })
         .where(inArray(inventoryItems.id, ids));
     }
 
@@ -230,7 +252,7 @@ export async function addBuildItemAction(
         if (unitIds.length > 0) {
           await tx
             .update(inventoryItems)
-            .set({ status: 'en_stock', updatedAt: new Date() })
+            .set({ ...freedUnit, updatedAt: new Date() })
             .where(inArray(inventoryItems.id, unitIds));
         }
         if (existing.length > 0) {
@@ -274,7 +296,7 @@ export async function addBuildItemAction(
       if (inventoryItemId) {
         await tx
           .update(inventoryItems)
-          .set({ status: UNIT_STATUS_FOR_BUILD[status], updatedAt: new Date() })
+          .set({ ...engagedUnit(status), updatedAt: new Date() })
           .where(eq(inventoryItems.id, inventoryItemId));
       }
     });
@@ -308,7 +330,7 @@ export async function removeBuildItemAction(
   if (removed.unitId) {
     await db
       .update(inventoryItems)
-      .set({ status: 'en_stock', updatedAt: new Date() })
+      .set({ ...freedUnit, updatedAt: new Date() })
       .where(eq(inventoryItems.id, removed.unitId));
   }
 

@@ -1,5 +1,5 @@
 import type { Build } from '@/lib/db/schema';
-import type { ItemCondition } from '@/lib/inventory/labels';
+import type { ItemCondition, ItemStatus } from '@/lib/inventory/labels';
 import type { ComponentCategory, ComponentSpecs } from '@/lib/specs';
 
 /**
@@ -67,6 +67,8 @@ export type Candidate = {
   specs: ComponentSpecs;
   priceCents: number | null;
   condition: ItemCondition | null;
+  /** Where the unit stands today — NULL for a catalog model nobody owns yet. */
+  status: ItemStatus | null;
   purchaseDate: string | null;
 };
 

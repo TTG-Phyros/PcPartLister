@@ -18,7 +18,7 @@ import { candidateToPart } from '@/lib/builds/selection';
 import type { Candidate } from '@/lib/builds/types';
 import { formatPriceCompact } from '@/lib/catalog/format';
 import { checkCandidate, type BuildSelection, type CandidateVerdict } from '@/lib/compat/engine';
-import { CONDITION_LABELS } from '@/lib/inventory/labels';
+import { CONDITION_LABELS, STATUS_LABELS, STATUS_TONES } from '@/lib/inventory/labels';
 import { CATEGORY_LABELS, type ComponentCategory } from '@/lib/specs';
 import { TIER_LIST_CONFIG, tierListKindFor, type TierListKind } from '@/lib/tier-list/kinds';
 import { buildTierIndex, findTierEntry } from '@/lib/tier-list/parse';
@@ -167,7 +167,7 @@ export function SlotPicker({
           <div className="min-w-0 flex-1">
             <h2 className="font-semibold">{CATEGORY_LABELS[slot]}</h2>
             <p className="text-xs text-ink-muted">
-              Vos unités en stock d’abord, puis les modèles à acheter.
+              Vos unités disponibles d’abord, puis les modèles à acheter.
             </p>
           </div>
           <Button variant="ghost" onClick={onClose} type="button">
@@ -257,8 +257,8 @@ export function SlotPicker({
           ) : null}
 
           <Group
-            title={`En stock (${stock.length})`}
-            hint="Prix d’achat réel, déjà payé."
+            title={`Mon stock (${stock.length})`}
+            hint="Prix d’achat réel, déjà payé — en transit et réservées comprises."
             empty={
               loading
                 ? 'Chargement…'
@@ -428,7 +428,21 @@ function CandidateRow({
             {candidate.brand}
             {candidate.condition ? ` · ${CONDITION_LABELS[candidate.condition]}` : ''}
           </span>
-          <span className="block truncate font-medium">{candidate.model}</span>
+          <span className="block truncate font-medium">
+            {candidate.model}
+            {/* Only when it is not simply on the shelf: a badge on every line
+                would say nothing. */}
+            {candidate.status && candidate.status !== 'en_stock' ? (
+              <span
+                className={cn(
+                  'ml-2 rounded-md px-1.5 py-0.5 align-middle text-[11px] font-medium',
+                  STATUS_TONES[candidate.status],
+                )}
+              >
+                {STATUS_LABELS[candidate.status]}
+              </span>
+            ) : null}
+          </span>
           <span className="block truncate text-xs text-ink-muted">
             {candidate.summary.join(' · ')}
           </span>

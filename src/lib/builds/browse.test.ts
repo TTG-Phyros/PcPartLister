@@ -29,6 +29,7 @@ function gpu(overrides: Partial<Candidate> & { model: string; vramGb?: number })
     },
     priceCents: 10000,
     condition: null,
+    status: null,
     purchaseDate: null,
     ...rest,
   };
@@ -55,6 +56,7 @@ function cpu(overrides: Partial<Candidate> & { model: string; socket: string }):
     },
     priceCents: 10000,
     condition: null,
+    status: null,
     purchaseDate: null,
     ...rest,
   };
