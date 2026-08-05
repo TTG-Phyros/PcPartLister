@@ -20,6 +20,12 @@ import type { TierRow } from '@/lib/tier-list/types';
 
 const MULTI = new Set<ComponentCategory>(MULTI_SLOT_CATEGORIES);
 
+/**
+ * Slots a finished configuration may legitimately leave empty. Everything else
+ * is required hardware: a PC without one of them is not a PC.
+ */
+const OPTIONAL_SLOTS = new Set<ComponentCategory>(['misc']);
+
 export function Configurator({
   build,
   targetMarginPct,
@@ -47,6 +53,11 @@ export function Configurator({
 
   const cost = computeBuildCost(build.lines, build.consumablesCents);
   const suggested = suggestedSalePriceCents(cost.totalCents, targetMarginPct);
+
+  // Required slots with nothing in them: what the configuration still needs.
+  const missingSlots = SLOT_ORDER.filter(
+    (slot) => !OPTIONAL_SLOTS.has(slot) && !build.lines.some((line) => line.slot === slot),
+  );
 
   return (
     <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
@@ -78,15 +89,36 @@ export function Configurator({
           </Alert>
         ) : null}
 
+        {missingSlots.length > 0 && editable ? (
+          <Alert tone="error">
+            <p className="font-medium">
+              {missingSlots.length} composant{missingSlots.length > 1 ? 's' : ''} manquant
+              {missingSlots.length > 1 ? 's' : ''}
+            </p>
+            <p className="mt-1">
+              {missingSlots.map((slot) => CATEGORY_LABELS[slot]).join(', ')} : sans eux la machine
+              ne démarre pas.
+            </p>
+          </Alert>
+        ) : null}
+
         <ul className="flex flex-col gap-3">
           {SLOT_ORDER.map((slot) => {
             const lines = build.lines.filter((line) => line.slot === slot);
             const multi = MULTI.has(slot);
+            // A slot left empty is flagged in red, except the optional ones:
+            // « Divers » holds the extras, a configuration is complete without it.
+            const missing = editable && lines.length === 0 && !OPTIONAL_SLOTS.has(slot);
             return (
               <li key={slot}>
-                <Card className="flex flex-col gap-3 p-3">
+                <Card className={cn('flex flex-col gap-3 p-3', missing && 'border-danger')}>
                   <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-sm font-medium text-ink-muted">
+                    <h2
+                      className={cn(
+                        'text-sm font-medium',
+                        missing ? 'text-danger' : 'text-ink-muted',
+                      )}
+                    >
                       {CATEGORY_LABELS[slot]}
                       {multi ? <span className="ml-1 text-xs">(plusieurs possibles)</span> : null}
                     </h2>
@@ -103,7 +135,9 @@ export function Configurator({
                   </div>
 
                   {lines.length === 0 ? (
-                    <p className="text-sm text-ink-muted">Aucun composant sélectionné.</p>
+                    <p className={cn('text-sm', missing ? 'text-danger' : 'text-ink-muted')}>
+                      {missing ? 'Composant manquant.' : 'Aucun composant sélectionné.'}
+                    </p>
                   ) : (
                     <ul className="flex flex-col gap-2">
                       {lines.map((line) => (
