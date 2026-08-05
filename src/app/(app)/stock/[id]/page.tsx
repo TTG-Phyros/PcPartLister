@@ -252,25 +252,33 @@ function SaleCard({
         </p>
       </div>
 
-      {concluding ? (
-        <SaleForm
-          subject={subject}
-          costCents={costCents}
-          suggestedPriceCents={suggestedPrice}
-          askingPriceCents={item.askingPriceCents}
-          targetMarginPct={targetMarginPct}
-          defaultPlatformFeePct={defaultPlatformFeePct}
-          sale={sale}
-        />
-      ) : (
+      {/* Announce, then re-price: the same form does both until the unit is
+          actually sold. */}
+      {item.status === 'vendu' ? null : (
         <ListForSale
           subject={subject}
           costCents={costCents}
           suggestedPriceCents={suggestedPrice}
           askingPriceCents={item.askingPriceCents}
           targetMarginPct={targetMarginPct}
+          listed={listed}
         />
       )}
+
+      {concluding ? (
+        <div className="flex flex-col gap-4 border-t border-border-subtle pt-4">
+          <h3 className="font-medium">{sale ? 'Vente enregistrée' : 'Conclure la vente'}</h3>
+          <SaleForm
+            subject={subject}
+            costCents={costCents}
+            suggestedPriceCents={suggestedPrice}
+            askingPriceCents={item.askingPriceCents}
+            targetMarginPct={targetMarginPct}
+            defaultPlatformFeePct={defaultPlatformFeePct}
+            sale={sale}
+          />
+        </div>
+      ) : null}
 
       {listed && !sale ? <Unlist subject={subject} /> : null}
     </Card>

@@ -41,15 +41,16 @@ export default async function BuildPage({ params }: { params: Promise<{ id: stri
     getAllTierRows(),
   ]);
   const cost = computeBuildCost(build.lines, build.consumablesCents);
+  const sold = build.status === 'vendue';
   // A sold configuration is a record: its lines stay as they were.
-  const editable = build.status !== 'vendue';
+  const editable = !sold;
 
   const subject: SaleSubject = { kind: 'build', id: build.id, name: build.name };
   const listed = build.status === 'en_vente';
   const suggestedPrice = suggestedSalePriceCents(cost.totalCents, settings.target_margin_pct);
   // A configuration marked sold from the flow has no figures yet: offer the
   // form so the sale can be filled in after the fact.
-  const concluding = sale !== null || listed || build.status === 'vendue';
+  const concluding = sale !== null || listed || sold;
 
   return (
     <div className="flex flex-col gap-5">
@@ -79,20 +80,33 @@ export default async function BuildPage({ params }: { params: Promise<{ id: stri
         tierRows={tierRows}
       />
 
-      {build.status === 'brouillon' && !sale ? null : (
-        <Card className="flex flex-col gap-4">
-          <div>
-            <h2 className="font-medium">Vente</h2>
-            <p className="mt-1 text-sm text-ink-muted">
-              Coût de revient : {formatPrice(cost.totalCents)} (
-              {formatPrice(cost.componentsCents)} de composants +{' '}
-              {formatPrice(cost.consumablesCents)} de consommables).
-              {listed && build.listedAt ? ` En vente depuis le ${formatDay(build.listedAt)}.` : ''}
-            </p>
-          </div>
+      <Card className="flex flex-col gap-4">
+        <div>
+          <h2 className="font-medium">Vente</h2>
+          <p className="mt-1 text-sm text-ink-muted">
+            Coût de revient : {formatPrice(cost.totalCents)} (
+            {formatPrice(cost.componentsCents)} de composants +{' '}
+            {formatPrice(cost.consumablesCents)} de consommables).
+            {listed && build.listedAt ? ` En vente depuis le ${formatDay(build.listedAt)}.` : ''}
+          </p>
+        </div>
 
-          {/* Two moments, two forms: still on the shelf, or on its way out. */}
-          {concluding ? (
+        {/* The price stays yours while nothing is concluded: the same form
+            announces the configuration, then moves its price. */}
+        {sold ? null : (
+          <ListForSale
+            subject={subject}
+            costCents={cost.totalCents}
+            suggestedPriceCents={suggestedPrice}
+            askingPriceCents={build.askingPriceCents}
+            targetMarginPct={settings.target_margin_pct}
+            listed={listed}
+          />
+        )}
+
+        {concluding ? (
+          <div className="flex flex-col gap-4 border-t border-border-subtle pt-4">
+            <h3 className="font-medium">{sale ? 'Vente enregistrée' : 'Conclure la vente'}</h3>
             <SaleForm
               subject={subject}
               costCents={cost.totalCents}
@@ -102,19 +116,11 @@ export default async function BuildPage({ params }: { params: Promise<{ id: stri
               defaultPlatformFeePct={settings.default_platform_fee_pct}
               sale={sale}
             />
-          ) : (
-            <ListForSale
-              subject={subject}
-              costCents={cost.totalCents}
-              suggestedPriceCents={suggestedPrice}
-              askingPriceCents={build.askingPriceCents}
-              targetMarginPct={settings.target_margin_pct}
-            />
-          )}
+          </div>
+        ) : null}
 
-          {listed && !sale ? <Unlist subject={subject} /> : null}
-        </Card>
-      )}
+        {listed && !sale ? <Unlist subject={subject} /> : null}
+      </Card>
 
       <Card>
         <h2 className="mb-4 font-medium">Informations</h2>

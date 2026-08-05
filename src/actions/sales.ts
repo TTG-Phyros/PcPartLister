@@ -122,12 +122,14 @@ export async function listForSaleAction(
   const askingPriceCents = optionalCents(formData.get('askingPriceEur'));
 
   const guard = await guardListable(kind, id);
-  if (guard) return guard;
+  if ('error' in guard) return guard.error;
 
   await db.transaction(async (tx) => {
     const listing = {
       askingPriceCents,
-      listedAt: sql`current_date`,
+      // Re-pricing something already announced must not rejuvenate it: the
+      // « en vente depuis » counter keeps its original day.
+      listedAt: sql`coalesce(listed_at, current_date)`,
       updatedAt: new Date(),
     };
 
@@ -152,6 +154,14 @@ export async function listForSaleAction(
   });
 
   revalidateSubject(kind, id);
+  if (guard.alreadyListed) {
+    return {
+      success:
+        askingPriceCents === null
+          ? 'Prix retiré : l’annonce est de nouveau à prix libre.'
+          : `Prix mis à jour : ${(askingPriceCents / 100).toLocaleString('fr-FR')} €.`,
+    };
+  }
   return {
     success:
       kind === 'build'
@@ -162,17 +172,26 @@ export async function listForSaleAction(
   };
 }
 
-/** Refuses the listings that would contradict something already decided. */
-async function guardListable(kind: SaleSubjectKind, id: string): Promise<ActionState | null> {
+/**
+ * Refuses the listings that would contradict something already decided, and
+ * tells whether the subject was already announced — the same form both puts a
+ * thing on sale and re-prices it afterwards.
+ */
+async function guardListable(
+  kind: SaleSubjectKind,
+  id: string,
+): Promise<{ error: ActionState } | { alreadyListed: boolean }> {
   if (kind === 'build') {
     const [build] = await db
       .select({ status: builds.status })
       .from(builds)
       .where(eq(builds.id, id))
       .limit(1);
-    if (!build) return { error: 'Configuration introuvable.' };
-    if (build.status === 'vendue') return { error: 'Cette configuration est déjà vendue.' };
-    return null;
+    if (!build) return { error: { error: 'Configuration introuvable.' } };
+    if (build.status === 'vendue') {
+      return { error: { error: 'Cette configuration est déjà vendue.' } };
+    }
+    return { alreadyListed: build.status === 'en_vente' };
   }
 
   if (kind === 'lot') {
@@ -181,15 +200,17 @@ async function guardListable(kind: SaleSubjectKind, id: string): Promise<ActionS
       .from(lots)
       .where(eq(lots.id, id))
       .limit(1);
-    if (!lot) return { error: 'Lot introuvable.' };
-    if (lot.status === 'vendu') return { error: 'Ce lot est déjà vendu.' };
+    if (!lot) return { error: { error: 'Lot introuvable.' } };
+    if (lot.status === 'vendu') return { error: { error: 'Ce lot est déjà vendu.' } };
 
     const [{ count }] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(lotItems)
       .where(eq(lotItems.lotId, id));
-    if (count === 0) return { error: 'Ce lot est vide : ajoutez-y des unités d’abord.' };
-    return null;
+    if (count === 0) {
+      return { error: { error: 'Ce lot est vide : ajoutez-y des unités d’abord.' } };
+    }
+    return { alreadyListed: lot.status === 'en_vente' };
   }
 
   const [item] = await db
@@ -197,8 +218,8 @@ async function guardListable(kind: SaleSubjectKind, id: string): Promise<ActionS
     .from(inventoryItems)
     .where(eq(inventoryItems.id, id))
     .limit(1);
-  if (!item) return { error: 'Unité introuvable.' };
-  if (item.status === 'vendu') return { error: 'Cette unité est déjà vendue.' };
+  if (!item) return { error: { error: 'Unité introuvable.' } };
+  if (item.status === 'vendu') return { error: { error: 'Cette unité est déjà vendue.' } };
 
   // A unit engaged elsewhere is sold with what holds it, not on its own:
   // otherwise the two would fight over its status.
@@ -209,8 +230,10 @@ async function guardListable(kind: SaleSubjectKind, id: string): Promise<ActionS
     .limit(1);
   if (inBuild) {
     return {
-      error:
-        'Cette unité fait partie d’une configuration : mettez la configuration en vente, ou retirez l’unité d’abord.',
+      error: {
+        error:
+          'Cette unité fait partie d’une configuration : mettez la configuration en vente, ou retirez l’unité d’abord.',
+      },
     };
   }
 
@@ -221,11 +244,13 @@ async function guardListable(kind: SaleSubjectKind, id: string): Promise<ActionS
     .limit(1);
   if (inLot) {
     return {
-      error: 'Cette unité fait partie d’un lot : mettez le lot en vente, ou retirez-la d’abord.',
+      error: {
+        error: 'Cette unité fait partie d’un lot : mettez le lot en vente, ou retirez-la d’abord.',
+      },
     };
   }
 
-  return null;
+  return { alreadyListed: item.status === 'en_vente' };
 }
 
 /** Takes a listing back: nothing was sold, the thing returns to the shelf. */

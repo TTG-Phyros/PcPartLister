@@ -125,25 +125,33 @@ export default async function LotPage({ params }: { params: Promise<{ id: string
             </p>
           </div>
 
-          {sale || listed || sold ? (
-            <SaleForm
-              subject={subject}
-              costCents={costCents}
-              suggestedPriceCents={suggestedPrice}
-              askingPriceCents={lot.askingPriceCents}
-              targetMarginPct={settings.target_margin_pct}
-              defaultPlatformFeePct={settings.default_platform_fee_pct}
-              sale={sale}
-            />
-          ) : (
+          {/* Announce, then re-price: the same form does both until the lot is
+              actually sold. */}
+          {sold ? null : (
             <ListForSale
               subject={subject}
               costCents={costCents}
               suggestedPriceCents={suggestedPrice}
               askingPriceCents={lot.askingPriceCents}
               targetMarginPct={settings.target_margin_pct}
+              listed={listed}
             />
           )}
+
+          {sale || listed || sold ? (
+            <div className="flex flex-col gap-4 border-t border-border-subtle pt-4">
+              <h3 className="font-medium">{sale ? 'Vente enregistrée' : 'Conclure la vente'}</h3>
+              <SaleForm
+                subject={subject}
+                costCents={costCents}
+                suggestedPriceCents={suggestedPrice}
+                askingPriceCents={lot.askingPriceCents}
+                targetMarginPct={settings.target_margin_pct}
+                defaultPlatformFeePct={settings.default_platform_fee_pct}
+                sale={sale}
+              />
+            </div>
+          ) : null}
 
           {listed && !sale ? <Unlist subject={subject} /> : null}
         </Card>
