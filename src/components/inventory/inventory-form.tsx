@@ -70,12 +70,15 @@ export function InventoryForm({
   submitLabel,
   mode,
   preselected,
+  buildLineId,
 }: {
   action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
   initial: InventoryFormInitial;
   submitLabel: string;
   mode: 'create' | 'edit';
   preselected?: CatalogSearchHit | null;
+  /** Build line this purchase fills, when the form was opened to complete one. */
+  buildLineId?: string | null;
 }) {
   const [state, formAction] = useActionState<ActionState, FormData>(action, {});
 
@@ -120,6 +123,7 @@ export function InventoryForm({
   return (
     <form action={formAction} className="flex flex-col gap-6">
       {initial.id ? <input type="hidden" name="id" value={initial.id} /> : null}
+      {buildLineId ? <input type="hidden" name="buildLineId" value={buildLineId} /> : null}
 
       {mode === 'create' ? (
         <section className="flex flex-col gap-3">
@@ -434,7 +438,9 @@ export function InventoryForm({
 
       <div className="flex flex-wrap gap-3">
         <SubmitButton label={submitLabel} />
-        {mode === 'create' ? (
+        {/* Filling one named line is a one-shot errand: chaining entries here
+            would leave the following units with nowhere to go. */}
+        {mode === 'create' && !buildLineId ? (
           <SubmitButton
             label="Enregistrer et en ajouter un autre"
             name="again"

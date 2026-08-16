@@ -34,7 +34,7 @@ docker compose exec db psql -U pcpartlister -d pcpartlister -c '\dt'
 
 Aucune page ni route API n'est accessible sans session valide, à la seule exception de
 `/connexion` et `/api/health`. Il n'y a pas d'inscription publique : les comptes se créent
-depuis **Comptes** (réservé aux administrateurs).
+depuis **Profil → Comptes** (réservé aux administrateurs).
 
 Le premier démarrage crée un administrateur à partir de `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
 Ce bootstrap ne s'exécute que si la table `users` est vide : modifier `ADMIN_PASSWORD`
@@ -266,6 +266,22 @@ sélectionner une pièce.
 
 Le panneau de coût sépare ce qui est déjà payé de ce qui reste à acheter, ajoute les
 consommables et propose un prix de vente atteignant l'objectif de marge (`target_margin_pct`).
+
+### À acheter
+
+`Configs → À acheter` renverse la lecture : au lieu d'une configuration et de ce qui lui
+manque, la liste de tout ce qui manque, toutes configurations confondues. Une ligne « à
+acheter » y entre dès qu'elle nomme un modèle sans unité derrière, et en sort quand une
+unité la remplit. Les configurations vendues n'y figurent pas : leurs emplacements vides
+sont de l'histoire, pas des courses.
+
+Un même modèle réclamé par deux configurations tient sur une ligne, dépliable pour voir
+qui l'attend. Le bouton **Acheter** ouvre la saisie d'achat avec le modèle et l'estimation
+déjà remplis ; à l'enregistrement, l'unité créée prend la place de la ligne dans la
+configuration et suit son statut, exactement comme si elle y avait été choisie à la main.
+
+Quand une unité libre du modèle dort déjà en stock — achetée depuis que la ligne a été
+écrite —, la liste le signale : il y a à rattacher, pas à racheter.
 
 ### Cycle de vie et effet sur le stock
 

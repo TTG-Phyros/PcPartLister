@@ -1,50 +1,16 @@
 'use server';
 
-import { and, eq, inArray, sql, type SQL } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { assertSession } from '@/lib/auth/guard';
+import { engagedUnit, freedUnit } from '@/lib/builds/engagement';
 import { BUILD_STATUSES, type BuildStatus } from '@/lib/builds/types';
 import { db } from '@/lib/db';
 import { buildItems, builds, catalogComponents, inventoryItems, lotItems } from '@/lib/db/schema';
-import type { ItemStatus } from '@/lib/inventory/labels';
 import { COMPONENT_CATEGORIES, MULTI_SLOT_CATEGORIES, type ComponentCategory } from '@/lib/specs';
 import type { ActionState } from './auth';
-
-/**
- * A unit placed in a configuration is no longer freely available. Its status
- * follows the configuration: reserved while the build is a draft, mounted once
- * assembled, sold once the build is sold.
- */
-const UNIT_STATUS_FOR_BUILD: Record<BuildStatus, ItemStatus> = {
-  brouillon: 'reserve',
-  montee: 'monte',
-  en_vente: 'en_vente',
-  vendue: 'vendu',
-};
-
-/**
- * A parcel does not land because a configuration claims it: a unit still
- * `en_transit` keeps that status instead of the one asked for.
- */
-function keepingTransit(otherwise: ItemStatus): SQL {
-  return sql`(case when ${inventoryItems.status} = 'en_transit' then 'en_transit' else ${otherwise} end)::item_status`;
-}
-
-/**
- * What a unit becomes when a configuration takes it. Reserving leaves a parcel
- * on the road; the other statuses all mean the part is in hand, so they double
- * as its reception — `coalesce` keeps the first arrival date.
- */
-function engagedUnit(build: BuildStatus): { status: ItemStatus | SQL; receivedAt?: SQL } {
-  const status = UNIT_STATUS_FOR_BUILD[build];
-  if (status === 'reserve') return { status: keepingTransit('reserve') };
-  return { status, receivedAt: sql`coalesce(${inventoryItems.receivedAt}, current_date)` };
-}
-
-/** Freed from a configuration: back on the shelf, or back to waiting for it. */
-const freedUnit = { status: keepingTransit('en_stock') };
 
 const MULTI = new Set<ComponentCategory>(MULTI_SLOT_CATEGORIES);
 
@@ -66,6 +32,7 @@ async function currentStatus(buildId: string): Promise<BuildStatus | null> {
 
 function revalidateBuild(buildId: string) {
   revalidatePath('/configs');
+  revalidatePath('/configs/a-acheter');
   revalidatePath(`/configs/${buildId}`);
   revalidatePath('/stock');
   revalidatePath('/ventes');

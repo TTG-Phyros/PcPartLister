@@ -18,13 +18,10 @@ export default async function BuildsPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Configurations</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Assemblez un PC emplacement par emplacement : vos unités en stock en tête, les modèles
-          à acheter en dessous, incompatibilités signalées en direct.
-        </p>
-      </div>
+      <p className="text-sm text-ink-muted">
+        Assemblez un PC emplacement par emplacement : vos unités en stock en tête, les modèles
+        à acheter en dessous, incompatibilités signalées en direct.
+      </p>
 
       <Card>
         <CreateBuildForm />

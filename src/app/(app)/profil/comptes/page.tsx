@@ -27,12 +27,9 @@ export default async function UsersAdminPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Comptes</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Il n’y a pas d’inscription publique : les comptes se créent uniquement ici.
-        </p>
-      </div>
+      <p className="text-sm text-ink-muted">
+        Il n’y a pas d’inscription publique : les comptes se créent uniquement ici.
+      </p>
 
       <Card className="flex flex-col gap-4">
         <h2 className="font-medium">Créer un compte</h2>

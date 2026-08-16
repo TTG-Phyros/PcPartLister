@@ -20,11 +20,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Every page under this layout is behind the session check.
   const user = await requireUser();
 
-  const links =
-    user.role === 'admin'
-      ? [...LINKS, { href: '/admin/utilisateurs', label: 'Comptes' }]
-      : LINKS;
-
   return (
     <div className="min-h-dvh">
       <SessionKeepAlive />
@@ -40,7 +35,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
 
           <div className="flex min-w-0 items-center gap-3">
-            <AppNav links={links} />
+            <AppNav links={LINKS} />
             <div className="hidden min-w-0 sm:flex sm:items-center sm:gap-2">
               <UserMenu email={user.email} />
             </div>

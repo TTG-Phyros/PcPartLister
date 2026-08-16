@@ -34,6 +34,16 @@ export async function listBuilds(): Promise<BuildSummaryRow[]> {
   }));
 }
 
+/** Just the name, to talk about a configuration without loading its lines. */
+export async function getBuildName(id: string): Promise<string | null> {
+  const [row] = await db
+    .select({ name: builds.name })
+    .from(builds)
+    .where(eq(builds.id, id))
+    .limit(1);
+  return row?.name ?? null;
+}
+
 export async function getBuildDetail(id: string): Promise<BuildDetail | null> {
   const [build] = await db.select().from(builds).where(eq(builds.id, id)).limit(1);
   if (!build) return null;

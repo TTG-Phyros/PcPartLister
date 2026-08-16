@@ -1,12 +1,13 @@
 'use server';
 
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, isNotNull, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { assertSession } from '@/lib/auth/guard';
+import { engagedUnit } from '@/lib/builds/engagement';
 import { db } from '@/lib/db';
-import { buildItems, catalogComponents, inventoryItems, lotItems } from '@/lib/db/schema';
+import { buildItems, builds, catalogComponents, inventoryItems, lotItems } from '@/lib/db/schema';
 import {
   ITEM_CONDITIONS,
   ITEM_STATUSES,
@@ -197,7 +198,7 @@ export async function createInventoryItemAction(
   }
 
   const [component] = await db
-    .select({ id: catalogComponents.id })
+    .select({ id: catalogComponents.id, category: catalogComponents.category })
     .from(catalogComponents)
     .where(eq(catalogComponents.id, componentId))
     .limit(1);
@@ -205,22 +206,71 @@ export async function createInventoryItemAction(
     return { error: 'Modèle du catalogue introuvable.', values: echoValues(formData) };
   }
 
-  const [created] = await db
-    .insert(inventoryItems)
-    .values({
-      catalogComponentId: componentId,
-      ...unit,
-      // A unit entered as already in stock was received the day it was bought.
-      receivedAt: unit.status === 'en_transit' ? null : unit.purchaseDate,
-    })
-    .returning({ id: inventoryItems.id });
+  // Bought to fill a named slot of a configuration, from the shopping list.
+  const buildLineId = String(formData.get('buildLineId') ?? '');
+
+  const { unitId, buildId } = await db.transaction(async (tx) => {
+    const [created] = await tx
+      .insert(inventoryItems)
+      .values({
+        catalogComponentId: componentId,
+        ...unit,
+        // A unit entered as already in stock was received the day it was bought.
+        receivedAt: unit.status === 'en_transit' ? null : unit.purchaseDate,
+      })
+      .returning({ id: inventoryItems.id });
+    const newUnitId = created!.id;
+
+    if (!buildLineId) return { unitId: newUnitId, buildId: null };
+
+    // The line may have been filled or dropped while the form was open, and the
+    // model may have been switched for one of another category — which would
+    // leave the slot holding something it is not typed for. Either way the
+    // purchase stands on its own; only the attachment is abandoned.
+    const [line] = await tx
+      .select({
+        id: buildItems.id,
+        buildId: buildItems.buildId,
+        slot: buildItems.slot,
+        buildStatus: builds.status,
+      })
+      .from(buildItems)
+      .innerJoin(builds, eq(builds.id, buildItems.buildId))
+      .where(and(eq(buildItems.id, buildLineId), isNotNull(buildItems.catalogComponentId)))
+      .limit(1);
+    if (!line || line.slot !== component.category) {
+      return { unitId: newUnitId, buildId: null };
+    }
+
+    // The line stops naming a model to find and starts holding the unit that
+    // answers it; the estimate goes with it, the real price now applies.
+    await tx
+      .update(buildItems)
+      .set({ inventoryItemId: newUnitId, catalogComponentId: null, estimatedPriceCents: null })
+      .where(eq(buildItems.id, line.id));
+
+    await tx
+      .update(inventoryItems)
+      .set({ ...engagedUnit(line.buildStatus), updatedAt: new Date() })
+      .where(eq(inventoryItems.id, newUnitId));
+
+    return { unitId: newUnitId, buildId: line.buildId };
+  });
 
   revalidatePath('/stock');
   revalidatePath('/');
 
+  if (buildId) {
+    revalidatePath('/configs');
+    revalidatePath('/configs/a-acheter');
+    revalidatePath(`/configs/${buildId}`);
+    // Back to the errand list, one item shorter.
+    redirect(`/configs/a-acheter?achete=${buildId}`);
+  }
+
   // "Save and add another" keeps the phone workflow going at a flea market.
   if (formData.get('again') === '1') redirect('/stock/nouveau?ajoute=1');
-  redirect(`/stock/${created!.id}`);
+  redirect(`/stock/${unitId}`);
 }
 
 export async function updateInventoryItemAction(

@@ -14,8 +14,6 @@ export default async function ProfilePage() {
 
   return (
     <div className="flex max-w-xl flex-col gap-6">
-      <h1 className="text-xl font-semibold tracking-tight">Profil</h1>
-
       <Card className="flex flex-col gap-2 text-sm">
         <Row label="Email" value={user.email} />
         <Row label="Rôle" value={user.role === 'admin' ? 'Administrateur' : 'Utilisateur'} />

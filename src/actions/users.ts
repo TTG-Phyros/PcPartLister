@@ -10,7 +10,7 @@ import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import type { ActionState } from './auth';
 
-const ADMIN_PATH = '/admin/utilisateurs';
+const ADMIN_PATH = '/profil/comptes';
 
 const createUserSchema = z.object({
   email: z.string().trim().toLowerCase().email('Adresse email invalide'),

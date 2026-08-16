@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
     // Purchase forms may carry an uploaded component picture.
     serverActions: { bodySizeLimit: '8mb' },
   },
+  // Account management moved out of the main navigation and into the profile
+  // page; bookmarks on the old address keep working.
+  async redirects() {
+    return [{ source: '/admin/utilisateurs', destination: '/profil/comptes', permanent: true }];
+  },
 };
 
 export default nextConfig;
