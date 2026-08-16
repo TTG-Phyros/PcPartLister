@@ -146,6 +146,72 @@ l'entrée catalogue et l'unité en une seule validation. Le bouton
 
 Plateformes d'achat : Vinted, Leboncoin, Facebook Marketplace, main propre, Amazon, autre.
 
+### Saisie groupée (arrivages)
+
+Cinq barrettes de RAM prises sur la même annonce Vinted, c'est **un** colis et **un** prix, mais
+cinq pièces qui vivront ensuite leur vie chacune de leur côté. `Stock → Saisie groupée` saisit
+tout cela d'un coup.
+
+Le formulaire tient en trois blocs : les lignes du lot (un modèle du catalogue et son nombre
+d'exemplaires — répétez la même ligne ou variez les catégories), l'achat (prix total, date,
+plateforme, état, statut), et le suivi du colis. Les modèles se choisissent au catalogue ; un
+modèle absent se crée d'abord depuis `Ajouter un achat` ou depuis le catalogue.
+
+Ce que la saisie produit :
+
+| Ce qui est saisi une fois | Ce qui est créé |
+| --- | --- |
+| N lignes × exemplaires | **Une unité de stock indépendante par exemplaire**, avec le statut, l'état, la date et les specs d'une unité saisie à la main |
+| Un prix total, port compris | La part de chacune, calculée à la saisie |
+| Un numéro de colis | Le même suivi sur chaque unité, plus un lot qui le porte |
+
+**La répartition du prix se fait au centime près.** Tout est stocké en centimes, donc le montant
+est divisé entier et le reliquat — toujours moins de centimes qu'il n'y a d'unités — va aux
+premières : 100,00 € pour 3 pièces donnent 33,34 € puis 33,33 € et 33,33 €. La somme des parts est
+donc **exactement** le prix payé, et aucune dérive ne peut apparaître plus tard dans un calcul de
+marge. C'est le seul rôle de [src/lib/inventory/split.ts](src/lib/inventory/split.ts), testé à part.
+
+#### Où les arrivages apparaissent
+
+Il n'y a pas de page qui liste les lots : un lot n'est pas une chose de plus à consulter, c'est
+une façon de lire le stock. Partout où des unités sont listées, **celles d'un même colis se
+replient en une seule ligne dépliante** :
+
+| Où | Ce que porte la ligne repliée |
+| --- | --- |
+| Liste du stock | Libellé, date, plateforme, nombre d'unités, prix du lot, transporteur, retard éventuel |
+| Tableau de bord, **Colis en cours** | Idem, plus l'échéance de livraison — un colis de cinq pièces ne noie plus le panneau |
+| Tableau de bord, derniers achats et dormants | Idem |
+
+Dépliée, la ligne montre ses unités **exactement comme les autres** — même carte, même sélecteur
+de statut, même lien vers la fiche — précédées d'un accès au suivi du colis et à la fiche du lot.
+C'est du `<details>` natif, rendu côté serveur : replier et déplier ne coûte aucun JavaScript ni
+aucun aller-retour.
+
+Filtres et pagination continuent de porter sur les **unités**, jamais sur les lots : filtrer par
+catégorie peut ne laisser qu'une pièce d'un colis, auquel cas la ligne l'annonce (« 1 unité
+sur 5 »). Un lot n'est jamais déplacé dans le tri : il prend la place de sa première unité.
+
+Le lien entre une unité et son lot est **facultatif** : une unité saisie seule n'en a pas, et
+c'est le cas courant. Quand il existe, la fiche de l'unité affiche un bloc **Arrivage** — « cette
+unité fait partie de l'arrivage X, avec 4 autres unités », le prix du lot et le numéro de colis —
+qui renvoie vers `/arrivages/<id>`. C'est la seule page propre au lot, celle où l'on corrige le
+suivi, où l'on passe **toutes** ses unités en stock d'un bouton quand le colis arrive, et où on le
+dissout.
+
+Le suivi se reporte sur les unités à l'enregistrement : c'est ce qu'un lot a d'unique, un seul
+numéro pour plusieurs pièces. Le prix total, lui, est réparti une fois pour
+toutes ; le re-répartir réécrirait le prix d'achat d'unités peut-être déjà vendues, donc une
+correction se fait unité par unité depuis sa fiche. La page signale l'écart si le total des parts
+finit par ne plus tomber sur le prix payé.
+
+**Dissoudre un lot ne supprime rien** : les unités restent au stock avec leur prix et perdent
+seulement le lien vers le colis (`on delete set null`).
+
+> À ne pas confondre avec les **lots de vente** ([Ventes](#lots)), qui sont l'image inverse :
+> plusieurs unités qui partent ensemble chez un même acheteur. Un arrivage groupe une entrée, un
+> lot groupe une sortie ; en base ce sont `purchase_batches` et `lots`.
+
 ### Stock de départ
 
 Le stock déjà possédé est décrit par [data/seed/stock.json](data/seed/stock.json), sur le même
@@ -317,7 +383,7 @@ de l'alimentation, ports SATA et slots M.2, plus deux avis non bloquants (goulot
 d'étranglement CPU/GPU, absence de sortie vidéo).
 
 ```bash
-npm test        # 133 tests
+npm test        # 176 tests
 ```
 
 ## Configuration

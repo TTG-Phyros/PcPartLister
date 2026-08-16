@@ -1,11 +1,15 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { ComponentImage } from '@/components/catalog/component-image';
+import { BatchGroup } from '@/components/inventory/batch-group';
 import { InventoryFilters } from '@/components/inventory/inventory-filters';
 import { StatusSelect } from '@/components/inventory/status-select';
 import { Button, Card } from '@/components/ui';
 import { requireUser } from '@/lib/auth/guard';
+import { groupByBatch } from '@/lib/batches/group';
+import { getBatchHeaders } from '@/lib/batches/queries';
 import type { InventoryItem } from '@/lib/db/schema';
+import type { InventoryRow } from '@/lib/inventory/queries';
 import { formatPrice, formatPriceCompact, summarizeSpecs } from '@/lib/catalog/format';
 import {
   CONDITION_LABELS,
@@ -93,6 +97,17 @@ export default async function StockPage({
     getInventorySummary(settings.dormant_days),
   ]);
 
+  // Units that shared a parcel are folded into one collapsible row. Only the
+  // batches present on this page are fetched, and grouping never re-orders:
+  // a batch takes the place of its first unit in the list as sorted.
+  const batches = await getBatchHeaders(
+    rows.map(({ item }) => item.purchaseBatchId).filter((id) => id !== null),
+  );
+  const entries = groupByBatch(rows, batches, {
+    batchId: ({ item }) => item.purchaseBatchId,
+    key: ({ item }) => item.id,
+  });
+
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const pageHref = (targetPage: number) => {
     const next = new URLSearchParams();
@@ -125,9 +140,14 @@ export default async function StockPage({
             {pageCount > 1 ? ` · page ${page} sur ${pageCount}` : ''}
           </p>
         </div>
-        <Link href="/stock/nouveau">
-          <Button>Ajouter un achat</Button>
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/stock/arrivage">
+            <Button variant="secondary">Saisie groupée</Button>
+          </Link>
+          <Link href="/stock/nouveau">
+            <Button>Ajouter un achat</Button>
+          </Link>
+        </div>
       </div>
 
       <StockSummary summary={summary} dormantDays={settings.dormant_days} />
@@ -139,63 +159,38 @@ export default async function StockPage({
       {rows.length === 0 ? (
         <Card>
           <p className="text-sm text-ink-muted">
-            Aucune unité ne correspond. Le stock se remplit depuis « Ajouter un achat ».
+            Aucune unité ne correspond. Le stock se remplit depuis « Ajouter un achat », ou depuis
+            « Saisie groupée » quand plusieurs pièces arrivent dans le même colis.
           </p>
         </Card>
       ) : (
         <ul className="flex flex-col gap-3">
-          {rows.map(({ item, component }) => {
-            const age = daysSince(item.purchaseDate);
-            const dormant = item.status === 'en_stock' && age > settings.dormant_days;
-            return (
-              <li key={item.id}>
+          {entries.map((entry) =>
+            entry.kind === 'item' ? (
+              <li key={entry.key}>
                 <Card className="flex gap-3 p-3">
-                  <Link href={`/stock/${item.id}`} className="shrink-0">
-                    <ComponentImage
-                      imagePath={component.imagePath}
-                      alt={`${component.brand} ${component.model}`}
-                      className="size-20"
-                    />
-                  </Link>
-
-                  <div className="flex min-w-0 flex-1 flex-col gap-1">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <Link href={`/stock/${item.id}`} className="min-w-0">
-                        <p className="text-xs text-ink-muted">
-                          {CATEGORY_LABELS[component.category]} · {component.brand}
-                        </p>
-                        <p className="font-medium break-words hover:underline">
-                          {component.model}
-                        </p>
-                      </Link>
-                      <StatusSelect id={item.id} status={item.status} />
-                    </div>
-
-                    <p className="line-clamp-1 text-xs text-ink-muted">
-                      {summarizeSpecs(component.specs).join(' · ')}
-                    </p>
-
-                    <p className="text-xs text-ink-muted">
-                      <span className="font-medium text-ink">
-                        {formatPriceCompact(item.purchasePriceCents)}
-                      </span>{' '}
-                      · {formatDay(item.purchaseDate)} · {PLATFORM_LABELS[item.platform]} ·{' '}
-                      {CONDITION_LABELS[item.condition]}
-                      {dormant ? (
-                        <span className="ml-1 rounded bg-warn/15 px-1.5 py-0.5 text-warn">
-                          dormant depuis {age} j
-                        </span>
-                      ) : null}
-                    </p>
-
-                    {item.status === 'en_transit' ? (
-                      <ParcelLine item={item} />
-                    ) : null}
-                  </div>
+                  <ItemRow row={entry.row} dormantDays={settings.dormant_days} />
                 </Card>
               </li>
-            );
-          })}
+            ) : (
+              <li key={entry.key}>
+                <BatchGroup
+                  batch={entry.batch}
+                  shownCount={entry.rows.length}
+                  tone={groupTone(entry.rows)}
+                  note={<BatchNote rows={entry.rows} />}
+                >
+                  <ul className="divide-y divide-border-subtle">
+                    {entry.rows.map((row) => (
+                      <li key={row.item.id} className="flex gap-3 p-3">
+                        <ItemRow row={row} dormantDays={settings.dormant_days} />
+                      </li>
+                    ))}
+                  </ul>
+                </BatchGroup>
+              </li>
+            ),
+          )}
         </ul>
       )}
 
@@ -221,6 +216,89 @@ export default async function StockPage({
         </nav>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * One unit of the list. Identical whether it stands alone or sits inside a
+ * batch — only the frame around it changes, never what a unit is.
+ */
+function ItemRow({ row, dormantDays }: { row: InventoryRow; dormantDays: number }) {
+  const { item, component } = row;
+  const age = daysSince(item.purchaseDate);
+  const dormant = item.status === 'en_stock' && age > dormantDays;
+
+  return (
+    <>
+      <Link href={`/stock/${item.id}`} className="shrink-0">
+        <ComponentImage
+          imagePath={component.imagePath}
+          alt={`${component.brand} ${component.model}`}
+          className="size-20"
+        />
+      </Link>
+
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <Link href={`/stock/${item.id}`} className="min-w-0">
+            <p className="text-xs text-ink-muted">
+              {CATEGORY_LABELS[component.category]} · {component.brand}
+            </p>
+            <p className="font-medium break-words hover:underline">{component.model}</p>
+          </Link>
+          <StatusSelect id={item.id} status={item.status} />
+        </div>
+
+        <p className="line-clamp-1 text-xs text-ink-muted">
+          {summarizeSpecs(component.specs).join(' · ')}
+        </p>
+
+        <p className="text-xs text-ink-muted">
+          <span className="font-medium text-ink">
+            {formatPriceCompact(item.purchasePriceCents)}
+          </span>{' '}
+          · {formatDay(item.purchaseDate)} · {PLATFORM_LABELS[item.platform]} ·{' '}
+          {CONDITION_LABELS[item.condition]}
+          {dormant ? (
+            <span className="ml-1 rounded bg-warn/15 px-1.5 py-0.5 text-warn">
+              dormant depuis {age} j
+            </span>
+          ) : null}
+        </p>
+
+        {item.status === 'en_transit' ? <ParcelLine item={item} /> : null}
+      </div>
+    </>
+  );
+}
+
+/** A batch borrows the alarm of its units: late first, then still travelling. */
+function groupTone(rows: InventoryRow[]): 'warn' | 'transit' | undefined {
+  if (rows.some(({ item }) => isLate(item))) return 'warn';
+  if (rows.some(({ item }) => item.status === 'en_transit')) return 'transit';
+  return undefined;
+}
+
+/** What the batch is doing, readable without unfolding it. */
+function BatchNote({ rows }: { rows: InventoryRow[] }) {
+  const transit = rows.filter(({ item }) => item.status === 'en_transit');
+  if (transit.length === 0) return null;
+
+  const late = transit.filter(({ item }) => isLate(item)).length;
+  const arrival = transit[0]!.item.expectedArrival;
+  const remaining = arrival ? daysUntil(arrival) : null;
+
+  return (
+    <p className={late > 0 ? 'text-warn' : 'text-brand'}>
+      {transit.length} en transit
+      {late > 0
+        ? ` · ${late} en retard`
+        : remaining === null
+          ? ''
+          : remaining === 0
+            ? ' · livraison aujourd’hui'
+            : ` · dans ${remaining} j`}
+    </p>
   );
 }
 

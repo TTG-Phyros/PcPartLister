@@ -177,6 +177,43 @@ export const catalogComponents = pgTable(
   ],
 );
 
+/* ─────────────────────────── Purchase batches ─────────────────────────── */
+
+/**
+ * Several units bought in one go — five sticks of RAM off the same Vinted
+ * listing. It exists for the two things such a purchase has exactly one of: a
+ * parcel to follow, and a price to pay. The units themselves stay ordinary
+ * inventory rows and go on to live separate lives.
+ *
+ * Not to be confused with `lots`, which is the mirror image on the way out:
+ * several units leaving together to one buyer.
+ */
+export const purchaseBatches = pgTable(
+  'purchase_batches',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    label: text('label').notNull(),
+    /** What the whole batch cost, shipping included: the sum actually paid. */
+    totalPriceCents: integer('total_price_cents').notNull(),
+    purchaseDate: date('purchase_date').notNull(),
+    platform: purchasePlatformEnum('platform').notNull().default('autre'),
+    listingUrl: text('listing_url'),
+    /* The one parcel of the batch — the reason this row exists at all. */
+    shippingCarrier: shippingCarrierEnum('shipping_carrier'),
+    trackingNumber: text('tracking_number'),
+    /** Explicit tracking link; when empty the carrier + number build one. */
+    trackingUrl: text('tracking_url'),
+    expectedArrival: date('expected_arrival'),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('purchase_batches_date_idx').on(t.purchaseDate),
+    check('purchase_batches_total_non_negative', sql`${t.totalPriceCents} >= 0`),
+  ],
+);
+
 /* ─────────────────────────── Inventory ─────────────────────────── */
 
 export const inventoryItems = pgTable(
@@ -186,6 +223,15 @@ export const inventoryItems = pgTable(
     catalogComponentId: uuid('catalog_component_id')
       .notNull()
       .references(() => catalogComponents.id, { onDelete: 'restrict' }),
+    /**
+     * The batch this unit came in with, when it was bought as part of one.
+     * NULL for a unit entered on its own: belonging to a batch is history, not
+     * a requirement. `set null` on delete says the same thing — dissolving a
+     * batch loses the grouping, never the units.
+     */
+    purchaseBatchId: uuid('purchase_batch_id').references(() => purchaseBatches.id, {
+      onDelete: 'set null',
+    }),
     purchasePriceCents: integer('purchase_price_cents').notNull(),
     purchaseDate: date('purchase_date').notNull(),
     platform: purchasePlatformEnum('platform').notNull().default('autre'),
@@ -214,6 +260,7 @@ export const inventoryItems = pgTable(
     uniqueIndex('inventory_seed_key_idx').on(t.seedKey),
     index('inventory_status_idx').on(t.status),
     index('inventory_catalog_idx').on(t.catalogComponentId),
+    index('inventory_purchase_batch_idx').on(t.purchaseBatchId),
     index('inventory_purchase_date_idx').on(t.purchaseDate),
     index('inventory_expected_arrival_idx').on(t.expectedArrival),
     check('inventory_price_non_negative', sql`${t.purchasePriceCents} >= 0`),
@@ -364,6 +411,8 @@ export type NewUser = typeof users.$inferInsert;
 export type Session = typeof sessions.$inferSelect;
 export type CatalogComponent = typeof catalogComponents.$inferSelect;
 export type NewCatalogComponent = typeof catalogComponents.$inferInsert;
+export type PurchaseBatch = typeof purchaseBatches.$inferSelect;
+export type NewPurchaseBatch = typeof purchaseBatches.$inferInsert;
 export type InventoryItem = typeof inventoryItems.$inferSelect;
 export type NewInventoryItem = typeof inventoryItems.$inferInsert;
 export type Build = typeof builds.$inferSelect;

@@ -15,11 +15,19 @@ export function CatalogPicker({
   name,
   initialSelection,
   initialCategory = '',
+  onSelect,
 }: {
-  name: string;
+  /**
+   * Field the chosen id is posted under. Omitted when the caller posts the
+   * selection itself — a form with repeatable lines has to keep each model next
+   * to its own quantity.
+   */
+  name?: string;
   initialSelection?: CatalogSearchHit | null;
   /** Pre-filters the list when the caller already knows the category wanted. */
   initialCategory?: ComponentCategory | '';
+  /** Mirrors every change of selection, `null` when it is cleared. */
+  onSelect?: (hit: CatalogSearchHit | null) => void;
 }) {
   const listId = useId();
   const [query, setQuery] = useState('');
@@ -28,6 +36,11 @@ export function CatalogPicker({
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<CatalogSearchHit | null>(initialSelection ?? null);
   const requestId = useRef(0);
+
+  const choose = (hit: CatalogSearchHit | null) => {
+    setSelected(hit);
+    onSelect?.(hit);
+  };
 
   useEffect(() => {
     if (selected) return;
@@ -58,7 +71,7 @@ export function CatalogPicker({
   if (selected) {
     return (
       <div className="flex items-center gap-3 rounded-xl border border-brand/50 bg-brand/10 p-3">
-        <input type="hidden" name={name} value={selected.id} />
+        {name ? <input type="hidden" name={name} value={selected.id} /> : null}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={selected.imageUrl}
@@ -77,7 +90,7 @@ export function CatalogPicker({
         <button
           type="button"
           onClick={() => {
-            setSelected(null);
+            choose(null);
             setQuery('');
           }}
           className="shrink-0 rounded-lg px-3 py-2 text-sm text-ink-muted hover:bg-surface-hover hover:text-ink"
@@ -128,7 +141,7 @@ export function CatalogPicker({
             <li key={hit.id}>
               <button
                 type="button"
-                onClick={() => setSelected(hit)}
+                onClick={() => choose(hit)}
                 className={cn(
                   'flex w-full items-center gap-3 p-2.5 text-left transition-colors hover:bg-surface-hover',
                 )}

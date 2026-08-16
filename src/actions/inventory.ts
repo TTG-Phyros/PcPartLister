@@ -13,52 +13,23 @@ import {
   PURCHASE_PLATFORMS,
 } from '@/lib/inventory/labels';
 import { SHIPPING_CARRIERS } from '@/lib/inventory/tracking';
+import {
+  echoValues,
+  optionalDay,
+  optionalText,
+  optionalUrl,
+  priceEurToCents,
+} from '@/lib/forms/fields';
 import { generatePlaceholderImage } from '@/lib/images/ensure';
 import { COMPONENT_CATEGORIES, type ComponentCategory } from '@/lib/specs';
 import { specsFromFormData } from '@/lib/specs/fields';
 import type { ActionState } from './auth';
 
-/** Every text field of the form, so a rejected submission can be re-rendered. */
-function echoValues(formData: FormData): Record<string, string | string[]> {
-  const values: Record<string, string | string[]> = {};
-  for (const [key, value] of formData.entries()) {
-    if (value instanceof File) continue;
-    const existing = values[key];
-    if (existing === undefined) values[key] = value;
-    else if (Array.isArray(existing)) existing.push(value);
-    else values[key] = [existing, value];
-  }
-  return values;
-}
-
-const optionalText = z
-  .string()
-  .trim()
-  .max(2000)
-  .optional()
-  .transform((v) => (v ? v : null));
-
-const optionalUrl = (message: string) =>
-  z
-    .union([z.string().trim().url(message), z.literal('')])
-    .optional()
-    .transform((v) => (v ? v : null));
-
-const optionalDay = (message: string) =>
-  z
-    .union([z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, message), z.literal('')])
-    .optional()
-    .transform((v) => (v ? v : null));
-
 const unitSchema = z.object({
-  // Accepts "129,90" as well as "129.90": a phone keypad often produces a comma.
-  purchasePriceEur: z
-    .string()
-    .trim()
-    .min(1, 'Le prix d’achat est obligatoire')
-    .transform((v) => v.replace(',', '.'))
-    .pipe(z.coerce.number().nonnegative('Le prix d’achat ne peut pas être négatif'))
-    .transform((v) => Math.round(v * 100)),
+  purchasePriceEur: priceEurToCents(
+    'Le prix d’achat est obligatoire',
+    'Prix d’achat invalide',
+  ),
   purchaseDate: z
     .string()
     .trim()

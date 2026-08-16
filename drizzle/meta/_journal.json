@@ -43,6 +43,13 @@
       "when": 1785842622248,
       "tag": "0005_lovely_golden_guardian",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786872204802,
+      "tag": "0006_wooden_red_skull",
+      "breakpoints": true
     }
   ]
 }

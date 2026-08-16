@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import { ComponentImage } from '@/components/catalog/component-image';
+import { BatchGroup } from '@/components/inventory/batch-group';
 import { Button, Card } from '@/components/ui';
 import { requireUser } from '@/lib/auth/guard';
+import { groupByBatch, type BatchEntry } from '@/lib/batches/group';
+import { getBatchHeaders } from '@/lib/batches/queries';
 import { formatPrice, formatPriceCompact } from '@/lib/catalog/format';
 import { PLATFORM_LABELS } from '@/lib/inventory/labels';
 import { CARRIER_LABELS, daysUntil, isLate, trackingLink } from '@/lib/inventory/tracking';
@@ -9,6 +12,7 @@ import {
   getInventorySummary,
   listIncomingParcels,
   searchInventory,
+  type InventoryRow,
 } from '@/lib/inventory/queries';
 import { getSalesStats } from '@/lib/sales/queries';
 import { getSettings } from '@/lib/settings-store';
@@ -27,13 +31,26 @@ export default async function DashboardPage() {
   const user = await requireUser();
   const settings = await getSettings();
 
+  // Fetched wider than displayed: units that shared a parcel collapse into one
+  // row, so it takes more than five of them to fill five lines of a panel.
   const [summary, recent, dormant, parcels, sales] = await Promise.all([
     getInventorySummary(settings.dormant_days),
-    searchInventory({ limit: 5 }),
-    searchInventory({ dormantDays: settings.dormant_days, limit: 5 }),
-    listIncomingParcels(5),
+    searchInventory({ limit: 15 }),
+    searchInventory({ dormantDays: settings.dormant_days, limit: 15 }),
+    listIncomingParcels(30),
     getSalesStats(),
   ]);
+
+  const batches = await getBatchHeaders(
+    [...recent, ...dormant, ...parcels]
+      .map(({ item }) => item.purchaseBatchId)
+      .filter((id) => id !== null),
+  );
+  const fold = (rows: InventoryRow[]) =>
+    groupByBatch(rows, batches, {
+      batchId: ({ item }) => item.purchaseBatchId,
+      key: ({ item }) => item.id,
+    }).slice(0, 5);
 
   return (
     <div className="flex flex-col gap-6">
@@ -63,7 +80,7 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {parcels.length > 0 ? <IncomingParcels rows={parcels} summary={summary} /> : null}
+      {parcels.length > 0 ? <IncomingParcels entries={fold(parcels)} summary={summary} /> : null}
 
       {sales.count > 0 ? (
         <section className="flex flex-col gap-3">
@@ -116,14 +133,14 @@ export default async function DashboardPage() {
       {dormant.length > 0 ? (
         <ItemList
           title={`Composants dormants (plus de ${settings.dormant_days} jours en stock)`}
-          rows={dormant}
+          entries={fold(dormant)}
           href="/stock?dormant=1"
           tone="warn"
         />
       ) : null}
 
       {recent.length > 0 ? (
-        <ItemList title="Derniers achats" rows={recent} href="/stock" />
+        <ItemList title="Derniers achats" entries={fold(recent)} href="/stock" />
       ) : (
         <Card>
           <p className="text-sm text-ink-muted">
@@ -163,10 +180,10 @@ function StatCard({
  * as much part of the day as what sits on the shelf.
  */
 function IncomingParcels({
-  rows,
+  entries,
   summary,
 }: {
-  rows: Awaited<ReturnType<typeof listIncomingParcels>>;
+  entries: Array<BatchEntry<InventoryRow>>;
   summary: Awaited<ReturnType<typeof getInventorySummary>>;
 }) {
   return (
@@ -187,60 +204,109 @@ function IncomingParcels({
         </Link>
       </div>
       <ul className="flex flex-col gap-2">
-        {rows.map(({ item, component }) => {
-          const link = trackingLink(item);
-          const remaining = item.expectedArrival ? daysUntil(item.expectedArrival) : null;
-          const late = isLate(item);
-          return (
+        {entries.map((entry) =>
+          entry.kind === 'item' ? (
             <li
-              key={item.id}
+              key={entry.key}
               className="flex items-center gap-3 rounded-xl border border-border-subtle bg-surface-raised p-2.5"
             >
-              <Link href={`/stock/${item.id}`} className="shrink-0">
-                <ComponentImage imagePath={component.imagePath} alt="" className="size-12" />
-              </Link>
-              <Link href={`/stock/${item.id}`} className="min-w-0 flex-1">
-                <span className="block text-xs text-ink-muted">
-                  {item.shippingCarrier ? CARRIER_LABELS[item.shippingCarrier] : 'Transporteur ?'}{' '}
-                  · {PLATFORM_LABELS[item.platform]}
-                </span>
-                <span className="block truncate font-medium">{component.model}</span>
-                <span className={late ? 'block text-xs text-warn' : 'block text-xs text-ink-muted'}>
-                  {remaining === null
-                    ? 'Date de livraison non renseignée'
-                    : late
-                      ? `En retard de ${-remaining} jour${remaining < -1 ? 's' : ''}`
-                      : remaining === 0
-                        ? 'Livraison aujourd’hui'
-                        : `Livraison dans ${remaining} jour${remaining > 1 ? 's' : ''}`}
-                </span>
-              </Link>
-              {link ? (
-                <a
-                  href={link}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="shrink-0 text-sm text-brand underline underline-offset-4"
-                >
-                  Suivre
-                </a>
-              ) : null}
+              <ParcelRow row={entry.row} />
             </li>
-          );
-        })}
+          ) : (
+            <li key={entry.key}>
+              {/* One parcel for the lot: its units share a carrier and a date,
+                  so they are one line until you ask for the detail. */}
+              <BatchGroup
+                batch={entry.batch}
+                shownCount={entry.rows.length}
+                tone={entry.rows.some(({ item }) => isLate(item)) ? 'warn' : 'transit'}
+                note={<ParcelNote rows={entry.rows} />}
+              >
+                <ul className="divide-y divide-border-subtle">
+                  {entry.rows.map((row) => (
+                    <li key={row.item.id} className="flex items-center gap-3 p-2.5">
+                      <ParcelRow row={row} />
+                    </li>
+                  ))}
+                </ul>
+              </BatchGroup>
+            </li>
+          ),
+        )}
       </ul>
     </section>
   );
 }
 
+function ParcelRow({ row }: { row: InventoryRow }) {
+  const { item, component } = row;
+  const link = trackingLink(item);
+  const remaining = item.expectedArrival ? daysUntil(item.expectedArrival) : null;
+  const late = isLate(item);
+
+  return (
+    <>
+      <Link href={`/stock/${item.id}`} className="shrink-0">
+        <ComponentImage imagePath={component.imagePath} alt="" className="size-12" />
+      </Link>
+      <Link href={`/stock/${item.id}`} className="min-w-0 flex-1">
+        <span className="block text-xs text-ink-muted">
+          {item.shippingCarrier ? CARRIER_LABELS[item.shippingCarrier] : 'Transporteur ?'} ·{' '}
+          {PLATFORM_LABELS[item.platform]}
+        </span>
+        <span className="block truncate font-medium">{component.model}</span>
+        <span className={late ? 'block text-xs text-warn' : 'block text-xs text-ink-muted'}>
+          {remaining === null
+            ? 'Date de livraison non renseignée'
+            : late
+              ? `En retard de ${-remaining} jour${remaining < -1 ? 's' : ''}`
+              : remaining === 0
+                ? 'Livraison aujourd’hui'
+                : `Livraison dans ${remaining} jour${remaining > 1 ? 's' : ''}`}
+        </span>
+      </Link>
+      {link ? (
+        <a
+          href={link}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="shrink-0 text-sm text-brand underline underline-offset-4"
+        >
+          Suivre
+        </a>
+      ) : null}
+    </>
+  );
+}
+
+/** Where the parcel is, on the folded row. */
+function ParcelNote({ rows }: { rows: InventoryRow[] }) {
+  const late = rows.filter(({ item }) => isLate(item)).length;
+  const arrival = rows[0]!.item.expectedArrival;
+  const remaining = arrival ? daysUntil(arrival) : null;
+
+  if (late > 0) {
+    return <p className="text-warn">En retard de {-daysUntil(arrival!)} jours</p>;
+  }
+  return (
+    <p className="text-brand">
+      {remaining === null
+        ? 'Date de livraison non renseignée'
+        : remaining === 0
+          ? 'Livraison aujourd’hui'
+          : `Livraison dans ${remaining} jour${remaining > 1 ? 's' : ''}`}
+    </p>
+  );
+}
+
 function ItemList({
   title,
-  rows,
+  entries,
   href,
   tone,
 }: {
   title: string;
-  rows: Awaited<ReturnType<typeof searchInventory>>;
+  entries: Array<BatchEntry<InventoryRow>>;
   href: string;
   tone?: 'warn';
 }) {
@@ -260,35 +326,59 @@ function ItemList({
         </Link>
       </div>
       <ul className="flex flex-col gap-2">
-        {rows.map(({ item, component }) => (
-          <li key={item.id}>
-            <Link
-              href={`/stock/${item.id}`}
-              className="flex items-center gap-3 rounded-xl border border-border-subtle bg-surface-raised p-2.5 transition-colors hover:bg-surface-hover"
-            >
-              <ComponentImage
-                imagePath={component.imagePath}
-                alt=""
-                className="size-12 shrink-0"
-              />
-              <span className="min-w-0 flex-1">
-                <span className="block text-xs text-ink-muted">
-                  {CATEGORY_LABELS[component.category]} · {component.brand}
-                </span>
-                <span className="block truncate font-medium">{component.model}</span>
-              </span>
-              <span className="shrink-0 text-right text-xs text-ink-muted">
-                <span className="block font-medium text-ink">
-                  {formatPriceCompact(item.purchasePriceCents)}
-                </span>
-                <span className="block">
-                  {formatDay(item.purchaseDate)} · {PLATFORM_LABELS[item.platform]}
-                </span>
-              </span>
-            </Link>
-          </li>
-        ))}
+        {entries.map((entry) =>
+          entry.kind === 'item' ? (
+            <li key={entry.key}>
+              <Link
+                href={`/stock/${entry.row.item.id}`}
+                className="flex items-center gap-3 rounded-xl border border-border-subtle bg-surface-raised p-2.5 transition-colors hover:bg-surface-hover"
+              >
+                <DashItemRow row={entry.row} />
+              </Link>
+            </li>
+          ) : (
+            <li key={entry.key}>
+              <BatchGroup batch={entry.batch} shownCount={entry.rows.length} tone={tone}>
+                <ul className="divide-y divide-border-subtle">
+                  {entry.rows.map((row) => (
+                    <li key={row.item.id}>
+                      <Link
+                        href={`/stock/${row.item.id}`}
+                        className="flex items-center gap-3 p-2.5 transition-colors hover:bg-surface-hover"
+                      >
+                        <DashItemRow row={row} />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </BatchGroup>
+            </li>
+          ),
+        )}
       </ul>
     </section>
+  );
+}
+
+function DashItemRow({ row }: { row: InventoryRow }) {
+  const { item, component } = row;
+  return (
+    <>
+      <ComponentImage imagePath={component.imagePath} alt="" className="size-12 shrink-0" />
+      <span className="min-w-0 flex-1">
+        <span className="block text-xs text-ink-muted">
+          {CATEGORY_LABELS[component.category]} · {component.brand}
+        </span>
+        <span className="block truncate font-medium">{component.model}</span>
+      </span>
+      <span className="shrink-0 text-right text-xs text-ink-muted">
+        <span className="block font-medium text-ink">
+          {formatPriceCompact(item.purchasePriceCents)}
+        </span>
+        <span className="block">
+          {formatDay(item.purchaseDate)} · {PLATFORM_LABELS[item.platform]}
+        </span>
+      </span>
+    </>
   );
 }

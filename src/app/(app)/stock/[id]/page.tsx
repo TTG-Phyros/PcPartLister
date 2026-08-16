@@ -10,6 +10,8 @@ import { ListForSale, Unlist } from '@/components/sales/listing-actions';
 import { SaleForm } from '@/components/sales/sale-form';
 import { Alert, Button, Card } from '@/components/ui';
 import { requireUser } from '@/lib/auth/guard';
+import { getBatchOfItem } from '@/lib/batches/queries';
+import type { BatchMembership } from '@/lib/batches/types';
 import { suggestedSalePriceCents } from '@/lib/builds/pricing';
 import type { InventoryItem } from '@/lib/db/schema';
 import { formatPrice, summarizeSpecs } from '@/lib/catalog/format';
@@ -48,11 +50,12 @@ export default async function InventoryItemPage({
   if (!row) notFound();
 
   const { item, component } = row;
-  const [settings, inBuild, lot, sale] = await Promise.all([
+  const [settings, inBuild, lot, sale, batch] = await Promise.all([
     getSettings(),
     isInventoryItemInBuild(item.id),
     getLotOfItem(item.id),
     getSaleFor('item', item.id),
+    getBatchOfItem(item.id),
   ]);
   const age = daysSince(item.purchaseDate);
   const dormant = item.status === 'en_stock' && age > settings.dormant_days;
@@ -90,6 +93,8 @@ export default async function InventoryItemPage({
           En stock depuis {age} jours, au-delà du seuil de {settings.dormant_days} jours.
         </Alert>
       ) : null}
+
+      {batch ? <BatchCard batch={batch} /> : null}
 
       {showTracking ? <TrackingCard item={item} link={tracking} /> : null}
 
@@ -281,6 +286,55 @@ function SaleCard({
       ) : null}
 
       {listed && !sale ? <Unlist subject={subject} /> : null}
+    </Card>
+  );
+}
+
+/**
+ * Where this unit came from, when it came in with others. The parcel is shared
+ * — knowing which one, and what else was in it, is the whole traceability the
+ * batch buys.
+ */
+function BatchCard({ batch }: { batch: BatchMembership }) {
+  const others = batch.itemCount - 1;
+  const link = trackingLink(batch);
+
+  return (
+    <Card className="flex flex-col gap-2">
+      <h2 className="font-medium">Arrivage</h2>
+      <p className="text-sm text-ink-muted">
+        Cette unité fait partie de l’arrivage{' '}
+        <Link href={`/arrivages/${batch.id}`} className="text-ink underline underline-offset-4">
+          {batch.label}
+        </Link>
+        {others > 0 ? `, avec ${others} autre${others > 1 ? 's' : ''} unité${others > 1 ? 's' : ''}` : ''}
+        . Prix payé pour le lot : {formatPrice(batch.totalPriceCents)}, réparti entre ses{' '}
+        {batch.itemCount} unité{batch.itemCount > 1 ? 's' : ''}.
+      </p>
+      {batch.trackingNumber ? (
+        <p className="text-sm text-ink-muted">
+          Colis {batch.shippingCarrier ? `${CARRIER_LABELS[batch.shippingCarrier]} ` : ''}
+          <span className="font-mono text-ink">{batch.trackingNumber}</span>
+        </p>
+      ) : null}
+      <div className="flex flex-wrap gap-3 text-sm">
+        <Link
+          href={`/arrivages/${batch.id}`}
+          className="text-ink-muted underline underline-offset-4 hover:text-ink"
+        >
+          Voir tout l’arrivage
+        </Link>
+        {link ? (
+          <a
+            href={link}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="text-ink-muted underline underline-offset-4 hover:text-ink"
+          >
+            Suivre le colis
+          </a>
+        ) : null}
+      </div>
     </Card>
   );
 }

@@ -55,6 +55,13 @@ export default async function NewInventoryItemPage({
           Une entrée de stock = un exemplaire physique. Les specs et l’image sont héritées du
           modèle, rien à ressaisir.
         </p>
+        <p className="mt-1 text-sm text-ink-muted">
+          Plusieurs pièces dans le même colis, pour un seul prix ?{' '}
+          <Link href="/stock/arrivage" className="text-ink underline underline-offset-4">
+            Passez à la saisie groupée
+          </Link>
+          .
+        </p>
       </div>
 
       {ajoute === '1' ? <Alert tone="success">Unité enregistrée. Au suivant.</Alert> : null}
