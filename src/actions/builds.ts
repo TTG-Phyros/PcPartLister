@@ -305,7 +305,17 @@ export async function removeBuildItemAction(
   return { success: 'Composant retiré.' };
 }
 
-export async function updateLineEstimateAction(
+/**
+ * What one line costs the configuration. The same field means two things
+ * depending on the line: the estimate of a part still to buy, or the adjusted
+ * cost of an owned unit — a part received as a gift, or one whose real price
+ * differs from the one recorded in stock. Blanking it goes back to the default:
+ * no estimate, or the unit's actual purchase price.
+ *
+ * The unit's own price is never touched: what it was bought for is history, and
+ * the adjustment belongs to this configuration alone.
+ */
+export async function updateLinePriceAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
@@ -314,13 +324,25 @@ export async function updateLineEstimateAction(
   const lineId = String(formData.get('lineId') ?? '');
   if (!lineId) return { error: 'Ligne introuvable.' };
 
+  const [line] = await db
+    .select({ unitId: buildItems.inventoryItemId })
+    .from(buildItems)
+    .where(eq(buildItems.id, lineId))
+    .limit(1);
+  if (!line) return { error: 'Ligne introuvable.' };
+
+  const priceCents = priceToCents(formData.get('priceEur'));
+
   const [updated] = await db
     .update(buildItems)
-    .set({ estimatedPriceCents: priceToCents(formData.get('estimatedPriceEur')) })
+    .set(line.unitId ? { customPriceCents: priceCents } : { estimatedPriceCents: priceCents })
     .where(eq(buildItems.id, lineId))
     .returning({ buildId: buildItems.buildId });
   if (!updated) return { error: 'Ligne introuvable.' };
 
   revalidateBuild(updated.buildId);
-  return { success: 'Estimation mise à jour.' };
+  if (!line.unitId) return { success: 'Estimation mise à jour.' };
+  return {
+    success: priceCents === null ? 'Prix d’achat rétabli.' : 'Coût réel mis à jour.',
+  };
 }

@@ -1,0 +1,3 @@
+ALTER TABLE "build_items" ADD COLUMN "custom_price_cents" integer;--> statement-breakpoint
+ALTER TABLE "build_items" ADD CONSTRAINT "build_items_custom_price_non_negative" CHECK ("build_items"."custom_price_cents" is null or "build_items"."custom_price_cents" >= 0);--> statement-breakpoint
+ALTER TABLE "build_items" ADD CONSTRAINT "build_items_custom_price_owned_only" CHECK ("build_items"."custom_price_cents" is null or "build_items"."inventory_item_id" is not null);

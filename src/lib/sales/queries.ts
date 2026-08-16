@@ -31,8 +31,9 @@ export type SaleRow = {
 };
 
 /**
- * Cost of every build in one pass: owned units at what they cost, parts still
- * to buy at their estimate. Shared by the sales list and the single-sale view.
+ * Cost of every build in one pass: owned units at what they cost — or at the
+ * adjusted cost the line carries, when one was entered — parts still to buy at
+ * their estimate. Shared by the sales list and the single-sale view.
  */
 // Built inside the function on purpose: at module scope it would touch the
 // lazily created database client while `next build` is collecting page data.
@@ -41,7 +42,12 @@ function buildCostSubquery() {
     .select({
       buildId: builds.id,
       componentsCents: sql<number>`coalesce(sum(
-        coalesce(${inventoryItems.purchasePriceCents}, ${buildItems.estimatedPriceCents}, 0)
+        coalesce(
+          ${buildItems.customPriceCents},
+          ${inventoryItems.purchasePriceCents},
+          ${buildItems.estimatedPriceCents},
+          0
+        )
       ), 0)::int`.as('components_cents'),
       lineCount: sql<number>`count(${buildItems.id})::int`.as('line_count'),
     })
@@ -269,7 +275,9 @@ async function buildLines(ids: string[]): Promise<Map<string, ListingLine[]>> {
         ...summarizeSpecs(component.specs),
       ].join(' · '),
       imageUrl: imageUrl(component.imagePath),
-      priceCents: inventory ? inventory.purchasePriceCents : item.estimatedPriceCents,
+      priceCents: inventory
+        ? (item.customPriceCents ?? inventory.purchasePriceCents)
+        : item.estimatedPriceCents,
       href: inventory ? `/stock/${inventory.id}` : `/catalogue/${component.id}`,
       source: inventory ? 'stock' : 'a_acheter',
     });

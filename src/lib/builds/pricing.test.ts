@@ -23,6 +23,7 @@ function line(overrides: Partial<BuildLine>): BuildLine {
       integratedGraphics: false,
     },
     priceCents: 0,
+    originalPriceCents: null,
     condition: null,
     position: 0,
     ...overrides,
@@ -58,6 +59,21 @@ describe('computeBuildCost', () => {
 
     expect(cost.toBuyCents).toBe(4000);
     expect(cost.missingEstimates).toBe(1);
+  });
+
+  it('counts an owned unit at its adjusted cost, not at what it was bought for', () => {
+    // A card given away: it stays worth 250 € in stock, and costs this
+    // configuration nothing.
+    const cost = computeBuildCost(
+      [
+        line({ id: 'a', priceCents: 0, originalPriceCents: 25000 }),
+        line({ id: 'b', priceCents: 8500 }),
+      ],
+      0,
+    );
+
+    expect(cost.stockCents).toBe(8500);
+    expect(cost.totalCents).toBe(8500);
   });
 
   it('returns zeros on an empty configuration', () => {

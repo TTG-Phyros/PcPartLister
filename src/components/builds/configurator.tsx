@@ -3,7 +3,7 @@
 import { useActionState, useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { ActionState } from '@/actions/auth';
-import { removeBuildItemAction, updateLineEstimateAction } from '@/actions/builds';
+import { removeBuildItemAction, updateLinePriceAction } from '@/actions/builds';
 import { BottleneckIndicator } from '@/components/builds/bottleneck-indicator';
 import { SlotPicker } from '@/components/builds/slot-picker';
 import { Alert, Button, Card, Input, cn } from '@/components/ui';
@@ -53,6 +53,9 @@ export function Configurator({
 
   const cost = computeBuildCost(build.lines, build.consumablesCents);
   const suggested = suggestedSalePriceCents(cost.totalCents, targetMarginPct);
+  // Owned units counted at something other than what they cost: worth saying,
+  // since the total no longer matches the stock prices.
+  const adjusted = build.lines.filter((line) => line.originalPriceCents !== null).length;
 
   // Required slots with nothing in them: what the configuration still needs.
   const missingSlots = SLOT_ORDER.filter(
@@ -190,6 +193,13 @@ export function Configurator({
             {build.lines.filter((l) => l.source === 'stock').length} pièce(s) déjà possédée(s),{' '}
             {build.lines.filter((l) => l.source === 'a_acheter').length} à acheter.
           </p>
+
+          {adjusted > 0 ? (
+            <p className="text-xs text-ink-muted">
+              {adjusted} pièce(s) comptée(s) à un coût ajusté ; leur prix d’achat en stock reste
+              inchangé.
+            </p>
+          ) : null}
         </Card>
 
         <BottleneckIndicator selection={selection} />
@@ -232,10 +242,12 @@ function LineRow({
     removeBuildItemAction,
     {},
   );
-  const [estimateState, estimateAction] = useActionState<ActionState, FormData>(
-    updateLineEstimateAction,
+  const [priceState, priceAction] = useActionState<ActionState, FormData>(
+    updateLinePriceAction,
     {},
   );
+
+  const owned = line.source === 'stock';
 
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border-subtle p-2.5">
@@ -269,6 +281,13 @@ function LineRow({
 
         <div className="shrink-0 text-right">
           <p className="font-medium">{formatPriceCompact(line.priceCents)}</p>
+          {/* An adjusted cost says nothing without the price it replaces. */}
+          {line.originalPriceCents !== null ? (
+            <p className="text-xs text-ink-muted">
+              au lieu de{' '}
+              <span className="line-through">{formatPriceCompact(line.originalPriceCents)}</span>
+            </p>
+          ) : null}
           <Link
             href={
               line.inventoryItemId
@@ -302,32 +321,38 @@ function LineRow({
             </Button>
           </form>
 
-          {line.source === 'a_acheter' ? (
-            <form action={estimateAction} className="flex items-center gap-2">
-              <input type="hidden" name="lineId" value={line.id} />
-              <label className="text-xs text-ink-muted" htmlFor={`estimate-${line.id}`}>
-                Estimation €
-              </label>
-              <div className="w-24">
-                <Input
-                  id={`estimate-${line.id}`}
-                  name="estimatedPriceEur"
-                  type="text"
-                  inputMode="decimal"
-                  defaultValue={line.priceCents !== null ? String(line.priceCents / 100) : ''}
-                  className="min-h-9 py-1 text-sm"
-                />
-              </div>
-              <Button type="submit" variant="ghost" className="min-h-9 px-2 py-1 text-xs">
-                OK
-              </Button>
-            </form>
-          ) : null}
+          {/* The same field on both kinds of line: what this configuration is
+              charged for the part. An estimate for one still to buy, the cost
+              actually borne for a unit already owned — zero for a gift, the
+              agreed share for a part salvaged from an old machine. Blank it and
+              the purchase price applies again. */}
+          <form action={priceAction} className="flex items-center gap-2">
+            <input type="hidden" name="lineId" value={line.id} />
+            <label className="text-xs text-ink-muted" htmlFor={`price-${line.id}`}>
+              {owned ? 'Coût réel €' : 'Estimation €'}
+            </label>
+            <div className="w-24">
+              <Input
+                // Remounted when the stored figure changes, so blanking the
+                // field shows the price it fell back to instead of staying empty.
+                key={line.priceCents ?? 'vide'}
+                id={`price-${line.id}`}
+                name="priceEur"
+                type="text"
+                inputMode="decimal"
+                defaultValue={line.priceCents !== null ? String(line.priceCents / 100) : ''}
+                className="min-h-9 py-1 text-sm"
+              />
+            </div>
+            <Button type="submit" variant="ghost" className="min-h-9 px-2 py-1 text-xs">
+              OK
+            </Button>
+          </form>
         </div>
       ) : null}
 
       {removeState.error ? <Alert tone="error">{removeState.error}</Alert> : null}
-      {estimateState.error ? <Alert tone="error">{estimateState.error}</Alert> : null}
+      {priceState.error ? <Alert tone="error">{priceState.error}</Alert> : null}
     </div>
   );
 }

@@ -267,6 +267,20 @@ sélectionner une pièce.
 Le panneau de coût sépare ce qui est déjà payé de ce qui reste à acheter, ajoute les
 consommables et propose un prix de vente atteignant l'objectif de marge (`target_margin_pct`).
 
+### Coût réel d'une pièce
+
+Chaque ligne porte un champ de prix : l'**estimation** pour un modèle à acheter, le **coût
+réel** pour une unité du stock. Ce dernier arrive pré-rempli avec le prix d'achat de l'unité
+et se corrige quand ce prix ne reflète pas ce que la configuration supporte vraiment — 0 €
+pour une pièce donnée, un prix estimé pour une carte récupérée sur un vieux PC, la part
+convenue d'un achat groupé. Vider le champ rétablit le prix d'achat.
+
+**Le prix d'achat en stock n'est jamais modifié** : ce qu'une unité a coûté est de
+l'histoire. L'ajustement est stocké sur la ligne de configuration
+(`build_items.custom_price_cents`), donc la même unité replacée ailleurs repart de son prix
+d'achat. Coût total, marge et prix de vente conseillé comptent l'ajustement dès qu'il est
+saisi ; la ligne affiche le prix remplacé, barré, pour que rien ne se perde en route.
+
 ### À acheter
 
 `Configs → À acheter` renverse la lecture : au lieu d'une configuration et de ce qui lui
@@ -349,7 +363,8 @@ marge % = marge / prix de vente
 ```
 
 Le coût d'une configuration compte ses composants à leur **prix d'achat réel** pour les unités
-du stock, à leur estimation pour celles restant à acheter, plus les consommables ; celui d'un
+du stock — ou au coût ajusté saisi sur la ligne, quand il y en a un —, à leur estimation pour
+celles restant à acheter, plus les consommables ; celui d'un
 lot est la somme de ses unités ; celui d'un composant vendu seul est simplement son prix
 d'achat. Un bouton applique la commission par défaut (`default_platform_fee_pct`) au prix
 saisi.

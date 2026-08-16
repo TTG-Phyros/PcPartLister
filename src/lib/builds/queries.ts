@@ -19,7 +19,12 @@ export async function listBuilds(): Promise<BuildSummaryRow[]> {
       stockCount: sql<number>`count(${buildItems.inventoryItemId})::int`,
       toBuyCount: sql<number>`count(${buildItems.catalogComponentId})::int`,
       componentsCents: sql<number>`coalesce(sum(
-        coalesce(${inventoryItems.purchasePriceCents}, ${buildItems.estimatedPriceCents}, 0)
+        coalesce(
+          ${buildItems.customPriceCents},
+          ${inventoryItems.purchasePriceCents},
+          ${buildItems.estimatedPriceCents},
+          0
+        )
       ), 0)::int`,
     })
     .from(builds)
@@ -79,7 +84,11 @@ export async function getBuildDetail(id: string): Promise<BuildDetail | null> {
     imageUrl: imageUrl(component.imagePath),
     summary: summarizeSpecs(component.specs),
     specs: component.specs,
-    priceCents: inventory ? inventory.purchasePriceCents : item.estimatedPriceCents,
+    priceCents: inventory
+      ? (item.customPriceCents ?? inventory.purchasePriceCents)
+      : item.estimatedPriceCents,
+    originalPriceCents:
+      inventory && item.customPriceCents !== null ? inventory.purchasePriceCents : null,
     condition: inventory?.condition ?? null,
     position: item.position,
   }));

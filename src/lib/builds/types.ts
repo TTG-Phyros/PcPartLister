@@ -22,8 +22,17 @@ export type BuildLine = {
   imageUrl: string;
   summary: string[];
   specs: ComponentSpecs;
-  /** Real purchase price for owned units, estimate for the ones to buy. */
+  /**
+   * What the line costs this configuration: the real purchase price for owned
+   * units, the estimate for the ones to buy — or the adjusted cost when one was
+   * entered.
+   */
   priceCents: number | null;
+  /**
+   * What the unit actually cost, kept only when an adjusted cost replaces it in
+   * `priceCents`. NULL the rest of the time: nothing was overridden.
+   */
+  originalPriceCents: number | null;
   condition: ItemCondition | null;
   position: number;
 };

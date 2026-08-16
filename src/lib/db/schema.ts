@@ -306,6 +306,17 @@ export const buildItems = pgTable(
       onDelete: 'restrict',
     }),
     estimatedPriceCents: integer('estimated_price_cents'),
+    /**
+     * What the owned unit is worth *to this configuration*, when that differs
+     * from what it cost: a part received as a gift, or salvaged from an old
+     * machine whose price was split across a dozen units. NULL means « take the
+     * purchase price », which is the normal case.
+     *
+     * It lives here rather than on the unit on purpose. The unit's own price is
+     * history and stays untouched, and the same unit moved to another
+     * configuration is re-priced from scratch.
+     */
+    customPriceCents: integer('custom_price_cents'),
     quantity: integer('quantity').notNull().default(1),
     position: integer('position').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -318,6 +329,16 @@ export const buildItems = pgTable(
       sql`(${t.inventoryItemId} is not null) <> (${t.catalogComponentId} is not null)`,
     ),
     check('build_items_quantity_positive', sql`${t.quantity} > 0`),
+    check(
+      'build_items_custom_price_non_negative',
+      sql`${t.customPriceCents} is null or ${t.customPriceCents} >= 0`,
+    ),
+    // There is nothing to override on a line that names a model to buy: that one
+    // already carries its own figure, the estimate.
+    check(
+      'build_items_custom_price_owned_only',
+      sql`${t.customPriceCents} is null or ${t.inventoryItemId} is not null`,
+    ),
   ],
 );
 
