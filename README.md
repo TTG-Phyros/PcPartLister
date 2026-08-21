@@ -264,8 +264,9 @@ la liste ouverte instantanément, sans aller-retour serveur. Les avertissements
 (goulot d'étranglement, alimentation juste, refroidissement limite) n'empêchent jamais de
 sélectionner une pièce.
 
-Le panneau de coût sépare ce qui est déjà payé de ce qui reste à acheter, ajoute les
-consommables et propose un prix de vente atteignant l'objectif de marge (`target_margin_pct`).
+Le panneau de coût sépare ce qui est déjà payé de ce qui reste à acheter et ajoute les
+consommables. En pied de panneau, un prix : le **prix objectif** s'il est renseigné, sinon
+un prix de vente atteignant l'objectif de marge par défaut (`target_margin_pct`).
 
 ### Coût réel d'une pièce
 
@@ -280,6 +281,26 @@ l'histoire. L'ajustement est stocké sur la ligne de configuration
 (`build_items.custom_price_cents`), donc la même unité replacée ailleurs repart de son prix
 d'achat. Coût total, marge et prix de vente conseillé comptent l'ajustement dès qu'il est
 saisi ; la ligne affiche le prix remplacé, barré, pour que rien ne se perde en route.
+
+### Prix objectif et marge estimée
+
+Peser une marge n'oblige pas à annoncer la configuration. Le champ **Prix objectif de vente**,
+dans le bloc « Informations » de la fiche, se remplit à n'importe quel stade — brouillon
+compris — et ne fait rien d'autre que servir de repère : il ne touche ni au statut, ni à
+l'annonce, ni au prix demandé une fois la configuration en vente.
+
+Le panneau de coût du configurateur mène avec ce prix, et la marge estimée sous lui, tant
+que rien n'est annoncé. Dès la mise en vente, la place revient au prix réel — le prix demandé,
+puis celui auquel la vente s'est conclue — sans la marge, qui se lit alors nette de frais dans
+la section « Vente ». Sans objectif, le panneau garde sa suggestion à la marge par défaut.
+
+Le bloc **Marge** de la section « Vente » en tire le coût de revient, la marge en euros et
+son pourcentage du prix objectif. Laissé vide, il affiche « non renseigné » et rien n'est
+calculé. Le chiffre est une simulation et s'annonce comme telle : il ne déduit ni port ni
+commission, contrairement à la marge d'une vente conclue.
+
+Dès qu'une vente existe, sa marge réelle s'affiche à côté, nette de frais, avec l'écart entre
+les deux — ce qui était visé, ce qui est arrivé.
 
 ### À acheter
 

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { computeBuildCost, suggestedSalePriceCents } from './pricing';
+import {
+  computeBuildCost,
+  computeTargetMargin,
+  headlinePrice,
+  suggestedSalePriceCents,
+} from './pricing';
 import type { BuildLine } from './types';
 
 function line(overrides: Partial<BuildLine>): BuildLine {
@@ -78,6 +83,88 @@ describe('computeBuildCost', () => {
 
   it('returns zeros on an empty configuration', () => {
     expect(computeBuildCost([], 0).totalCents).toBe(0);
+  });
+});
+
+describe('computeTargetMargin', () => {
+  it('measures the margin of a target price against the cost', () => {
+    // 300 € of cost aiming at 400 €: 100 € of margin, a quarter of the price.
+    const margin = computeTargetMargin(40000, 30000);
+
+    expect(margin).not.toBeNull();
+    expect(margin!.marginCents).toBe(10000);
+    expect(margin!.marginPct).toBeCloseTo(25);
+  });
+
+  it('says nothing rather than zero when no objective is set', () => {
+    expect(computeTargetMargin(null, 30000)).toBeNull();
+  });
+
+  it('reports a target below the cost as a loss', () => {
+    const margin = computeTargetMargin(20000, 30000);
+
+    expect(margin!.marginCents).toBe(-10000);
+    expect(margin!.marginPct).toBeCloseTo(-50);
+  });
+
+  it('holds a percentage of zero on a free configuration, rather than NaN', () => {
+    const margin = computeTargetMargin(0, 0);
+
+    expect(margin!.marginCents).toBe(0);
+    expect(margin!.marginPct).toBe(0);
+  });
+});
+
+describe('headlinePrice', () => {
+  const base = {
+    targetMargin: computeTargetMargin(40000, 30000),
+    askingPriceCents: null,
+    salePriceCents: null,
+    suggestedCents: 39000,
+  };
+
+  it('leads with the objective while the configuration is not announced', () => {
+    const headline = headlinePrice({ ...base, status: 'brouillon' });
+
+    expect(headline.kind).toBe('target');
+    expect(headline.priceCents).toBe(40000);
+    expect(headline.margin?.marginCents).toBe(10000);
+  });
+
+  it('keeps the objective on an assembled configuration, still unannounced', () => {
+    expect(headlinePrice({ ...base, status: 'montee' }).kind).toBe('target');
+  });
+
+  it('hands the slot to the asking price once the configuration is listed', () => {
+    const headline = headlinePrice({ ...base, status: 'en_vente', askingPriceCents: 42000 });
+
+    expect(headline.kind).toBe('asking');
+    expect(headline.priceCents).toBe(42000);
+    // The real margin nets out postage and commission, which this panel ignores.
+    expect(headline.margin).toBeNull();
+  });
+
+  it('prefers what the sale fetched over what the listing asked', () => {
+    const headline = headlinePrice({
+      ...base,
+      status: 'vendue',
+      askingPriceCents: 42000,
+      salePriceCents: 38000,
+    });
+
+    expect(headline.kind).toBe('sale');
+    expect(headline.priceCents).toBe(38000);
+  });
+
+  it('falls back to the objective when a listing carries no price yet', () => {
+    expect(headlinePrice({ ...base, status: 'en_vente' }).kind).toBe('target');
+  });
+
+  it('falls back to the suggestion when no objective was ever set', () => {
+    const headline = headlinePrice({ ...base, status: 'brouillon', targetMargin: null });
+
+    expect(headline.kind).toBe('suggested');
+    expect(headline.priceCents).toBe(39000);
   });
 });
 

@@ -70,6 +70,11 @@ const metaSchema = z.object({
     .transform((v) => (v ? v : null)),
 });
 
+/**
+ * Editing the objective is deliberately part of the ordinary meta form: it is a
+ * working figure, available at every stage, and it moves neither the status nor
+ * the listing. Blanking the field drops the objective.
+ */
 export async function updateBuildMetaAction(
   _prev: ActionState,
   formData: FormData,
@@ -83,12 +88,21 @@ export async function updateBuildMetaAction(
   });
   if (!parsed.success) return { error: parsed.error.issues[0]!.message };
 
+  // Told apart from an empty field on purpose: `priceToCents` answers NULL for
+  // both, and silently wiping an objective over a typo would be a poor trade.
+  const rawTarget = String(formData.get('targetPriceEur') ?? '').trim();
+  const targetPriceCents = priceToCents(rawTarget);
+  if (rawTarget && targetPriceCents === null) {
+    return { error: 'Prix objectif invalide : indiquez un montant positif, ou laissez vide.' };
+  }
+
   await db
     .update(builds)
     .set({
       name: parsed.data.name,
       notes: parsed.data.notes,
       consumablesCents: priceToCents(formData.get('consumablesEur')) ?? 0,
+      targetPriceCents,
       updatedAt: new Date(),
     })
     .where(eq(builds.id, parsed.data.id));

@@ -90,6 +90,22 @@ export function BuildMetaForm({ build }: { build: BuildDetail }) {
             defaultValue={String(build.consumablesCents / 100)}
           />
         </Field>
+        <Field
+          label="Prix objectif de vente (€)"
+          htmlFor="targetPriceEur"
+          hint="Pour simuler la marge. Ne met pas la configuration en vente ; laissez vide si vous n’avez pas d’objectif."
+        >
+          <Input
+            id="targetPriceEur"
+            name="targetPriceEur"
+            type="text"
+            inputMode="decimal"
+            placeholder="Non renseigné"
+            defaultValue={
+              build.targetPriceCents === null ? '' : String(build.targetPriceCents / 100)
+            }
+          />
+        </Field>
       </div>
 
       <Field label="Notes" htmlFor="notes">

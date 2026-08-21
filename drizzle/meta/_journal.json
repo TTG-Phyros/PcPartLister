@@ -57,6 +57,13 @@
       "when": 1786878864136,
       "tag": "0007_simple_nightcrawler",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1787326842070,
+      "tag": "0008_curly_annihilus",
+      "breakpoints": true
     }
   ]
 }

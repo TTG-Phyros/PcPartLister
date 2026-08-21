@@ -6,6 +6,7 @@ import {
   DeleteBuild,
 } from '@/components/builds/build-header';
 import { Configurator } from '@/components/builds/configurator';
+import { MarginSummary } from '@/components/builds/margin-summary';
 import { ListForSale, Unlist } from '@/components/sales/listing-actions';
 import { SaleForm } from '@/components/sales/sale-form';
 import { Card } from '@/components/ui';
@@ -76,6 +77,7 @@ export default async function BuildPage({ params }: { params: Promise<{ id: stri
       <Configurator
         build={build}
         targetMarginPct={settings.target_margin_pct}
+        salePriceCents={sale?.salePriceCents ?? null}
         editable={editable}
         tierRows={tierRows}
       />
@@ -90,6 +92,11 @@ export default async function BuildPage({ params }: { params: Promise<{ id: stri
             {listed && build.listedAt ? ` En vente depuis le ${formatDay(build.listedAt)}.` : ''}
           </p>
         </div>
+
+        {/* Above the listing actions on purpose: the objective is there to be
+            weighed before anything is announced, and it survives the sale as
+            the yardstick the real margin is read against. */}
+        <MarginSummary cost={cost} targetPriceCents={build.targetPriceCents} sale={sale} />
 
         {/* The price stays yours while nothing is concluded: the same form
             announces the configuration, then moves its price. */}

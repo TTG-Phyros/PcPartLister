@@ -277,6 +277,13 @@ export const builds = pgTable(
     status: buildStatusEnum('status').notNull().default('brouillon'),
     /** Thermal paste, screws, cable ties... */
     consumablesCents: integer('consumables_cents').notNull().default(0),
+    /**
+     * What the configuration is meant to fetch, to weigh a margin before
+     * anything is announced. A working figure and nothing more: it never moves
+     * the status, and the listing keeps its own `askingPriceCents`. NULL means
+     * no objective was set yet.
+     */
+    targetPriceCents: integer('target_price_cents'),
     /* Listing, only meaningful while the configuration is `en_vente`. */
     listedAt: date('listed_at'),
     askingPriceCents: integer('asking_price_cents'),
@@ -284,7 +291,13 @@ export const builds = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('builds_status_idx').on(t.status)],
+  (t) => [
+    index('builds_status_idx').on(t.status),
+    check(
+      'builds_target_price_non_negative',
+      sql`${t.targetPriceCents} is null or ${t.targetPriceCents} >= 0`,
+    ),
+  ],
 );
 
 /**

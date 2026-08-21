@@ -42,6 +42,8 @@ export type BuildDetail = {
   name: string;
   status: BuildStatus;
   consumablesCents: number;
+  /** What the configuration aims to fetch; NULL while no objective is set. */
+  targetPriceCents: number | null;
   /** Day the configuration was listed, and the price asked in the listing. */
   listedAt: string | null;
   askingPriceCents: number | null;

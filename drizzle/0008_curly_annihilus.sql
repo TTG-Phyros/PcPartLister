@@ -1,0 +1,2 @@
+ALTER TABLE "builds" ADD COLUMN "target_price_cents" integer;--> statement-breakpoint
+ALTER TABLE "builds" ADD CONSTRAINT "builds_target_price_non_negative" CHECK ("builds"."target_price_cents" is null or "builds"."target_price_cents" >= 0);

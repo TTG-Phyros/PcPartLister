@@ -7,7 +7,12 @@ import { removeBuildItemAction, updateLinePriceAction } from '@/actions/builds';
 import { BottleneckIndicator } from '@/components/builds/bottleneck-indicator';
 import { SlotPicker } from '@/components/builds/slot-picker';
 import { Alert, Button, Card, Input, cn } from '@/components/ui';
-import { computeBuildCost, suggestedSalePriceCents } from '@/lib/builds/pricing';
+import {
+  computeBuildCost,
+  computeTargetMargin,
+  headlinePrice,
+  suggestedSalePriceCents,
+} from '@/lib/builds/pricing';
 import { selectionFromLines } from '@/lib/builds/selection';
 import { SLOT_ORDER, type BuildDetail, type BuildLine } from '@/lib/builds/types';
 import { formatPrice, formatPriceCompact } from '@/lib/catalog/format';
@@ -20,6 +25,13 @@ import type { TierRow } from '@/lib/tier-list/types';
 
 const MULTI = new Set<ComponentCategory>(MULTI_SLOT_CATEGORIES);
 
+/** The suggestion is left out: its label carries the margin objective inline. */
+const HEADLINE_LABELS: Record<'sale' | 'asking' | 'target', string> = {
+  sale: 'Prix de vente',
+  asking: 'Prix demandé',
+  target: 'Prix objectif',
+};
+
 /**
  * Slots a finished configuration may legitimately leave empty. Everything else
  * is required hardware: a PC without one of them is not a PC.
@@ -29,11 +41,14 @@ const OPTIONAL_SLOTS = new Set<ComponentCategory>(['misc']);
 export function Configurator({
   build,
   targetMarginPct,
+  salePriceCents,
   editable,
   tierRows,
 }: {
   build: BuildDetail;
   targetMarginPct: number;
+  /** Price the sale concluded at, once there is one: the last word on the panel. */
+  salePriceCents: number | null;
   editable: boolean;
   /** Handed straight to the slot picker, which needs the ranking of the slot it opens. */
   tierRows: Record<TierListKind, TierRow[]>;
@@ -53,6 +68,13 @@ export function Configurator({
 
   const cost = computeBuildCost(build.lines, build.consumablesCents);
   const suggested = suggestedSalePriceCents(cost.totalCents, targetMarginPct);
+  const headline = headlinePrice({
+    status: build.status,
+    targetMargin: computeTargetMargin(build.targetPriceCents, cost.totalCents),
+    askingPriceCents: build.askingPriceCents,
+    salePriceCents,
+    suggestedCents: suggested,
+  });
   // Owned units counted at something other than what they cost: worth saying,
   // since the total no longer matches the stock prices.
   const adjusted = build.lines.filter((line) => line.originalPriceCents !== null).length;
@@ -184,9 +206,22 @@ export function Configurator({
 
           <div className="rounded-lg bg-surface-hover p-3">
             <p className="text-xs text-ink-muted">
-              Prix de vente pour {targetMarginPct} % de marge
+              {headline.kind === 'suggested'
+                ? `Prix de vente pour ${targetMarginPct} % de marge`
+                : HEADLINE_LABELS[headline.kind]}
             </p>
-            <p className="text-lg font-semibold">{formatPrice(suggested)}</p>
+            <p className="text-lg font-semibold">{formatPrice(headline.priceCents)}</p>
+            {headline.margin ? (
+              <p
+                className={cn(
+                  'text-xs',
+                  headline.margin.marginCents >= 0 ? 'text-ok' : 'text-danger',
+                )}
+              >
+                Marge estimée : {formatPrice(headline.margin.marginCents)} (
+                {headline.margin.marginPct.toFixed(1)} %)
+              </p>
+            ) : null}
           </div>
 
           <p className="text-xs text-ink-muted">

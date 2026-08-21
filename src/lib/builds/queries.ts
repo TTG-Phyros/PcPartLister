@@ -98,6 +98,7 @@ export async function getBuildDetail(id: string): Promise<BuildDetail | null> {
     name: build.name,
     status: build.status,
     consumablesCents: build.consumablesCents,
+    targetPriceCents: build.targetPriceCents,
     listedAt: build.listedAt,
     askingPriceCents: build.askingPriceCents,
     notes: build.notes,
