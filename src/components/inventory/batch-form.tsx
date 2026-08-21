@@ -18,7 +18,8 @@ import {
   STATUS_TONES,
   type PurchasePlatform,
 } from '@/lib/inventory/labels';
-import { splitEvenly } from '@/lib/inventory/split';
+import { parseEurosToCents } from '@/lib/forms/fields';
+import { sharesByLine, splitEvenly } from '@/lib/inventory/split';
 import {
   HANDOVER_LABELS,
   PURCHASE_HANDOVERS,
@@ -38,15 +39,6 @@ import { CATEGORY_LABELS } from '@/lib/specs';
 type Line = { key: number; selection: CatalogSearchHit | null; quantity: number };
 
 const MAX_QUANTITY = 100;
-
-/** Same tolerance as the server: a phone keypad often produces a comma. */
-function parseEuros(value: string): number | null {
-  const normalized = value.trim().replace(',', '.');
-  if (!normalized) return null;
-  const parsed = Number(normalized);
-  if (!Number.isFinite(parsed) || parsed < 0) return null;
-  return Math.round(parsed * 100);
-}
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -101,19 +93,21 @@ export function BatchForm({ today }: { today: string }) {
     (total, line) => total + (line.selection ? line.quantity : 0),
     0,
   );
-  const totalCents = parseEuros(totalEur);
+  const totalCents = parseEurosToCents(totalEur);
   const shares =
     totalCents === null || unitCount === 0 ? [] : splitEvenly(totalCents, unitCount);
 
-  // Each line takes the next slice of the shares, in the order the lines are
-  // posted — exactly what the server does with the same helper.
-  let cursor = 0;
-  const lineShares = lines.map((line) => {
-    if (!line.selection) return null;
-    const slice = shares.slice(cursor, cursor + line.quantity);
-    cursor += line.quantity;
-    return slice;
-  });
+  // Each filled line takes the next slice of the shares, in the order the lines
+  // are posted — exactly what the server does with the same helper. An empty
+  // line is a row waiting to be filled, so it takes no slice at all.
+  const filled = lines.filter((line) => line.selection);
+  const filledShares = sharesByLine(
+    totalCents ?? 0,
+    filled.map((line) => line.quantity),
+  );
+  const lineShares = lines.map((line) =>
+    totalCents === null || !line.selection ? null : (filledShares[filled.indexOf(line)] ?? null),
+  );
 
   const baseShare = shares.at(-1) ?? 0;
   const remainder = shares.filter((share) => share > baseShare).length;

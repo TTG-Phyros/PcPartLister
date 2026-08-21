@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { splitEvenly } from './split';
+import { sharesByLine, splitEvenly } from './split';
 
 describe('splitEvenly', () => {
   it('divides an amount that falls right', () => {
@@ -35,5 +35,25 @@ describe('splitEvenly', () => {
 
   it('returns nothing for an empty batch rather than dividing by zero', () => {
     expect(splitEvenly(1000, 0)).toEqual([]);
+  });
+});
+
+describe('sharesByLine', () => {
+  it('hands each line the cents of its own units, in order', () => {
+    expect(sharesByLine(10000, [1, 2])).toEqual([[3334], [3333, 3333]]);
+  });
+
+  it('adds up to the amount paid, whatever the lines look like', () => {
+    for (const quantities of [[1, 1], [3, 1, 5], [7], [2, 2, 2, 2]]) {
+      const total = 12_345;
+      const spent = sharesByLine(total, quantities)
+        .flat()
+        .reduce((sum, cents) => sum + cents, 0);
+      expect(spent).toBe(total);
+    }
+  });
+
+  it('gives an empty batch nothing to share', () => {
+    expect(sharesByLine(5000, [])).toEqual([]);
   });
 });

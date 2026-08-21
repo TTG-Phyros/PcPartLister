@@ -19,3 +19,23 @@ export function splitEvenly(totalCents: number, count: number): number[] {
   const remainder = totalCents - base * count;
   return Array.from({ length: count }, (_, index) => base + (index < remainder ? 1 : 0));
 }
+
+/**
+ * The same split, read line by line: `quantities` are the copies each line of a
+ * batch brought in, and the answer gives each line the cents its units got.
+ *
+ * Lines are served in order, which is what makes this shareable — the form
+ * previewing the split and the action writing it must hand the leftover cents
+ * to the very same units, or the preview lies.
+ */
+export function sharesByLine(totalCents: number, quantities: readonly number[]): number[][] {
+  const total = quantities.reduce((sum, quantity) => sum + quantity, 0);
+  const shares = splitEvenly(totalCents, total);
+
+  let cursor = 0;
+  return quantities.map((quantity) => {
+    const slice = shares.slice(cursor, cursor + quantity);
+    cursor += quantity;
+    return slice;
+  });
+}

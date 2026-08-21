@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { CatalogSearchHit } from '@/app/api/catalog/search/route';
 import { Input, Select, cn } from '@/components/ui';
 import { formatPriceCompact } from '@/lib/catalog/format';
@@ -15,6 +15,8 @@ export function CatalogPicker({
   name,
   initialSelection,
   initialCategory = '',
+  hideCategoryFilter = false,
+  emptyHint = 'Aucun modèle trouvé. Utilisez « Nouveau modèle » ci-dessus.',
   onSelect,
 }: {
   /**
@@ -26,6 +28,13 @@ export function CatalogPicker({
   initialSelection?: CatalogSearchHit | null;
   /** Pre-filters the list when the caller already knows the category wanted. */
   initialCategory?: ComponentCategory | '';
+  /**
+   * Drops the category dropdown, for a caller that has already settled the
+   * category and would only be offering a way to contradict itself.
+   */
+  hideCategoryFilter?: boolean;
+  /** What to say when the catalogue has nothing: the way to add a model differs per caller. */
+  emptyHint?: ReactNode;
   /** Mirrors every change of selection, `null` when it is cleared. */
   onSelect?: (hit: CatalogSearchHit | null) => void;
 }) {
@@ -34,6 +43,10 @@ export function CatalogPicker({
   const [category, setCategory] = useState<ComponentCategory | ''>(initialCategory);
   const [results, setResults] = useState<CatalogSearchHit[]>([]);
   const [loading, setLoading] = useState(false);
+  // The search failed rather than found nothing. Worth telling apart: the first
+  // is a connection to try again, the second a model to create.
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [selected, setSelected] = useState<CatalogSearchHit | null>(initialSelection ?? null);
   const requestId = useRef(0);
 
@@ -55,18 +68,25 @@ export function CatalogPicker({
         const response = await fetch(`/api/catalog/search?${params}`, {
           credentials: 'same-origin',
         });
+        if (!response.ok) throw new Error(String(response.status));
         const data = (await response.json()) as { results?: CatalogSearchHit[] };
         // Ignore a slow response that lost the race with a newer keystroke.
-        if (id === requestId.current) setResults(data.results ?? []);
+        if (id === requestId.current) {
+          setResults(data.results ?? []);
+          setFailed(false);
+        }
       } catch {
-        if (id === requestId.current) setResults([]);
+        if (id === requestId.current) {
+          setResults([]);
+          setFailed(true);
+        }
       } finally {
         if (id === requestId.current) setLoading(false);
       }
     }, 250);
 
     return () => clearTimeout(timer);
-  }, [query, category, selected]);
+  }, [query, category, selected, attempt]);
 
   if (selected) {
     return (
@@ -113,19 +133,21 @@ export function CatalogPicker({
           aria-controls={listId}
           autoComplete="off"
         />
-        <Select
-          value={category}
-          onChange={(e) => setCategory(e.target.value as ComponentCategory | '')}
-          aria-label="Filtrer par catégorie"
-          className="sm:max-w-56"
-        >
-          <option value="">Toutes catégories</option>
-          {COMPONENT_CATEGORIES.map((value) => (
-            <option key={value} value={value}>
-              {CATEGORY_LABELS[value]}
-            </option>
-          ))}
-        </Select>
+        {hideCategoryFilter ? null : (
+          <Select
+            value={category}
+            onChange={(e) => setCategory(e.target.value as ComponentCategory | '')}
+            aria-label="Filtrer par catégorie"
+            className="sm:max-w-56"
+          >
+            <option value="">Toutes catégories</option>
+            {COMPONENT_CATEGORIES.map((value) => (
+              <option key={value} value={value}>
+                {CATEGORY_LABELS[value]}
+              </option>
+            ))}
+          </Select>
+        )}
       </div>
 
       <ul
@@ -134,7 +156,22 @@ export function CatalogPicker({
       >
         {results.length === 0 ? (
           <li className="px-3 py-4 text-sm text-ink-muted">
-            {loading ? 'Recherche…' : 'Aucun modèle trouvé. Utilisez « Nouveau modèle » ci-dessus.'}
+            {loading ? (
+              'Recherche…'
+            ) : failed ? (
+              <span className="flex flex-wrap items-center gap-2">
+                Recherche indisponible — connexion perdue ?
+                <button
+                  type="button"
+                  onClick={() => setAttempt((n) => n + 1)}
+                  className="rounded-lg border border-border-subtle px-3 py-1.5 text-ink hover:bg-surface-hover"
+                >
+                  Réessayer
+                </button>
+              </span>
+            ) : (
+              emptyHint
+            )}
           </li>
         ) : (
           results.map((hit) => (

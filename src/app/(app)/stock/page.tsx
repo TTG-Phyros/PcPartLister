@@ -4,7 +4,7 @@ import { ComponentImage } from '@/components/catalog/component-image';
 import { BatchGroup } from '@/components/inventory/batch-group';
 import { InventoryFilters } from '@/components/inventory/inventory-filters';
 import { StatusSelect } from '@/components/inventory/status-select';
-import { Button, Card } from '@/components/ui';
+import { Alert, Button, Card } from '@/components/ui';
 import { requireUser } from '@/lib/auth/guard';
 import { groupByBatch } from '@/lib/batches/group';
 import { getBatchHeaders } from '@/lib/batches/queries';
@@ -35,6 +35,8 @@ export const metadata = { title: 'Stock — PcPartLister' };
 
 const PAGE_SIZE = 50;
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const dateFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium' });
 
 /** Purchase dates are DATE columns, returned as 'YYYY-MM-DD' strings. */
@@ -63,6 +65,9 @@ export default async function StockPage({
   };
   const page = Math.max(1, Number(one('page') ?? 1) || 1);
   const settings = await getSettings();
+
+  // Batch just created by the wizard, named in the banner below.
+  const arrivage = UUID.test(one('arrivage') ?? '') ? one('arrivage') : undefined;
 
   const toCents = (value: string | undefined) => {
     if (value === undefined) return undefined;
@@ -141,14 +146,27 @@ export default async function StockPage({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/stock/arrivage">
-            <Button variant="secondary">Saisie groupée</Button>
-          </Link>
           <Link href="/stock/nouveau">
+            <Button variant="secondary">Formulaire complet</Button>
+          </Link>
+          <Link href="/stock/assistant">
             <Button>Ajouter un achat</Button>
           </Link>
         </div>
       </div>
+
+      {/* Where the wizard lands once it has written the purchase. */}
+      {one('ajoute') === '1' ? (
+        <Alert tone="success">Achat enregistré : l’unité est dans la liste ci-dessous.</Alert>
+      ) : null}
+      {arrivage ? (
+        <Alert tone="success">
+          Arrivage enregistré : ses unités sont regroupées ci-dessous.{' '}
+          <Link href={`/arrivages/${arrivage}`} className="underline underline-offset-4">
+            Voir l’arrivage
+          </Link>
+        </Alert>
+      ) : null}
 
       <StockSummary summary={summary} dormantDays={settings.dormant_days} />
 
@@ -159,8 +177,8 @@ export default async function StockPage({
       {rows.length === 0 ? (
         <Card>
           <p className="text-sm text-ink-muted">
-            Aucune unité ne correspond. Le stock se remplit depuis « Ajouter un achat », ou depuis
-            « Saisie groupée » quand plusieurs pièces arrivent dans le même colis.
+            Aucune unité ne correspond. Le stock se remplit depuis « Ajouter un achat », qui
+            guide la saisie pas à pas — une pièce seule comme un colis entier.
           </p>
         </Card>
       ) : (

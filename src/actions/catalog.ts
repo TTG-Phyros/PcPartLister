@@ -11,12 +11,16 @@ import {
   ALLOWED_IMAGE_TYPES,
   MAX_IMAGE_BYTES,
   deleteImage,
+  imageUrl,
   saveImage,
   uploadPath,
 } from '@/lib/images/store';
 import { generatePlaceholderImage } from '@/lib/images/ensure';
+import { summarizeSpecs } from '@/lib/catalog/format';
+import { findOrCreateCatalogComponent } from '@/lib/catalog/upsert';
 import { COMPONENT_CATEGORIES, type ComponentCategory } from '@/lib/specs';
 import { specsFromFormData } from '@/lib/specs/fields';
+import type { CatalogSearchHit } from '@/app/api/catalog/search/route';
 import type { ActionState } from './auth';
 
 const identitySchema = z.object({
@@ -146,6 +150,72 @@ export async function createCatalogComponentAction(
 
   revalidatePath('/catalogue');
   redirect(`/catalogue/${created!.id}`);
+}
+
+/**
+ * A catalog model resolved to an id, for a caller that has somewhere else to be.
+ * `hit` has the exact shape the model picker hands around, so the wizard can
+ * show a model it just created the same way it shows one it found.
+ */
+export type EnsureModelState = ActionState & { hit?: CatalogSearchHit };
+
+/**
+ * Creates the model — or finds it, if that exact one is already catalogued —
+ * and answers with it instead of navigating.
+ *
+ * The wizard needs this: a purchase of several parts is written as a batch,
+ * which only knows how to point at catalog ids, so a model absent from the
+ * catalogue has to become one before the purchase can be saved. Entering the
+ * same model twice is therefore harmless by construction, which matters on a
+ * phone connection that may have dropped the first answer.
+ */
+export async function ensureCatalogModelAction(
+  _prev: EnsureModelState,
+  formData: FormData,
+): Promise<EnsureModelState> {
+  await assertSession();
+
+  const parsed = parseForm(formData);
+  if (!parsed.ok) return { error: parsed.error, values: echoValues(formData) };
+  const { identity, specs } = parsed;
+
+  let component;
+  try {
+    component = await findOrCreateCatalogComponent({
+      category: identity.category,
+      brand: identity.brand,
+      model: identity.model,
+      specs,
+      releaseYear: identity.releaseYear,
+      // Named in euros on the form, already in cents out of the schema.
+      msrpCents: identity.msrpEur,
+    });
+  } catch (error) {
+    return {
+      error: `Création du modèle impossible : ${error instanceof Error ? error.message : String(error)}`,
+      values: echoValues(formData),
+    };
+  }
+
+  revalidatePath('/catalogue');
+
+  return {
+    success: component.created
+      ? 'Modèle ajouté au catalogue.'
+      : 'Ce modèle était déjà au catalogue : il est repris tel quel.',
+    hit: {
+      id: component.id,
+      category: identity.category,
+      brand: identity.brand,
+      model: identity.model,
+      summary: summarizeSpecs(specs),
+      imageUrl: imageUrl(component.imagePath),
+      msrpCents: identity.msrpEur,
+      // Only the picker's list shows this, and it never lists a model being
+      // created: nothing to count.
+      inStock: 0,
+    },
+  };
 }
 
 export async function updateCatalogComponentAction(

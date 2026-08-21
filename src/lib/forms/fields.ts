@@ -49,3 +49,16 @@ export const priceEurToCents = (requiredMessage: string, invalidMessage: string)
     .transform((v) => v.replace(',', '.'))
     .pipe(z.coerce.number({ invalid_type_error: invalidMessage }).nonnegative(invalidMessage))
     .transform((v) => Math.round(v * 100));
+
+/**
+ * The client-side twin of `priceEurToCents`, for a form that has to show what a
+ * price will become before it is posted. Same tolerance for the comma a phone
+ * keypad produces, and `null` for anything that is not a usable amount.
+ */
+export function parseEurosToCents(value: string): number | null {
+  const normalized = value.trim().replace(',', '.');
+  if (!normalized) return null;
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed) || parsed < 0) return null;
+  return Math.round(parsed * 100);
+}

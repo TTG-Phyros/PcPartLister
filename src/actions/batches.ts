@@ -250,6 +250,9 @@ export async function createPurchaseBatchAction(
   }
 
   revalidateBatch(batchId);
+  // Same as for a single unit: the wizard closes on the stock list, with the
+  // arrival named there rather than opened in its own page.
+  if (formData.get('apres') === 'stock') redirect(`/stock?arrivage=${batchId}`);
   redirect(`/arrivages/${batchId}`);
 }
 

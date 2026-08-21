@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { assertSession } from '@/lib/auth/guard';
+import { findOrCreateCatalogComponent } from '@/lib/catalog/upsert';
 import { db } from '@/lib/db';
 import { buildItems, builds, catalogComponents, inventoryItems, lotItems } from '@/lib/db/schema';
 import {
@@ -20,7 +21,6 @@ import {
   PURCHASE_PLATFORMS,
   type ItemStatus,
 } from '@/lib/inventory/labels';
-import { generatePlaceholderImage } from '@/lib/images/ensure';
 import {
   PURCHASE_HANDOVERS,
   initialReceivedAt,
@@ -160,41 +160,17 @@ export async function createInventoryItemAction(
       return { error: specs.errors.join(' · '), values: echoValues(formData) };
     }
 
-    const imagePath = await generatePlaceholderImage(
-      identity.data.category,
-      identity.data.brand,
-      identity.data.model,
-    );
-
     try {
-      componentId = await db.transaction(async (tx) => {
-        // An identical model may already exist: reuse it instead of failing on
-        // the natural-key index.
-        const [existing] = await tx
-          .select({ id: catalogComponents.id })
-          .from(catalogComponents)
-          .where(
-            sql`${catalogComponents.category} = ${identity.data.category}
-                and lower(${catalogComponents.brand}) = ${identity.data.brand.toLowerCase()}
-                and lower(${catalogComponents.model}) = ${identity.data.model.toLowerCase()}`,
-          )
-          .limit(1);
-        if (existing) return existing.id;
-
-        const [created] = await tx
-          .insert(catalogComponents)
-          .values({
-            category: identity.data.category,
-            brand: identity.data.brand,
-            model: identity.data.model,
-            specs: specs.specs,
-            imagePath,
-            msrpCents: identity.data.msrpEur,
-            releaseYear: identity.data.releaseYear,
-          })
-          .returning({ id: catalogComponents.id });
-        return created!.id;
+      const component = await findOrCreateCatalogComponent({
+        category: identity.data.category,
+        brand: identity.data.brand,
+        model: identity.data.model,
+        specs: specs.specs,
+        releaseYear: identity.data.releaseYear,
+        // Named in euros on the form, already in cents out of the schema.
+        msrpCents: identity.data.msrpEur,
       });
+      componentId = component.id;
     } catch (error) {
       return {
         error: `Création du modèle impossible : ${error instanceof Error ? error.message : String(error)}`,
@@ -307,6 +283,9 @@ export async function createInventoryItemAction(
 
   // "Save and add another" keeps the phone workflow going at a flea market.
   if (formData.get('again') === '1') redirect('/stock/nouveau?ajoute=1');
+  // The wizard has already shown its own recap of what it is about to write:
+  // it lands on the list, where the unit is one row among the others.
+  if (formData.get('apres') === 'stock') redirect('/stock?ajoute=1');
   redirect(`/stock/${unitId}`);
 }
 

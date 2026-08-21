@@ -139,12 +139,55 @@ Une entrée de stock est **un exemplaire physique**, rattaché à un modèle du 
 il hérite specs et image : rien à ressaisir d'un achat à l'autre. Chaque unité porte son
 prix d'achat réel, sa date, sa plateforme, le lien de l'annonce, son état et son statut.
 
-Saisie d'un achat depuis le téléphone : `Stock → Ajouter un achat`. Le modèle se cherche
-au clavier parmi le catalogue ; s'il en est absent, l'onglet **Nouveau modèle** crée
-l'entrée catalogue et l'unité en une seule validation. Le bouton
-« Enregistrer et en ajouter un autre » enchaîne les saisies sans repasser par la liste.
+Saisie d'un achat depuis le téléphone : `Stock → Ajouter un achat`, qui ouvre l'**assistant**
+décrit juste en dessous. Les deux formulaires complets restent accessibles pour une saisie
+posée au clavier : `Stock → Formulaire complet` pour un achat seul — où le modèle se cherche
+parmi le catalogue, l'onglet **Nouveau modèle** créant l'entrée catalogue et l'unité en une
+seule validation, et où « Enregistrer et en ajouter un autre » enchaîne les saisies — et
+`Saisie groupée` pour un colis entier.
 
 Plateformes d'achat : Vinted, Leboncoin, Facebook Marketplace, main propre, Amazon, autre.
+
+### Assistant de saisie
+
+Le moment où un achat se saisit, c'est les deux minutes qui suivent : dans une cage
+d'escalier, le téléphone d'une main et la pièce de l'autre. `Stock → Ajouter un achat`
+(`/stock/assistant`) pose **quatre questions, une à la fois**, jamais deux à l'écran :
+
+| Étape | Question | Ce qu'elle évite |
+| --- | --- | --- |
+| 1. Type | Neuf cartes illustrées, une par catégorie | Un `<select>` qui ouvre un tiroir système |
+| 2. Composant | Recherche au catalogue, déjà filtrée sur le type | Choisir la catégorie une deuxième fois |
+| 3. Achat | Mode de récupération, prix, exemplaires, colis | Les champs qui ne concernent pas cet achat |
+| 4. Récap | La fiche de ce qui va être écrit | Découvrir le résultat après coup |
+
+Un achat simple — pièce en main, modèle déjà au catalogue, un exemplaire — tient en quatre
+taps et un prix. Le choix du type et celui du modèle **enchaînent tout seuls** sur l'étape
+suivante ; la barre d'étapes reste visible et **ramène en arrière sans rien perdre**.
+
+Le **mode d'achat** de l'étape 3 est la question dont découle le statut, et il n'y en a pas
+d'autre : « récupéré en main propre » (→ *en stock*), « réservé, à récupérer » (→ *réservé*),
+« envoi avec suivi » (→ *en transit*). Le statut est affiché en direct sous les cartes, calculé
+par la fonction même que l'action applique à l'enregistrement. Un envoi sans numéro, sans lien
+et sans date est refusé plutôt qu'enregistré en réservé à l'insu de tous.
+
+Le prix est celui de l'**achat**, pas de la pièce : dès qu'il y a plus d'une unité, il devient
+le prix total et se répartit au centime près, avec la part de chacune montrée avant validation.
+Un bouton **Don / troc** met 0 € en un tap.
+
+« **Ajouter un autre article** » repart à l'étape 1 **en gardant l'achat** — même mode, même
+colis, même prix total, même date : c'est le cas du lot Vinted où arrivent une carte mère et
+deux barrettes sous un seul suivi. « **Terminer** » écrit tout et revient au stock.
+
+L'assistant **n'écrit rien lui-même** : une unité part dans l'action du stock, plusieurs dans
+celle des arrivages — les mêmes que les formulaires complets, avec la même déduction de statut
+et la même répartition de prix. Il ne fait que poser les questions dans l'ordre.
+
+Ce qu'il faut pour une saisie dans un hall d'immeuble sans réseau : la saisie est **conservée
+sur l'appareil** à chaque frappe et restaurée telle quelle au retour, une recherche catalogue
+qui échoue le dit et propose de réessayer au lieu d'annoncer « aucun modèle », et un
+enregistrement qui n'aboutit pas laisse la saisie intacte avec de quoi retenter. Le brouillon
+n'est effacé que lorsque l'achat est réellement écrit.
 
 ### Saisie groupée (arrivages)
 
@@ -154,7 +197,8 @@ tout cela d'un coup.
 
 Le formulaire tient en trois blocs : les lignes du lot (un modèle du catalogue et son nombre
 d'exemplaires — répétez la même ligne ou variez les catégories), l'achat (prix total, date,
-plateforme, état, récupération), et le suivi du colis. Le statut des unités s'en déduit, comme
+plateforme, état, récupération), et le suivi du colis. L'[assistant](#assistant-de-saisie)
+écrit exactement la même chose, une pièce après l'autre, quand la saisie se fait au téléphone. Le statut des unités s'en déduit, comme
 pour un achat saisi seul. Les modèles se choisissent au catalogue ; un
 modèle absent se crée d'abord depuis `Ajouter un achat` ou depuis le catalogue.
 
@@ -527,6 +571,9 @@ npm run db:generate   # régénère les migrations après modification du schém
 | `src/lib/db/schema.ts` | Schéma Drizzle, source de vérité de la base |
 | `src/lib/specs/` | Schémas Zod des specs, une par catégorie de composant |
 | `src/lib/compat/` | Moteur de compatibilité isolé et testable |
+| `src/lib/inventory/status.ts` | Statut d'une unité : naissance, transitions, arrivée |
+| `src/lib/inventory/wizard.ts` | Logique de l'assistant de saisie, testée à part |
+| `src/components/card-select.tsx` | Sélection par cartes, réutilisable hors du stock |
 | `data/seed/catalog.json` | Catalogue de référence, éditable à la main |
 | `data/seed/stock.json` | Exemplaires possédés, réinjectés dans le stock au démarrage |
 | `data/tier-list/` | Classements des cartes graphiques et des processeurs, en CSV éditables à la main |
