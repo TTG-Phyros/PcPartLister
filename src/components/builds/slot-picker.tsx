@@ -15,7 +15,7 @@ import {
   type SortKey,
 } from '@/lib/builds/browse';
 import { candidateToPart } from '@/lib/builds/selection';
-import type { Candidate } from '@/lib/builds/types';
+import type { BuildStatus, Candidate } from '@/lib/builds/types';
 import { formatPriceCompact } from '@/lib/catalog/format';
 import { checkCandidate, type BuildSelection, type CandidateVerdict } from '@/lib/compat/engine';
 import { CONDITION_LABELS, STATUS_LABELS, STATUS_TONES } from '@/lib/inventory/labels';
@@ -36,12 +36,15 @@ type GradedCandidate = Candidate & { verdict: CandidateVerdict };
  */
 export function SlotPicker({
   buildId,
+  buildStatus,
   slot,
   selection,
   tierRows,
   onClose,
 }: {
   buildId: string;
+  /** Decides what may be offered: a draft takes parcels, an assembled build does not. */
+  buildStatus: BuildStatus;
   slot: ComponentCategory;
   selection: BuildSelection;
   /** Every ranking, so the picker can badge whichever ranked slot it opens. */
@@ -61,7 +64,7 @@ export function SlotPicker({
     const timer = setTimeout(
       async () => {
         setLoading(true);
-        const params = new URLSearchParams({ slot });
+        const params = new URLSearchParams({ slot, buildStatus });
         if (query.trim()) params.set('q', query.trim());
         try {
           const response = await fetch(`/api/builds/candidates?${params}`, {
@@ -78,7 +81,7 @@ export function SlotPicker({
       query ? 250 : 0,
     );
     return () => clearTimeout(timer);
-  }, [slot, query]);
+  }, [slot, query, buildStatus]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {

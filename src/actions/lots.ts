@@ -7,7 +7,9 @@ import { z } from 'zod';
 import { assertSession } from '@/lib/auth/guard';
 import { db } from '@/lib/db';
 import { buildItems, inventoryItems, lotItems, lots } from '@/lib/db/schema';
-import { UNIT_STATUS_FOR_LOT, type LotStatus } from '@/lib/lots/types';
+import { requiresUnitsInHand } from '@/lib/inventory/status';
+import { countAwaited, engagedByLot, freedUnit, heldUnitIds } from '@/lib/inventory/transitions';
+import type { LotStatus } from '@/lib/lots/types';
 import type { ActionState } from './auth';
 
 function revalidateLot(lotId: string) {
@@ -91,15 +93,11 @@ export async function deleteLotAction(
 
   await db.transaction(async (tx) => {
     // Free the units before the cascade removes the lines pointing at them.
-    const rows = await tx
-      .select({ id: lotItems.inventoryItemId })
-      .from(lotItems)
-      .where(eq(lotItems.lotId, id));
-    const ids = rows.map((row) => row.id);
+    const ids = await heldUnitIds(tx, 'lot', id);
     if (ids.length > 0) {
       await tx
         .update(inventoryItems)
-        .set({ status: 'en_stock', listedAt: null, updatedAt: new Date() })
+        .set(freedUnit())
         .where(inArray(inventoryItems.id, ids));
     }
 
@@ -128,6 +126,18 @@ export async function addLotItemAction(
   if (!status) return { error: 'Lot introuvable.' };
   if (status === 'vendu') return { error: 'Ce lot est vendu : il ne bouge plus.' };
 
+  // An announced lot claims hardware in hand; a lot being gathered may well
+  // wait on a purchase, exactly like a draft configuration.
+  if (requiresUnitsInHand(status)) {
+    const awaited = await countAwaited(db, 'item', inventoryItemId);
+    if (awaited > 0) {
+      return {
+        error:
+          'Cette unité n’est pas encore arrivée : marquez-la comme reçue avant de l’ajouter à un lot en vente.',
+      };
+    }
+  }
+
   // A unit engaged in a configuration is promised there; letting it join a lot
   // would sell the same part twice.
   const [engaged] = await db
@@ -150,13 +160,7 @@ export async function addLotItemAction(
 
       await tx
         .update(inventoryItems)
-        .set({
-          status: UNIT_STATUS_FOR_LOT[status],
-          ...(status === 'en_vente'
-            ? { listedAt: sql`coalesce(${inventoryItems.listedAt}, current_date)` }
-            : {}),
-          updatedAt: new Date(),
-        })
+        .set(engagedByLot(status))
         .where(eq(inventoryItems.id, inventoryItemId));
     });
   } catch (error) {
@@ -180,6 +184,17 @@ export async function removeLotItemAction(
   const lineId = String(formData.get('lineId') ?? '');
   if (!lineId) return { error: 'Ligne introuvable.' };
 
+  // A sold lot is history: taking a unit back out of it would put on the shelf
+  // something the buyer already went home with.
+  const [line] = await db
+    .select({ lotStatus: lots.status })
+    .from(lotItems)
+    .innerJoin(lots, eq(lots.id, lotItems.lotId))
+    .where(eq(lotItems.id, lineId))
+    .limit(1);
+  if (!line) return { error: 'Ligne introuvable.' };
+  if (line.lotStatus === 'vendu') return { error: 'Ce lot est vendu : il ne bouge plus.' };
+
   const [removed] = await db
     .delete(lotItems)
     .where(eq(lotItems.id, lineId))
@@ -188,7 +203,7 @@ export async function removeLotItemAction(
 
   await db
     .update(inventoryItems)
-    .set({ status: 'en_stock', listedAt: null, updatedAt: new Date() })
+    .set(freedUnit())
     .where(eq(inventoryItems.id, removed.unitId));
 
   revalidateLot(removed.lotId);

@@ -243,6 +243,7 @@ export function Configurator({
       {openSlot ? (
         <SlotPicker
           buildId={build.id}
+          buildStatus={build.status}
           slot={openSlot}
           selection={selection}
           tierRows={tierRows}

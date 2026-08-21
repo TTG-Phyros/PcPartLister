@@ -154,14 +154,15 @@ tout cela d'un coup.
 
 Le formulaire tient en trois blocs : les lignes du lot (un modèle du catalogue et son nombre
 d'exemplaires — répétez la même ligne ou variez les catégories), l'achat (prix total, date,
-plateforme, état, statut), et le suivi du colis. Les modèles se choisissent au catalogue ; un
+plateforme, état, récupération), et le suivi du colis. Le statut des unités s'en déduit, comme
+pour un achat saisi seul. Les modèles se choisissent au catalogue ; un
 modèle absent se crée d'abord depuis `Ajouter un achat` ou depuis le catalogue.
 
 Ce que la saisie produit :
 
 | Ce qui est saisi une fois | Ce qui est créé |
 | --- | --- |
-| N lignes × exemplaires | **Une unité de stock indépendante par exemplaire**, avec le statut, l'état, la date et les specs d'une unité saisie à la main |
+| N lignes × exemplaires | **Une unité de stock indépendante par exemplaire**, avec le statut déduit de l'achat, l'état, la date et les specs d'une unité saisie à la main |
 | Un prix total, port compris | La part de chacune, calculée à la saisie |
 | Un numéro de colis | Le même suivi sur chaque unité, plus un lot qui le porte |
 
@@ -226,15 +227,81 @@ recréée (volume neuf, nouveau serveur) revient donc avec le stock réel, et pa
 le catalogue. Retirer une entrée du fichier ne supprime rien en base ; c'est la fiche de
 l'unité qui fait foi une fois l'import passé.
 
-Statuts : `en transit`, `en stock`, `réservé`, `monté`, `en vente`, `vendu`, `HS`. `réservé`,
-`monté` et `vendu` sont pilotés par les configurations mais restent modifiables à la main.
-`en vente` est posé par le bouton « Mettre en vente » (voir [Ventes](#ventes-et-rentabilité)).
+#### Statuts et transitions
+
+Statuts : `en transit`, `en stock`, `réservé`, `monté`, `en vente`, `vendu`, `HS`. Le statut
+d'une unité n'est **jamais saisi librement à l'achat** : il découle de deux faits — y a-t-il un
+colis à suivre, et la pièce est-elle déjà en main. Il ne bouge ensuite que par des transitions
+écrites en un seul endroit, [src/lib/inventory/status.ts](src/lib/inventory/status.ts) pour la
+règle et [src/lib/inventory/transitions.ts](src/lib/inventory/transitions.ts) pour son écriture
+en base.
+
+| Depuis | Vers | Ce qui le déclenche |
+| --- | --- | --- |
+| `en transit`, `réservé` *(pas encore récupérée)* | `en stock` | **« Marquer comme reçu / récupérée »**, sur l'unité ou sur l'arrivage entier — la seule sortie, jamais automatique |
+| `en stock` | `réservé` | ajout à une configuration ou à un lot en préparation |
+| `réservé` | `en stock` | ligne retirée, configuration ou lot supprimé |
+| `réservé` | `monté` | la configuration passe « montée » |
+| `réservé`, `monté` | `en vente` | la configuration ou le lot est mis en vente |
+| `en vente` | `monté` (config), `réservé` (lot) | retrait de la vente |
+| `en vente` | `vendu` | vente enregistrée |
+| `vendu` | `en vente` | annulation de la vente |
+| `en stock` | `HS` | à la main, dans les deux sens |
+
+**Ce qui n'est pas là ne bouge pas.** Aucun événement automatique — configuration montée, mise
+en vente, vente enregistrée — ne fait arriver une unité : ni un colis en route, ni un achat pas
+encore récupéré. La seule sortie est le bouton **« Marquer comme reçu »** (« Marquer comme
+récupérée » pour une remise en main propre), sur l'unité ou sur son arrivage — et c'est lui, et
+lui seul, qui écrit la date de réception.
+
+Cette date est d'ailleurs **ce qui dit où la pièce est**, pas le statut : `réservé` recouvre deux
+situations qui se ressemblent et ne sont pas les mêmes — mise de côté chez le vendeur, ou posée
+sur l'étagère et promise à un brouillon. Deux contraintes le garantissent en base :
+`inventory_transit_not_received` (une unité en transit n'a pas de date de réception) et
+`inventory_settled_received` (tout statut qui affirme que la pièce est là en a une).
+
+Ce que fait une configuration ou un lot des unités qu'il tient — `réservé` en brouillon, `monté`
+une fois assemblé, `en vente` une fois annoncé, `vendu` une fois vendu — s'applique donc à tout
+sauf à ce qui n'est pas encore arrivé. Et comme « montée », « en vente » et « vendue » affirment
+toutes trois qu'on a la pièce en main, **la configuration refuse d'y passer** tant qu'une unité
+manque, plutôt que de l'entraîner avec elle : « 2 unités ne sont pas encore arrivées :
+marquez-les comme reçues d'abord. » Un brouillon, lui, accueille sans problème une pièce en
+route ou pas encore récupérée : planifier autour d'un achat en cours, c'est le principe.
+
+Rendue à elle-même — ligne retirée, configuration ou lot supprimé — une unité revient à
+l'étagère, sauf si elle n'est pas encore arrivée (elle continue d'attendre, en transit ou
+réservée) ou si elle a été déclarée HS entre-temps (sortir une pièce d'une configuration ne la
+répare pas).
+
+Le sélecteur de statut de la liste et de la fiche reste, lui, entièrement libre : c'est la
+correction à la main, celle qui rattrape ce que les transitions automatiques refusent
+délibérément de faire.
+
+#### Saisir un achat
+
+Le formulaire ne demande jamais un statut, il pose deux questions concrètes et en déduit le
+statut, affiché en clair au fur et à mesure de la saisie :
+
+| Ce qui est saisi | Statut obtenu | Date de réception |
+| --- | --- | --- |
+| Un n° de suivi, un lien de suivi ou une date de livraison | **En transit** | aucune |
+| Rien de tout cela, « réservée, pas encore récupérée » *(défaut)* | **Réservé** | aucune |
+| Rien de tout cela, « déjà récupérée en main propre » | **En stock** | le jour de l'achat |
+
+Le défaut est **réservé** : un accord de vente n'est pas une pièce dans un tiroir. Le cas
+« récupérée sur place » est celui de la brocante — payée et empochée dans la foulée. Dans les
+deux premiers cas l'argent est sorti mais la pièce n'est pas là : elle compte dans l'immobilisé,
+n'apparaît pas dans le stock disponible, et n'est jamais comptée comme dormante. Le
+configurateur la propose aux brouillons — mais pas aux configurations déjà montées ou annoncées,
+qui ne peuvent pas la prendre. Sa fiche porte le bouton qui met fin à l'attente : **Suivi du
+colis** avec « Marquer comme reçu » pour un colis, **Récupération** avec « Marquer comme
+récupérée » pour un rendez-vous.
+
+La même règle vaut pour une saisie groupée, un achat étant un achat : un arrivage entier peut
+attendre son colis ou attendre d'être récupéré, et le bouton de la fiche d'arrivage fait
+atterrir toutes ses unités d'un coup.
 
 ### Suivi de colis
-
-Un achat pas encore arrivé se saisit en statut **en transit** : l'argent est déjà sorti, la
-pièce n'est pas là. Elle compte donc dans l'immobilisé mais n'est proposée ni au
-configurateur ni au stock disponible, et n'est jamais comptée comme dormante.
 
 Le bloc **Suivi du colis** du formulaire prend le transporteur, le numéro de suivi, un lien
 et la date de livraison prévue. Le lien de suivi est **déduit du transporteur et du numéro**
@@ -245,8 +312,8 @@ coller l'URL, qui est alors prioritaire.
 Le colis est ensuite accessible en un tap depuis la liste du stock, la fiche de l'unité et
 le tableau de bord, avec le nombre de jours restants et un **retard** signalé dès que la date
 annoncée est passée. Le bouton « Marquer comme reçu » passe l'unité en stock et enregistre la
-date de réception ; le filtre **Colis en cours** de la page Stock ne garde que les livraisons
-en attente.
+date de réception — c'est, avec son équivalent sur l'arrivage, la seule action qui le fasse ; le
+filtre **Colis en cours** de la page Stock ne garde que les livraisons en attente.
 
 La synthèse affiche la valeur du stock au prix d'achat, le montant immobilisé, la
 répartition par catégorie et les **composants dormants** — en stock depuis plus de

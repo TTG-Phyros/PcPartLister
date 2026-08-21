@@ -61,10 +61,14 @@ export default async function InventoryItemPage({
   const dormant = item.status === 'en_stock' && age > settings.dormant_days;
 
   const inTransit = item.status === 'en_transit';
+  // Where the unit physically is, which the status alone cannot say: `reserve`
+  // covers both a purchase not collected yet and one held on the shelf.
+  const awaiting = item.receivedAt === null;
   const tracking = trackingLink(item);
-  const showTracking =
-    inTransit ||
-    Boolean(item.shippingCarrier || item.trackingNumber || item.trackingUrl || item.expectedArrival);
+  const hasParcel = Boolean(
+    item.shippingCarrier || item.trackingNumber || item.trackingUrl || item.expectedArrival,
+  );
+  const showTracking = inTransit || hasParcel;
 
   return (
     <div className="flex max-w-3xl flex-col gap-5">
@@ -97,6 +101,7 @@ export default async function InventoryItemPage({
       {batch ? <BatchCard batch={batch} /> : null}
 
       {showTracking ? <TrackingCard item={item} link={tracking} /> : null}
+      {!showTracking && awaiting ? <PickupCard item={item} /> : null}
 
       <Card className="flex flex-col gap-4 sm:flex-row">
         <ComponentImage
@@ -345,6 +350,7 @@ function BatchCard({ batch }: { batch: BatchMembership }) {
  */
 function TrackingCard({ item, link }: { item: InventoryItem; link: string | null }) {
   const inTransit = item.status === 'en_transit';
+  const awaiting = item.receivedAt === null;
   const remaining = item.expectedArrival ? daysUntil(item.expectedArrival) : null;
   const late = isLate(item);
 
@@ -391,7 +397,32 @@ function TrackingCard({ item, link }: { item: InventoryItem; link: string | null
             Aucun lien de suivi : ajoutez le transporteur et le numéro ci-dessous.
           </p>
         ) : null}
-        {inTransit ? <MarkReceived id={item.id} /> : null}
+        {awaiting ? <MarkReceived id={item.id} /> : null}
+      </div>
+    </Card>
+  );
+}
+
+/**
+ * The other way a purchase waits: no parcel, a hand-over still to come. Same
+ * single button as a parcel, since it answers the same question — la pièce
+ * est-elle là ?
+ */
+function PickupCard({ item }: { item: InventoryItem }) {
+  const age = daysSince(item.purchaseDate);
+
+  return (
+    <Card className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="font-medium">Récupération</h2>
+        <span className="text-sm text-ink-muted">{PLATFORM_LABELS[item.platform]}</span>
+      </div>
+      <p className="text-sm text-ink-muted">
+        Achetée il y a {age} jour{age > 1 ? 's' : ''} et pas encore récupérée : elle compte dans
+        l’immobilisé, mais ni dans le stock disponible ni dans une configuration montée.
+      </p>
+      <div>
+        <MarkReceived id={item.id} label="Marquer comme récupérée" />
       </div>
     </Card>
   );

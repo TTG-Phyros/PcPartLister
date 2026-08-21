@@ -1,11 +1,10 @@
 'use server';
 
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { assertSession } from '@/lib/auth/guard';
-import { BATCH_STATUSES } from '@/lib/batches/types';
 import { db } from '@/lib/db';
 import { catalogComponents, inventoryItems, purchaseBatches } from '@/lib/db/schema';
 import {
@@ -17,7 +16,13 @@ import {
 } from '@/lib/forms/fields';
 import { ITEM_CONDITIONS, PLATFORM_LABELS, PURCHASE_PLATFORMS } from '@/lib/inventory/labels';
 import { splitEvenly } from '@/lib/inventory/split';
+import {
+  PURCHASE_HANDOVERS,
+  initialReceivedAt,
+  initialStatus,
+} from '@/lib/inventory/status';
 import { SHIPPING_CARRIERS } from '@/lib/inventory/tracking';
+import { arrived, pendingArrival } from '@/lib/inventory/transitions';
 import type { ActionState } from './auth';
 
 /** Guard against a slip of the quantity field turning into a mass insert. */
@@ -66,7 +71,6 @@ const batchSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date d’achat invalide'),
   platform: z.enum(PURCHASE_PLATFORMS),
   condition: z.enum(ITEM_CONDITIONS),
-  status: z.enum(BATCH_STATUSES),
   listingUrl: optionalUrl('Lien de l’annonce invalide'),
   ...trackingFields,
   notes: optionalText,
@@ -129,7 +133,6 @@ export async function createPurchaseBatchAction(
     purchaseDate: formData.get('purchaseDate') ?? '',
     platform: formData.get('platform') ?? 'autre',
     condition: formData.get('condition') ?? 'bon',
-    status: formData.get('status') ?? 'en_transit',
     listingUrl: formData.get('listingUrl') ?? '',
     shippingCarrier: formData.get('shippingCarrier') ?? '',
     trackingNumber: formData.get('trackingNumber') ?? '',
@@ -189,6 +192,12 @@ export async function createPurchaseBatchAction(
 
   const shares = splitEvenly(totalPriceCents, componentIds.length);
 
+  // One purchase for the whole batch, so one status for all its units: the
+  // parcel decides it, or the hand-over does, exactly as for a purchase entered
+  // on its own.
+  const handover = z.enum(PURCHASE_HANDOVERS).safeParse(formData.get('handover'));
+  const status = initialStatus(shared, handover.success ? handover.data : 'reserve');
+
   let batchId: string;
   try {
     batchId = await db.transaction(async (tx) => {
@@ -217,7 +226,7 @@ export async function createPurchaseBatchAction(
           platform: shared.platform,
           listingUrl: shared.listingUrl,
           condition: shared.condition,
-          status: shared.status,
+          status,
           // The parcel is one and the same for every unit: copied onto each row
           // so the stock list, the dashboard and the « colis en cours » filter
           // keep working on units alone, with no idea batches exist.
@@ -225,8 +234,8 @@ export async function createPurchaseBatchAction(
           trackingNumber: shared.trackingNumber,
           trackingUrl: shared.trackingUrl,
           expectedArrival: shared.expectedArrival,
-          // A unit entered as already in stock was received the day it was bought.
-          receivedAt: shared.status === 'en_transit' ? null : shared.purchaseDate,
+          // Only a batch already in hand has a reception date.
+          receivedAt: initialReceivedAt(status, shared.purchaseDate),
           notes: shared.notes,
         })),
       );
@@ -305,7 +314,7 @@ export async function updatePurchaseBatchAction(
 }
 
 /**
- * One parcel, one arrival: the whole batch lands at once, so it takes one tap
+ * One purchase, one arrival: the whole batch lands at once, so it takes one tap
  * rather than one per unit. Units already received keep their own date.
  */
 export async function markBatchReceivedAction(
@@ -319,18 +328,12 @@ export async function markBatchReceivedAction(
 
   const received = await db
     .update(inventoryItems)
-    .set({
-      status: 'en_stock',
-      receivedAt: sql`coalesce(${inventoryItems.receivedAt}, current_date)`,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(eq(inventoryItems.purchaseBatchId, id), eq(inventoryItems.status, 'en_transit')),
-    )
+    .set(arrived())
+    .where(and(eq(inventoryItems.purchaseBatchId, id), pendingArrival()))
     .returning({ id: inventoryItems.id });
 
   revalidateBatch(id);
-  if (received.length === 0) return { success: 'Aucune unité n’était encore en transit.' };
+  if (received.length === 0) return { success: 'Toutes les unités étaient déjà arrivées.' };
   return {
     success: `${received.length} unité${received.length > 1 ? 's' : ''} passée${received.length > 1 ? 's' : ''} en stock.`,
   };

@@ -2,12 +2,6 @@ import type { ItemCondition, ItemStatus, PurchasePlatform } from '@/lib/inventor
 import type { ShippingCarrier } from '@/lib/inventory/tracking';
 import type { ComponentCategory } from '@/lib/specs';
 
-/**
- * Statuses a freshly entered batch can be in. A batch is an arrival, not a
- * lifecycle: whatever happens to a unit afterwards is decided unit by unit.
- */
-export const BATCH_STATUSES = ['en_transit', 'en_stock'] as const satisfies readonly ItemStatus[];
-
 /** One unit of a batch, as shown on the batch page. */
 export type BatchLine = {
   inventoryItemId: string;

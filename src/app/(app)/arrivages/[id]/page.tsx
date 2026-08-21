@@ -39,7 +39,9 @@ export default async function PurchaseBatchPage({
   const batch = await getPurchaseBatchDetail(id);
   if (!batch) notFound();
 
-  const pending = batch.lines.filter((line) => line.status === 'en_transit').length;
+  // What the batch is still waiting on, parcel or hand-over alike: the
+  // reception date is what says a unit is here, not its status.
+  const pending = batch.lines.filter((line) => line.receivedAt === null).length;
   const link = trackingLink(batch);
   const remaining = batch.expectedArrival ? daysUntil(batch.expectedArrival) : null;
   const late = pending > 0 && remaining !== null && remaining < 0;
@@ -66,7 +68,9 @@ export default async function PurchaseBatchPage({
                 : 'rounded-md bg-ok/15 px-2 py-1 text-xs font-medium text-ok'
             }
           >
-            {pending > 0 ? `${pending} en transit` : 'Reçu'}
+            {pending > 0
+              ? `${pending} ${hasParcel ? 'en transit' : 'à récupérer'}`
+              : 'Reçu'}
           </span>
         </div>
         <p className="mt-1 text-sm text-ink-muted">
@@ -87,14 +91,19 @@ export default async function PurchaseBatchPage({
       {hasParcel || pending > 0 ? (
         <Card className="flex flex-col gap-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="font-medium">Suivi du colis</h2>
+            <h2 className="font-medium">{hasParcel ? 'Suivi du colis' : 'Récupération'}</h2>
             <span className="text-sm text-ink-muted">
-              {batch.shippingCarrier ? CARRIER_LABELS[batch.shippingCarrier] : 'Transporteur inconnu'}
+              {hasParcel
+                ? batch.shippingCarrier
+                  ? CARRIER_LABELS[batch.shippingCarrier]
+                  : 'Transporteur inconnu'
+                : PLATFORM_LABELS[batch.platform]}
             </span>
           </div>
 
           <p className="text-sm text-ink-muted">
-            Un seul colis pour {batch.lines.length} unité{batch.lines.length > 1 ? 's' : ''}.
+            {hasParcel ? 'Un seul colis' : 'Un seul achat'} pour {batch.lines.length} unité
+            {batch.lines.length > 1 ? 's' : ''}.
           </p>
 
           {batch.trackingNumber ? (
@@ -121,7 +130,7 @@ export default async function PurchaseBatchPage({
               <a href={link} target="_blank" rel="noreferrer noopener">
                 <Button variant="secondary">Suivre le colis</Button>
               </a>
-            ) : pending > 0 ? (
+            ) : hasParcel && pending > 0 ? (
               <p className="text-sm text-ink-muted">
                 Aucun lien de suivi : ajoutez le transporteur et le numéro ci-dessous.
               </p>

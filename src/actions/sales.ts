@@ -7,6 +7,8 @@ import { assertSession } from '@/lib/auth/guard';
 import { db } from '@/lib/db';
 import { buildItems, builds, inventoryItems, lotItems, lots, sales } from '@/lib/db/schema';
 import { PURCHASE_PLATFORMS } from '@/lib/inventory/labels';
+import { awaitedBlockMessage } from '@/lib/inventory/status';
+import { countAwaited, heldUnitIds, movedTo } from '@/lib/inventory/transitions';
 import { SALE_SHIPPING_METHODS, type SaleSubjectKind } from '@/lib/sales/labels';
 import type { ActionState } from './auth';
 
@@ -53,54 +55,29 @@ function revalidateSubject(kind: SaleSubjectKind, id: string) {
   }
 }
 
-/**
- * Units carried along by the subject. A lone unit is its own subject, so it is
- * updated once, by the subject update itself, and never listed here.
- */
-async function memberUnitIds(tx: Tx, kind: SaleSubjectKind, id: string): Promise<string[]> {
-  if (kind === 'build') {
-    const rows = await tx
-      .select({ id: buildItems.inventoryItemId })
-      .from(buildItems)
-      .where(and(eq(buildItems.buildId, id), sql`${buildItems.inventoryItemId} is not null`));
-    return rows.map((row) => row.id).filter((value): value is string => value !== null);
-  }
-  if (kind === 'lot') {
-    const rows = await tx
-      .select({ id: lotItems.inventoryItemId })
-      .from(lotItems)
-      .where(eq(lotItems.lotId, id));
-    return rows.map((row) => row.id);
-  }
-  return [];
-}
-
 /** Status of the members that matches a subject on sale, sold, or back home. */
 const MEMBER_STATUS = { listed: 'en_vente', sold: 'vendu', idle: 'monte' } as const;
 
+/**
+ * Carries the units a subject holds along with it. A lone unit is its own
+ * subject: it is updated once, by the subject update itself, and there is
+ * nothing to carry.
+ */
 async function setMemberStatus(
   tx: Tx,
   kind: SaleSubjectKind,
   id: string,
   phase: keyof typeof MEMBER_STATUS,
 ) {
-  const ids = await memberUnitIds(tx, kind, id);
+  const ids = await heldUnitIds(tx, kind, id);
   if (ids.length === 0) return;
-  // A lot is not assembled hardware: its units go back to plain stock, while a
-  // configuration's units stay mounted in it.
-  const status =
-    phase === 'idle' && kind === 'lot' ? 'reserve' : MEMBER_STATUS[phase];
+  // A lot is not assembled hardware: its units go back to being set aside,
+  // while a configuration's units stay mounted in it.
+  const status = phase === 'idle' && kind === 'lot' ? 'reserve' : MEMBER_STATUS[phase];
 
   await tx
     .update(inventoryItems)
-    .set({
-      status,
-      ...(phase === 'listed'
-        ? { listedAt: sql`coalesce(${inventoryItems.listedAt}, current_date)` }
-        : {}),
-      ...(phase === 'idle' ? { listedAt: null } : {}),
-      updatedAt: new Date(),
-    })
+    .set(movedTo(status))
     .where(inArray(inventoryItems.id, ids));
 }
 
@@ -146,7 +123,7 @@ export async function listForSaleAction(
     } else {
       await tx
         .update(inventoryItems)
-        .set({ status: 'en_vente', ...listing })
+        .set({ ...movedTo('en_vente'), askingPriceCents })
         .where(eq(inventoryItems.id, id));
     }
 
@@ -191,6 +168,8 @@ async function guardListable(
     if (build.status === 'vendue') {
       return { error: { error: 'Cette configuration est déjà vendue.' } };
     }
+    const awaited = await countAwaited(db, kind, id);
+    if (awaited > 0) return { error: { error: awaitedBlockMessage(awaited) } };
     return { alreadyListed: build.status === 'en_vente' };
   }
 
@@ -210,6 +189,8 @@ async function guardListable(
     if (count === 0) {
       return { error: { error: 'Ce lot est vide : ajoutez-y des unités d’abord.' } };
     }
+    const awaited = await countAwaited(db, kind, id);
+    if (awaited > 0) return { error: { error: awaitedBlockMessage(awaited) } };
     return { alreadyListed: lot.status === 'en_vente' };
   }
 
@@ -220,6 +201,16 @@ async function guardListable(
     .limit(1);
   if (!item) return { error: { error: 'Unité introuvable.' } };
   if (item.status === 'vendu') return { error: { error: 'Cette unité est déjà vendue.' } };
+  // Announcing something not in hand is announcing what may never turn up in
+  // the state expected: the listing waits for the delivery, or for the pickup.
+  if (await countAwaited(db, kind, id)) {
+    return {
+      error: {
+        error:
+          'Cette unité n’est pas encore arrivée : marquez-la comme reçue avant de la mettre en vente.',
+      },
+    };
+  }
 
   // A unit engaged elsewhere is sold with what holds it, not on its own:
   // otherwise the two would fight over its status.
@@ -276,10 +267,7 @@ export async function unlistAction(
         .set({ status: 'brouillon', listedAt: null, updatedAt: new Date() })
         .where(eq(lots.id, id));
     } else {
-      await tx
-        .update(inventoryItems)
-        .set({ status: 'en_stock', listedAt: null, updatedAt: new Date() })
-        .where(eq(inventoryItems.id, id));
+      await tx.update(inventoryItems).set(movedTo('en_stock')).where(eq(inventoryItems.id, id));
     }
 
     await setMemberStatus(tx, kind, id, 'idle');
@@ -342,6 +330,12 @@ export async function recordSaleAction(
   const salePriceCents = centsFrom(formData.get('salePriceEur'), -1);
   if (salePriceCents < 0) return { error: 'Le prix de vente est obligatoire.' };
 
+  // Same wall as the listing, one step further: what has not arrived cannot
+  // have changed hands. Recording the sale would otherwise carry a unit that is
+  // not here straight to `vendu`, parcel and all.
+  const awaited = await countAwaited(db, kind, id);
+  if (awaited > 0) return { error: awaitedBlockMessage(awaited) };
+
   const values = {
     buildId: kind === 'build' ? id : null,
     lotId: kind === 'lot' ? id : null,
@@ -375,10 +369,7 @@ export async function recordSaleAction(
     } else if (kind === 'lot') {
       await tx.update(lots).set({ status: 'vendu', updatedAt: new Date() }).where(eq(lots.id, id));
     } else {
-      await tx
-        .update(inventoryItems)
-        .set({ status: 'vendu', updatedAt: new Date() })
-        .where(eq(inventoryItems.id, id));
+      await tx.update(inventoryItems).set(movedTo('vendu')).where(eq(inventoryItems.id, id));
     }
 
     await setMemberStatus(tx, kind, id, 'sold');
@@ -419,10 +410,7 @@ export async function deleteSaleAction(
         .where(eq(lots.id, id));
     } else {
       await tx.delete(sales).where(eq(sales.inventoryItemId, id));
-      await tx
-        .update(inventoryItems)
-        .set({ ...relisted, listedAt: sql`coalesce(${inventoryItems.listedAt}, current_date)` })
-        .where(eq(inventoryItems.id, id));
+      await tx.update(inventoryItems).set(movedTo('en_vente')).where(eq(inventoryItems.id, id));
     }
 
     await setMemberStatus(tx, kind, id, 'listed');

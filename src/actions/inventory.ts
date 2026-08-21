@@ -1,19 +1,12 @@
 'use server';
 
-import { and, eq, isNotNull, sql } from 'drizzle-orm';
+import { and, eq, isNotNull, sql, type SQL } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { assertSession } from '@/lib/auth/guard';
-import { engagedUnit } from '@/lib/builds/engagement';
 import { db } from '@/lib/db';
 import { buildItems, builds, catalogComponents, inventoryItems, lotItems } from '@/lib/db/schema';
-import {
-  ITEM_CONDITIONS,
-  ITEM_STATUSES,
-  PURCHASE_PLATFORMS,
-} from '@/lib/inventory/labels';
-import { SHIPPING_CARRIERS } from '@/lib/inventory/tracking';
 import {
   echoValues,
   optionalDay,
@@ -21,7 +14,21 @@ import {
   optionalUrl,
   priceEurToCents,
 } from '@/lib/forms/fields';
+import {
+  ITEM_CONDITIONS,
+  ITEM_STATUSES,
+  PURCHASE_PLATFORMS,
+  type ItemStatus,
+} from '@/lib/inventory/labels';
 import { generatePlaceholderImage } from '@/lib/images/ensure';
+import {
+  PURCHASE_HANDOVERS,
+  initialReceivedAt,
+  initialStatus,
+  requiresUnitsInHand,
+} from '@/lib/inventory/status';
+import { SHIPPING_CARRIERS } from '@/lib/inventory/tracking';
+import { arrived, engagedByBuild, pendingArrival } from '@/lib/inventory/transitions';
 import { COMPONENT_CATEGORIES, type ComponentCategory } from '@/lib/specs';
 import { specsFromFormData } from '@/lib/specs/fields';
 import type { ActionState } from './auth';
@@ -37,7 +44,6 @@ const unitSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date d’achat invalide'),
   platform: z.enum(PURCHASE_PLATFORMS),
   condition: z.enum(ITEM_CONDITIONS),
-  status: z.enum(ITEM_STATUSES),
   listingUrl: optionalUrl('Lien de l’annonce invalide'),
   shippingCarrier: z
     .union([z.enum(SHIPPING_CARRIERS), z.literal('')])
@@ -61,7 +67,6 @@ function parseUnit(formData: FormData) {
     purchaseDate: formData.get('purchaseDate') ?? '',
     platform: formData.get('platform') ?? 'autre',
     condition: formData.get('condition') ?? 'bon',
-    status: formData.get('status') ?? 'en_stock',
     listingUrl: formData.get('listingUrl') ?? '',
     shippingCarrier: formData.get('shippingCarrier') ?? '',
     trackingNumber: formData.get('trackingNumber') ?? '',
@@ -79,20 +84,25 @@ function parseUnit(formData: FormData) {
 }
 
 /**
- * Reception date derived from the status: a unit leaves `en_transit` exactly
- * when the parcel lands, and nothing should have to be ticked by hand for that.
- * `coalesce` keeps the first arrival date across later status changes.
+ * Reception date implied by a status set by hand. Putting a unit back on the
+ * road forgets its arrival; `reserve` leaves the date alone, being the one
+ * status that says nothing about where the unit is — set aside at the seller's,
+ * or on the shelf and promised to a build; anything else means it is here, and
+ * `coalesce` keeps the first arrival across later changes.
+ *
+ * The ordinary way in is `arrived()`. This is the correction path.
  */
-function receivedAtFor(status: (typeof ITEM_STATUSES)[number]) {
-  if (status === 'en_transit') return null;
-  return sql`coalesce(${inventoryItems.receivedAt}, current_date)`;
+function receivedAtFor(status: ItemStatus): { receivedAt?: SQL | null } {
+  if (status === 'en_transit') return { receivedAt: null };
+  if (status === 'reserve') return {};
+  return { receivedAt: sql`coalesce(${inventoryItems.receivedAt}, current_date)` };
 }
 
 /**
  * Listing date, same idea in the other direction: a unit switched to `en_vente`
  * by hand is listed today, and leaving that status closes the listing.
  */
-function listedAtFor(status: (typeof ITEM_STATUSES)[number]) {
+function listedAtFor(status: ItemStatus) {
   if (status !== 'en_vente') return null;
   return sql`coalesce(${inventoryItems.listedAt}, current_date)`;
 }
@@ -209,14 +219,41 @@ export async function createInventoryItemAction(
   // Bought to fill a named slot of a configuration, from the shopping list.
   const buildLineId = String(formData.get('buildLineId') ?? '');
 
+  // Where the purchase is born: on the road if there is a parcel to follow,
+  // otherwise wherever the hand-over says — set aside by default, on the shelf
+  // when it was picked up on the spot.
+  const handover = z.enum(PURCHASE_HANDOVERS).safeParse(formData.get('handover'));
+  const status = initialStatus(unit, handover.success ? handover.data : 'reserve');
+
+  // A configuration that claims to be assembled, announced or sold cannot take
+  // in a part that has not arrived. Refused before anything is written, so the
+  // form comes back filled rather than the purchase landing half-attached.
+  if (buildLineId && status !== 'en_stock') {
+    const [line] = await db
+      .select({ buildStatus: builds.status })
+      .from(buildItems)
+      .innerJoin(builds, eq(builds.id, buildItems.buildId))
+      .where(eq(buildItems.id, buildLineId))
+      .limit(1);
+    if (line && requiresUnitsInHand(line.buildStatus)) {
+      return {
+        error:
+          'Cette configuration n’est plus un brouillon : une pièce pas encore arrivée ne peut pas y être rattachée. Enregistrez l’achat depuis le stock, puis placez-la dans la configuration une fois la pièce reçue.',
+        values: echoValues(formData),
+      };
+    }
+  }
+
   const { unitId, buildId } = await db.transaction(async (tx) => {
     const [created] = await tx
       .insert(inventoryItems)
       .values({
         catalogComponentId: componentId,
         ...unit,
-        // A unit entered as already in stock was received the day it was bought.
-        receivedAt: unit.status === 'en_transit' ? null : unit.purchaseDate,
+        status,
+        // Only a unit already in hand has a reception date, and it is the day it
+        // was bought. The two others are still waiting, each for its own reason.
+        receivedAt: initialReceivedAt(status, unit.purchaseDate),
       })
       .returning({ id: inventoryItems.id });
     const newUnitId = created!.id;
@@ -251,7 +288,7 @@ export async function createInventoryItemAction(
 
     await tx
       .update(inventoryItems)
-      .set({ ...engagedUnit(line.buildStatus), updatedAt: new Date() })
+      .set(engagedByBuild(line.buildStatus))
       .where(eq(inventoryItems.id, newUnitId));
 
     return { unitId: newUnitId, buildId: line.buildId };
@@ -285,12 +322,19 @@ export async function updateInventoryItemAction(
   const parsed = parseUnit(formData);
   if (!parsed.ok) return { error: parsed.error, values: echoValues(formData) };
 
+  // Editing keeps the status field: it is the escape hatch for everything the
+  // automatic transitions deliberately refuse to do — a part found dead, a
+  // parcel that turned out never to have shipped.
+  const status = z.enum(ITEM_STATUSES).safeParse(formData.get('status'));
+  if (!status.success) return { error: 'Statut invalide.', values: echoValues(formData) };
+
   const updated = await db
     .update(inventoryItems)
     .set({
       ...parsed.unit,
-      receivedAt: receivedAtFor(parsed.unit.status),
-      listedAt: listedAtFor(parsed.unit.status),
+      status: status.data,
+      ...receivedAtFor(status.data),
+      listedAt: listedAtFor(status.data),
       updatedAt: new Date(),
     })
     .where(eq(inventoryItems.id, id))
@@ -378,7 +422,39 @@ const statusSchema = z.object({
   status: z.enum(ITEM_STATUSES),
 });
 
-/** One-tap status change from the list. */
+/**
+ * The unit arrived — the parcel landed, or the hand-over happened. The one way
+ * out of waiting, and it is always asked for: no configuration, no listing and
+ * no sale ends a wait on its own.
+ */
+export async function markItemReceivedAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await assertSession();
+
+  const id = String(formData.get('id') ?? '');
+  if (!id) return { error: 'Unité introuvable.' };
+
+  const received = await db
+    .update(inventoryItems)
+    .set(arrived())
+    .where(and(eq(inventoryItems.id, id), pendingArrival()))
+    .returning({ id: inventoryItems.id });
+
+  revalidatePath('/stock');
+  revalidatePath(`/stock/${id}`);
+  revalidatePath('/');
+  if (received.length === 0) return { error: 'Cette unité était déjà arrivée.' };
+  return { success: 'Unité reçue : elle est en stock.' };
+}
+
+/**
+ * One-tap status change from the list, and the edit form's status field. Left
+ * deliberately free: it is the hand correction of last resort, the place where
+ * a unit is written off or a purchase entered after the fact. The automatic
+ * transitions are the ones that must never surprise anyone.
+ */
 export async function setInventoryStatusAction(
   _prev: ActionState,
   formData: FormData,
@@ -395,7 +471,7 @@ export async function setInventoryStatusAction(
     .update(inventoryItems)
     .set({
       status: parsed.data.status,
-      receivedAt: receivedAtFor(parsed.data.status),
+      ...receivedAtFor(parsed.data.status),
       listedAt: listedAtFor(parsed.data.status),
       updatedAt: new Date(),
     })

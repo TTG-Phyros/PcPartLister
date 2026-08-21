@@ -5,9 +5,8 @@ import { useFormStatus } from 'react-dom';
 import type { ActionState } from '@/actions/auth';
 import { createPurchaseBatchAction } from '@/actions/batches';
 import { CatalogPicker } from '@/components/inventory/catalog-picker';
-import { Alert, Button, Card, Field, Input, Select } from '@/components/ui';
+import { Alert, Button, Card, Field, Input, Select, cn } from '@/components/ui';
 import type { CatalogSearchHit } from '@/app/api/catalog/search/route';
-import { BATCH_STATUSES } from '@/lib/batches/types';
 import { formatPrice } from '@/lib/catalog/format';
 import {
   CONDITION_LABELS,
@@ -16,10 +15,16 @@ import {
   PLATFORM_LABELS,
   PURCHASE_PLATFORMS,
   STATUS_LABELS,
-  type ItemStatus,
+  STATUS_TONES,
   type PurchasePlatform,
 } from '@/lib/inventory/labels';
 import { splitEvenly } from '@/lib/inventory/split';
+import {
+  HANDOVER_LABELS,
+  PURCHASE_HANDOVERS,
+  initialStatus,
+  type PurchaseHandover,
+} from '@/lib/inventory/status';
 import {
   CARRIER_LABELS,
   SHIPPING_CARRIERS,
@@ -67,11 +72,12 @@ export function BatchForm({ today }: { today: string }) {
   ]);
 
   const [totalEur, setTotalEur] = useState('');
-  const [status, setStatus] = useState<ItemStatus>('en_transit');
   const [platform, setPlatform] = useState<PurchasePlatform>('vinted');
   const [carrier, setCarrier] = useState<ShippingCarrier | ''>('');
   const [trackingNumber, setTrackingNumber] = useState('');
   const [trackingUrlValue, setTrackingUrlValue] = useState('');
+  const [expectedArrival, setExpectedArrival] = useState('');
+  const [handover, setHandover] = useState<PurchaseHandover>('reserve');
 
   const updateLine = (key: number, patch: Partial<Line>) =>
     setLines((current) =>
@@ -112,6 +118,13 @@ export function BatchForm({ today }: { today: string }) {
   const baseShare = shares.at(-1) ?? 0;
   const remainder = shares.filter((share) => share > baseShare).length;
 
+  // One purchase for the whole batch, so one status for all its units — read
+  // off the parcel, or off the hand-over. Same rule, same function as a
+  // purchase entered on its own.
+  const status = initialStatus(
+    { trackingNumber, trackingUrl: trackingUrlValue, expectedArrival },
+    handover,
+  );
   const inTransit = status === 'en_transit';
   const inPerson = IN_PERSON_PLATFORMS.includes(platform);
   const preview = trackingLink({
@@ -257,28 +270,47 @@ export function BatchForm({ today }: { today: string }) {
               ))}
             </Select>
           </Field>
-          <Field
-            label="Statut"
-            htmlFor="status"
-            hint={
-              inTransit
-                ? 'Les unités attendent le colis : elles comptent dans l’immobilisé, pas dans le stock disponible.'
-                : 'Les unités sont déjà sur l’étagère.'
-            }
-          >
-            <Select
-              id="status"
-              name="status"
-              defaultValue="en_transit"
-              onChange={(e) => setStatus(e.target.value as ItemStatus)}
+          {/* One purchase, one answer, for every unit of the batch at once.
+              « Marquer les N unités comme reçues » is then the one thing that
+              puts them on the shelf. */}
+          {inTransit ? (
+            <Field
+              label="Statut"
+              hint="Un suivi est renseigné : les unités attendent le colis et comptent dans l’immobilisé, pas dans le stock disponible."
             >
-              {BATCH_STATUSES.map((value) => (
-                <option key={value} value={value}>
-                  {STATUS_LABELS[value]}
-                </option>
-              ))}
-            </Select>
-          </Field>
+              <p
+                className={cn(
+                  'inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-medium',
+                  STATUS_TONES[status],
+                )}
+              >
+                {STATUS_LABELS[status]}
+              </p>
+            </Field>
+          ) : (
+            <Field
+              label="Récupération"
+              htmlFor="handover"
+              hint={
+                handover === 'en_stock'
+                  ? 'Statut : En stock. Les unités sont sur l’étagère, disponibles pour une configuration.'
+                  : 'Statut : Réservées. Achetées mais pas encore en main : elles comptent dans l’immobilisé, pas dans le stock disponible.'
+              }
+            >
+              <Select
+                id="handover"
+                name="handover"
+                value={handover}
+                onChange={(e) => setHandover(e.target.value as PurchaseHandover)}
+              >
+                {PURCHASE_HANDOVERS.map((value) => (
+                  <option key={value} value={value}>
+                    {HANDOVER_LABELS[value]}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}
           <Field label="Lien de l’annonce" htmlFor="listingUrl">
             <Input
               id="listingUrl"
@@ -381,7 +413,12 @@ export function BatchForm({ today }: { today: string }) {
           </Field>
 
           <Field label="Livraison prévue le" htmlFor="expectedArrival">
-            <Input id="expectedArrival" name="expectedArrival" type="date" />
+            <Input
+              id="expectedArrival"
+              name="expectedArrival"
+              type="date"
+              onChange={(e) => setExpectedArrival(e.target.value)}
+            />
           </Field>
         </div>
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { assertSession } from '@/lib/auth/guard';
 import { candidatesForSlot } from '@/lib/builds/queries';
+import { BUILD_STATUSES } from '@/lib/builds/types';
 import { COMPONENT_CATEGORIES, type ComponentCategory } from '@/lib/specs';
 
 export const dynamic = 'force-dynamic';
@@ -23,8 +24,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Emplacement inconnu' }, { status: 400 });
   }
 
+  // Optional: without it the picker is told nothing and every owned unit is
+  // offered, which is what a draft wants anyway.
+  const rawStatus = url.searchParams.get('buildStatus');
+  const buildStatus = BUILD_STATUSES.find((value) => value === rawStatus);
+
   const data = await candidatesForSlot(slot as ComponentCategory, {
     q: url.searchParams.get('q') ?? undefined,
+    buildStatus,
   });
 
   return NextResponse.json(data);

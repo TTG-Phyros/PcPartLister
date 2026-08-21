@@ -16,10 +16,17 @@ import {
   PLATFORM_LABELS,
   PURCHASE_PLATFORMS,
   STATUS_LABELS,
+  STATUS_TONES,
   type ItemCondition,
   type ItemStatus,
   type PurchasePlatform,
 } from '@/lib/inventory/labels';
+import {
+  HANDOVER_LABELS,
+  PURCHASE_HANDOVERS,
+  initialStatus,
+  type PurchaseHandover,
+} from '@/lib/inventory/status';
 import {
   CARRIER_LABELS,
   SHIPPING_CARRIERS,
@@ -97,12 +104,24 @@ export function InventoryForm({
   const [category, setCategory] = useState<ComponentCategory>('cpu');
 
   // Mirrors of the fields the parcel section reacts to. The inputs stay
-  // uncontrolled — only what drives the preview lives in state.
-  const [status, setStatus] = useState<ItemStatus>(initial.status);
+  // uncontrolled — only what drives the preview and the derived status lives in
+  // state.
+  const [editedStatus, setEditedStatus] = useState<ItemStatus>(initial.status);
   const [platform, setPlatform] = useState<PurchasePlatform>(initial.platform);
   const [carrier, setCarrier] = useState<ShippingCarrier | ''>(initial.shippingCarrier);
   const [trackingNumber, setTrackingNumber] = useState(initial.trackingNumber);
   const [trackingUrlValue, setTrackingUrlValue] = useState(initial.trackingUrl);
+  const [expectedArrival, setExpectedArrival] = useState(initial.expectedArrival);
+  const [handover, setHandover] = useState<PurchaseHandover>('reserve');
+
+  // A purchase is born where its parcel says, or where the hand-over does.
+  // Shown live rather than asked as a raw status, and computed with the very
+  // function the server applies on save.
+  const derivedStatus = initialStatus(
+    { trackingNumber, trackingUrl: trackingUrlValue, expectedArrival },
+    handover,
+  );
+  const status = mode === 'create' ? derivedStatus : editedStatus;
 
   const inTransit = status === 'en_transit';
   const inPerson = IN_PERSON_PLATFORMS.includes(platform);
@@ -112,7 +131,9 @@ export function InventoryForm({
       initial.trackingUrl ||
       initial.expectedArrival,
   );
-  const [trackingOpen, setTrackingOpen] = useState(inTransit || hasTracking);
+  // Open from the start when creating: the parcel fields are what decides
+  // whether the unit lands on the shelf or starts travelling.
+  const [trackingOpen, setTrackingOpen] = useState(mode === 'create' || inTransit || hasTracking);
 
   const preview = trackingLink({
     shippingCarrier: carrier === '' ? null : carrier,
@@ -269,36 +290,79 @@ export function InventoryForm({
               ))}
             </Select>
           </Field>
-          <Field
-            label="Statut"
-            htmlFor="status"
-            hint={
-              inTransit
-                ? 'Colis en cours : l’unité n’est pas proposée aux configurations tant qu’elle n’est pas reçue.'
-                : BUILD_DRIVEN_STATUSES.includes(initial.status)
-                  ? 'Ce statut est normalement piloté par une configuration.'
-                  : undefined
-            }
-          >
-            <Select
-              id="status"
-              name="status"
-              defaultValue={text('status', initial.status)}
-              onChange={(e) => {
-                const next = e.target.value as ItemStatus;
-                setStatus(next);
-                // Switching to « en transit » is exactly when the tracking
-                // fields are needed: open them rather than hide them one click away.
-                if (next === 'en_transit') setTrackingOpen(true);
-              }}
+          {mode === 'create' && inTransit ? (
+            // A parcel settles the question on its own: nothing to choose, and
+            // nothing posted — the server reads the same fields.
+            <Field
+              label="Statut"
+              hint="Un suivi est renseigné : l’unité attend son colis, et passera en stock au clic sur « Marquer comme reçu »."
             >
-              {ITEM_STATUSES.map((value) => (
-                <option key={value} value={value}>
-                  {STATUS_LABELS[value]}
-                </option>
-              ))}
-            </Select>
-          </Field>
+              <p
+                className={cn(
+                  'inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-medium',
+                  STATUS_TONES[status],
+                )}
+              >
+                {STATUS_LABELS[status]}
+              </p>
+            </Field>
+          ) : mode === 'create' ? (
+            // No parcel: the only thing left to know is whether the part is
+            // already in hand. The status follows from the answer.
+            <Field
+              label="Récupération"
+              htmlFor="handover"
+              hint={
+                handover === 'en_stock'
+                  ? 'Statut : En stock. La pièce est sur l’étagère et disponible pour une configuration.'
+                  : 'Statut : Réservée. Achetée mais pas encore en main : elle compte dans l’immobilisé, pas dans le stock disponible, et « Marquer comme reçue » la fera passer en stock.'
+              }
+            >
+              <Select
+                id="handover"
+                name="handover"
+                value={handover}
+                onChange={(e) => setHandover(e.target.value as PurchaseHandover)}
+              >
+                {PURCHASE_HANDOVERS.map((value) => (
+                  <option key={value} value={value}>
+                    {HANDOVER_LABELS[value]}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          ) : (
+            <Field
+              label="Statut"
+              htmlFor="status"
+              hint={
+                inTransit
+                  ? 'Colis en cours : seul « Marquer comme reçu » le passe en stock, aucune configuration ne le fera à sa place.'
+                  : BUILD_DRIVEN_STATUSES.includes(initial.status)
+                    ? 'Ce statut est normalement piloté par une configuration.'
+                    : undefined
+              }
+            >
+              <Select
+                id="status"
+                name="status"
+                defaultValue={text('status', initial.status)}
+                onChange={(e) => {
+                  const next = e.target.value as ItemStatus;
+                  setEditedStatus(next);
+                  // Switching to « en transit » is exactly when the tracking
+                  // fields are needed: open them rather than hide them one click away.
+                  if (next === 'en_transit') setTrackingOpen(true);
+                }}
+              >
+                {ITEM_STATUSES.map((value) => (
+                  <option key={value} value={value}>
+                    {STATUS_LABELS[value]}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}
           <Field label="Lien de l’annonce" htmlFor="listingUrl">
             <Input
               id="listingUrl"
@@ -326,8 +390,8 @@ export function InventoryForm({
               </p>
             ) : (
               <p className="text-sm text-ink-muted">
-                Pour un achat pas encore arrivé, passez le statut en « En transit » et
-                renseignez le suivi. Le lien s’ouvre en un tap depuis la fiche.
+                Un numéro de suivi, un lien ou une date de livraison suffit à déclarer l’achat
+                en transit. Le lien s’ouvre ensuite en un tap depuis la fiche.
               </p>
             )}
 
@@ -402,6 +466,7 @@ export function InventoryForm({
                   name="expectedArrival"
                   type="date"
                   defaultValue={text('expectedArrival', initial.expectedArrival)}
+                  onChange={(e) => setExpectedArrival(e.target.value)}
                 />
               </Field>
             </div>

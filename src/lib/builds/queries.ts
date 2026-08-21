@@ -1,11 +1,12 @@
-import { and, asc, desc, eq, ilike, inArray, isNull, or, sql, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, inArray, isNotNull, isNull, or, sql, type SQL } from 'drizzle-orm';
 import { summarizeSpecs } from '@/lib/catalog/format';
 import { db } from '@/lib/db';
 import { buildItems, builds, catalogComponents, inventoryItems } from '@/lib/db/schema';
 import { imageUrl } from '@/lib/images/store';
 import { AVAILABLE_STATUSES } from '@/lib/inventory/labels';
+import { requiresUnitsInHand } from '@/lib/inventory/status';
 import type { ComponentCategory } from '@/lib/specs';
-import type { BuildDetail, BuildLine, BuildSummaryRow, Candidate } from './types';
+import type { BuildDetail, BuildLine, BuildStatus, BuildSummaryRow, Candidate } from './types';
 
 export async function listBuilds(): Promise<BuildSummaryRow[]> {
   const rows = await db
@@ -114,7 +115,7 @@ export async function getBuildDetail(id: string): Promise<BuildDetail | null> {
  */
 export async function candidatesForSlot(
   slot: ComponentCategory,
-  options: { q?: string; limit?: number } = {},
+  options: { q?: string; limit?: number; buildStatus?: BuildStatus } = {},
 ): Promise<{ stock: Candidate[]; catalog: Candidate[] }> {
   const limit = options.limit ?? 60;
   const pattern = options.q?.trim() ? `%${options.q.trim()}%` : null;
@@ -128,6 +129,14 @@ export async function candidatesForSlot(
     );
   };
 
+  // A configuration that already claims to be assembled, announced or sold
+  // cannot take in a part that has not arrived — the action refuses it, so the
+  // picker does not offer it either.
+  const inHandOnly =
+    options.buildStatus && requiresUnitsInHand(options.buildStatus)
+      ? isNotNull(inventoryItems.receivedAt)
+      : undefined;
+
   // Every unit still on hand and free: on the shelf, reserved, assembled or on
   // its way, all of it can go into a configuration. Only what is promised to a
   // buyer stays out, and anything already placed in a build is taken.
@@ -140,6 +149,7 @@ export async function candidatesForSlot(
       and(
         eq(catalogComponents.category, slot),
         inArray(inventoryItems.status, AVAILABLE_STATUSES),
+        inHandOnly,
         isNull(buildItems.id),
         textMatch(),
       ),

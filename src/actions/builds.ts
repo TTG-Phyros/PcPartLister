@@ -5,10 +5,16 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { assertSession } from '@/lib/auth/guard';
-import { engagedUnit, freedUnit } from '@/lib/builds/engagement';
 import { BUILD_STATUSES, type BuildStatus } from '@/lib/builds/types';
 import { db } from '@/lib/db';
 import { buildItems, builds, catalogComponents, inventoryItems, lotItems } from '@/lib/db/schema';
+import { awaitedBlockMessage, requiresUnitsInHand } from '@/lib/inventory/status';
+import {
+  countAwaited,
+  engagedByBuild,
+  freedUnit,
+  heldUnitIds,
+} from '@/lib/inventory/transitions';
 import { COMPONENT_CATEGORIES, MULTI_SLOT_CATEGORIES, type ComponentCategory } from '@/lib/specs';
 import type { ActionState } from './auth';
 
@@ -123,6 +129,15 @@ export async function setBuildStatusAction(
     return { error: 'Statut invalide.' };
   }
 
+  // Assembled, announced, sold: all three claim hardware in hand. A part still
+  // on the road, or not collected yet, cannot be dragged along — so the
+  // configuration waits instead. Marking it received is one tap away on the
+  // unit, or on its batch when a whole parcel is late.
+  if (requiresUnitsInHand(status)) {
+    const awaited = await countAwaited(db, 'build', id);
+    if (awaited > 0) return { error: awaitedBlockMessage(awaited) };
+  }
+
   await db.transaction(async (tx) => {
     await tx
       .update(builds)
@@ -138,16 +153,11 @@ export async function setBuildStatusAction(
       .where(eq(builds.id, id));
 
     // Carry the whole configuration's units to the matching stock status.
-    const units = await tx
-      .select({ id: buildItems.inventoryItemId })
-      .from(buildItems)
-      .where(and(eq(buildItems.buildId, id), sql`${buildItems.inventoryItemId} is not null`));
-
-    const ids = units.map((u) => u.id).filter((value): value is string => value !== null);
+    const ids = await heldUnitIds(tx, 'build', id);
     if (ids.length > 0) {
       await tx
         .update(inventoryItems)
-        .set({ ...engagedUnit(status), updatedAt: new Date() })
+        .set(engagedByBuild(status))
         .where(inArray(inventoryItems.id, ids));
     }
   });
@@ -167,16 +177,11 @@ export async function deleteBuildAction(
 
   await db.transaction(async (tx) => {
     // Free the units before the cascade removes the lines that point at them.
-    const units = await tx
-      .select({ id: buildItems.inventoryItemId })
-      .from(buildItems)
-      .where(and(eq(buildItems.buildId, id), sql`${buildItems.inventoryItemId} is not null`));
-
-    const ids = units.map((u) => u.id).filter((value): value is string => value !== null);
+    const ids = await heldUnitIds(tx, 'build', id);
     if (ids.length > 0) {
       await tx
         .update(inventoryItems)
-        .set({ ...freedUnit, updatedAt: new Date() })
+        .set(freedUnit())
         .where(inArray(inventoryItems.id, ids));
     }
 
@@ -206,6 +211,9 @@ export async function addBuildItemAction(
 
   const status = await currentStatus(buildId);
   if (!status) return { error: 'Configuration introuvable.' };
+  if (status === 'vendue') {
+    return { error: 'Cette configuration est vendue : sa composition ne bouge plus.' };
+  }
 
   // A unit promised to a lot cannot also be promised to a configuration, or the
   // same part would be sold twice.
@@ -216,6 +224,19 @@ export async function addBuildItemAction(
       .where(eq(lotItems.inventoryItemId, inventoryItemId))
       .limit(1);
     if (inLot) return { error: 'Cette unité fait partie d’un lot : retirez-la du lot d’abord.' };
+
+    // Symmetric with the status change above: a configuration that says it is
+    // assembled or announced cannot take in a part that has not arrived. A
+    // draft can — planning around a purchase in progress is the point.
+    if (requiresUnitsInHand(status)) {
+      const awaited = await countAwaited(db, 'item', inventoryItemId);
+      if (awaited > 0) {
+        return {
+          error:
+            'Cette unité n’est pas encore arrivée : marquez-la comme reçue avant de la placer dans une configuration montée ou en vente.',
+        };
+      }
+    }
   }
 
   try {
@@ -233,7 +254,7 @@ export async function addBuildItemAction(
         if (unitIds.length > 0) {
           await tx
             .update(inventoryItems)
-            .set({ ...freedUnit, updatedAt: new Date() })
+            .set(freedUnit())
             .where(inArray(inventoryItems.id, unitIds));
         }
         if (existing.length > 0) {
@@ -277,7 +298,7 @@ export async function addBuildItemAction(
       if (inventoryItemId) {
         await tx
           .update(inventoryItems)
-          .set({ ...engagedUnit(status), updatedAt: new Date() })
+          .set(engagedByBuild(status))
           .where(eq(inventoryItems.id, inventoryItemId));
       }
     });
@@ -302,6 +323,19 @@ export async function removeBuildItemAction(
   const lineId = String(formData.get('lineId') ?? '');
   if (!lineId) return { error: 'Ligne introuvable.' };
 
+  // A sold configuration is history: pulling a part out of it would put back on
+  // the shelf something a buyer already went home with.
+  const [line] = await db
+    .select({ buildStatus: builds.status })
+    .from(buildItems)
+    .innerJoin(builds, eq(builds.id, buildItems.buildId))
+    .where(eq(buildItems.id, lineId))
+    .limit(1);
+  if (!line) return { error: 'Ligne introuvable.' };
+  if (line.buildStatus === 'vendue') {
+    return { error: 'Cette configuration est vendue : sa composition ne bouge plus.' };
+  }
+
   const [removed] = await db
     .delete(buildItems)
     .where(eq(buildItems.id, lineId))
@@ -311,7 +345,7 @@ export async function removeBuildItemAction(
   if (removed.unitId) {
     await db
       .update(inventoryItems)
-      .set({ ...freedUnit, updatedAt: new Date() })
+      .set(freedUnit())
       .where(eq(inventoryItems.id, removed.unitId));
   }
 

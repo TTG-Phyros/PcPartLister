@@ -176,7 +176,13 @@ export function MarkBatchReceived({ id, pending }: { id: string; pending: number
     <div className="flex flex-col gap-2">
       <form action={formAction}>
         <input type="hidden" name="id" value={id} />
-        <Submit label={`Marquer les ${pending} unités comme reçues`} />
+        <Submit
+          label={
+            pending > 1
+              ? `Marquer les ${pending} unités comme reçues`
+              : 'Marquer l’unité comme reçue'
+          }
+        />
       </form>
       {state.error ? <Alert tone="error">{state.error}</Alert> : null}
       {state.success ? <Alert tone="success">{state.success}</Alert> : null}

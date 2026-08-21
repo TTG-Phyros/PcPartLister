@@ -264,6 +264,20 @@ export const inventoryItems = pgTable(
     index('inventory_purchase_date_idx').on(t.purchaseDate),
     index('inventory_expected_arrival_idx').on(t.expectedArrival),
     check('inventory_price_non_negative', sql`${t.purchasePriceCents} >= 0`),
+    // The two halves of the invariant behind the whole status machine, and the
+    // reason `received_at` is what says where a unit physically is. A unit on
+    // the road has not been received; a unit the status claims is on the shelf,
+    // mounted, announced or sold has. In between sits `reserve`, the one status
+    // that says nothing on its own — set aside at the seller's, or on the shelf
+    // and promised to a configuration — which is exactly why the date decides.
+    check(
+      'inventory_transit_not_received',
+      sql`${t.status} <> 'en_transit' or ${t.receivedAt} is null`,
+    ),
+    check(
+      'inventory_settled_received',
+      sql`${t.status} in ('en_transit', 'reserve') or ${t.receivedAt} is not null`,
+    ),
   ],
 );
 
