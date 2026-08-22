@@ -126,9 +126,12 @@ function PartToBuy({ row }: { row: ShoppingRow }) {
           ordering another one costs the price of the part. */}
       {row.availableStock > 0 ? (
         <p className="rounded-lg bg-warn/10 px-3 py-2 text-xs text-warn">
-          {row.availableStock} unité{row.availableStock > 1 ? 's' : ''} de ce modèle{' '}
-          {row.availableStock > 1 ? 'sont libres' : 'est libre'} en stock : rattachez-l
-          {row.availableStock > 1 ? 'es' : 'a'} depuis la configuration plutôt que de racheter.
+          {row.availableStock} unité{row.availableStock > 1 ? 's' : ''} de ce modèle vous{' '}
+          {row.availableStock > 1
+            ? 'appartiennent déjà et sont libres'
+            : 'appartient déjà et est libre'}{' '}
+          : rattachez-l{row.availableStock > 1 ? 'es' : 'a'} depuis la configuration plutôt que de
+          racheter.
         </p>
       ) : null}
 

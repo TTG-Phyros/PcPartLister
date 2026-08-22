@@ -52,7 +52,11 @@ export default async function BuildsPage() {
                   </div>
                   <p className="mt-1 text-xs text-ink-muted">
                     {dateFormat.format(new Date(row.createdAt))} · {row.lineCount} composant(s) ·{' '}
-                    {row.stockCount} en stock · {row.toBuyCount} à acheter
+                    {row.stockCount} en stock ·{' '}
+                    {/* Owned but not arrived: neither on the shelf nor to buy
+                        again, and the only thing holding the assembly up. */}
+                    {row.awaitedCount > 0 ? `${row.awaitedCount} en attente · ` : ''}
+                    {row.toBuyCount} à acheter
                   </p>
                 </div>
                 <div className="text-right">

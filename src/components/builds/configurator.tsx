@@ -14,11 +14,12 @@ import {
   suggestedSalePriceCents,
 } from '@/lib/builds/pricing';
 import { selectionFromLines } from '@/lib/builds/selection';
-import { SLOT_ORDER, type BuildDetail, type BuildLine } from '@/lib/builds/types';
+import { SLOT_ORDER, lineBadge, type BuildDetail, type BuildLine } from '@/lib/builds/types';
 import { formatPrice, formatPriceCompact } from '@/lib/catalog/format';
 import { blockingIssues, evaluate, warnings } from '@/lib/compat/engine';
 import { cpuGpuBottleneckRule } from '@/lib/compat/rules/advisory';
 import { CONDITION_LABELS } from '@/lib/inventory/labels';
+import { stillAwaited } from '@/lib/inventory/status';
 import { CATEGORY_LABELS, MULTI_SLOT_CATEGORIES, type ComponentCategory } from '@/lib/specs';
 import type { TierListKind } from '@/lib/tier-list/kinds';
 import type { TierRow } from '@/lib/tier-list/types';
@@ -78,6 +79,13 @@ export function Configurator({
   // Owned units counted at something other than what they cost: worth saying,
   // since the total no longer matches the stock prices.
   const adjusted = build.lines.filter((line) => line.originalPriceCents !== null).length;
+
+  // Units held by the configuration that are still on their way. Read off the
+  // reception date, like everywhere else: the status alone would call a parcel
+  // set aside for a draft « réservée » and leave it looking available.
+  const awaited = stillAwaited(
+    build.lines.map((line) => line.unit).filter((unit) => unit !== null),
+  );
 
   // Required slots with nothing in them: what the configuration still needs.
   const missingSlots = SLOT_ORDER.filter(
@@ -227,6 +235,13 @@ export function Configurator({
           <p className="text-xs text-ink-muted">
             {build.lines.filter((l) => l.source === 'stock').length} pièce(s) déjà possédée(s),{' '}
             {build.lines.filter((l) => l.source === 'a_acheter').length} à acheter.
+            {/* Owned is not the same as usable: a parcel counts among the
+                pieces above and still keeps the configuration waiting. */}
+            {awaited > 0
+              ? ` ${awaited} n’${awaited > 1 ? 'ont' : 'a'} pas encore été reçue${
+                  awaited > 1 ? 's' : ''
+                }.`
+              : ''}
           </p>
 
           {adjusted > 0 ? (
@@ -285,6 +300,8 @@ function LineRow({
 
   const owned = line.source === 'stock';
 
+  const badge = lineBadge(line);
+
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border-subtle p-2.5">
       <div className="flex items-center gap-3">
@@ -298,13 +315,8 @@ function LineRow({
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={cn(
-                'rounded px-1.5 py-0.5 text-[11px] font-medium',
-                line.source === 'stock' ? 'bg-ok/15 text-ok' : 'bg-warn/15 text-warn',
-              )}
-            >
-              {line.source === 'stock' ? 'En stock' : 'À acheter'}
+            <span className={cn('rounded px-1.5 py-0.5 text-[11px] font-medium', badge.tone)}>
+              {badge.label}
             </span>
             <span className="text-xs text-ink-muted">
               {line.brand}

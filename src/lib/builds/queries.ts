@@ -17,7 +17,14 @@ export async function listBuilds(): Promise<BuildSummaryRow[]> {
       createdAt: builds.createdAt,
       consumablesCents: builds.consumablesCents,
       lineCount: sql<number>`count(${buildItems.id})::int`,
-      stockCount: sql<number>`count(${buildItems.inventoryItemId})::int`,
+      // « En stock » is a claim about the shelf, so it counts reception dates,
+      // not attached units: a parcel promised to a configuration is owned, not
+      // available. The two together still add up to the units it holds.
+      stockCount: sql<number>`count(${inventoryItems.receivedAt})::int`,
+      awaitedCount: sql<number>`(count(*) filter (
+        where ${buildItems.inventoryItemId} is not null
+          and ${inventoryItems.receivedAt} is null
+      ))::int`,
       toBuyCount: sql<number>`count(${buildItems.catalogComponentId})::int`,
       componentsCents: sql<number>`coalesce(sum(
         coalesce(
@@ -91,6 +98,7 @@ export async function getBuildDetail(id: string): Promise<BuildDetail | null> {
     originalPriceCents:
       inventory && item.customPriceCents !== null ? inventory.purchasePriceCents : null,
     condition: inventory?.condition ?? null,
+    unit: inventory ? { status: inventory.status, receivedAt: inventory.receivedAt } : null,
     position: item.position,
   }));
 

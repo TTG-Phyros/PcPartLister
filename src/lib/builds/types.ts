@@ -1,5 +1,11 @@
 import type { Build } from '@/lib/db/schema';
-import type { ItemCondition, ItemStatus } from '@/lib/inventory/labels';
+import {
+  STATUS_LABELS,
+  STATUS_TONES,
+  type ItemCondition,
+  type ItemStatus,
+} from '@/lib/inventory/labels';
+import { isInHand, type UnitPresence } from '@/lib/inventory/status';
 import type { ComponentCategory, ComponentSpecs } from '@/lib/specs';
 
 /**
@@ -34,6 +40,13 @@ export type BuildLine = {
    */
   originalPriceCents: number | null;
   condition: ItemCondition | null;
+  /**
+   * Where the owned unit stands, and whether it has actually arrived. NULL for
+   * a model still to be bought: nothing is awaited that was never purchased.
+   * Carried rather than deduced from `source`, because holding a unit and
+   * having it in hand are two different things — see `@/lib/inventory/status`.
+   */
+  unit: UnitPresence | null;
   position: number;
 };
 
@@ -58,7 +71,10 @@ export type BuildSummaryRow = {
   status: BuildStatus;
   createdAt: string;
   lineCount: number;
+  /** Units already in hand: what the configuration can be built with today. */
   stockCount: number;
+  /** Units bought but not arrived yet — owned, and still no use for assembly. */
+  awaitedCount: number;
   toBuyCount: number;
   componentsCents: number;
   consumablesCents: number;
@@ -100,6 +116,20 @@ export const BUILD_STATUS_TONES: Record<BuildStatus, string> = {
   en_vente: 'border border-ok/50 text-ok',
   vendue: 'bg-ok/15 text-ok',
 };
+
+/**
+ * What a line says about itself in the configurator. « En stock » is a claim
+ * about the shelf, so only a unit actually there gets it: one still travelling,
+ * or bought and not collected, wears its own status — the same badge the picker
+ * showed before it was placed here. Presence is read off the reception date,
+ * never the status, which alone cannot tell a parcel held by a draft from a
+ * part on the shelf held by the same draft.
+ */
+export function lineBadge(line: Pick<BuildLine, 'unit'>): { label: string; tone: string } {
+  if (line.unit === null) return { label: 'À acheter', tone: 'bg-warn/15 text-warn' };
+  if (isInHand(line.unit)) return { label: 'En stock', tone: STATUS_TONES.en_stock };
+  return { label: STATUS_LABELS[line.unit.status], tone: STATUS_TONES[line.unit.status] };
+}
 
 /** Slots in the order the configurator shows them. */
 export const SLOT_ORDER: ComponentCategory[] = [

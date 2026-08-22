@@ -30,6 +30,7 @@ function line(overrides: Partial<BuildLine>): BuildLine {
     priceCents: 0,
     originalPriceCents: null,
     condition: null,
+    unit: { status: 'en_stock', receivedAt: '2026-01-10' },
     position: 0,
     ...overrides,
   };
