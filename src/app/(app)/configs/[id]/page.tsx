@@ -6,11 +6,13 @@ import {
   DeleteBuild,
 } from '@/components/builds/build-header';
 import { Configurator } from '@/components/builds/configurator';
+import { ListingPrompt } from '@/components/builds/listing-prompt';
 import { MarginSummary } from '@/components/builds/margin-summary';
 import { ListForSale, Unlist } from '@/components/sales/listing-actions';
 import { SaleForm } from '@/components/sales/sale-form';
 import { Card } from '@/components/ui';
 import { requireUser } from '@/lib/auth/guard';
+import { buildListingText } from '@/lib/builds/listing-text';
 import { computeBuildCost, suggestedSalePriceCents } from '@/lib/builds/pricing';
 import { getBuildDetail } from '@/lib/builds/queries';
 import { BUILD_STATUS_LABELS, BUILD_STATUS_TONES } from '@/lib/builds/types';
@@ -128,6 +130,10 @@ export default async function BuildPage({ params }: { params: Promise<{ id: stri
 
         {listed && !sale ? <Unlist subject={subject} /> : null}
       </Card>
+
+      {/* Under the sale section, because that is when the question comes up:
+          the configuration is ready to leave and needs an ad written. */}
+      <ListingPrompt text={buildListingText(build, sale?.salePriceCents ?? null)} />
 
       <Card>
         <h2 className="mb-4 font-medium">Informations</h2>

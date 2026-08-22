@@ -459,6 +459,26 @@ Une unité engagée dans une configuration ou dans un lot ne se met pas en vente
 le paquet qui part, avec toutes ses unités. La fiche de l'unité le dit et renvoie vers la
 config ou le lot. **Retirer de la vente** annule l'annonce sans rien enregistrer.
 
+### Texte d'annonce pour une IA
+
+Une fois la configuration prête à partir, il reste l'annonce à écrire. La fiche s'arrête là
+où le travail d'écriture commence : le panneau **Générer la description pour l'annonce**,
+sous la section « Vente », déplie un texte brut qui reprend, dans l'ordre du configurateur,
+chaque composant avec sa catégorie, sa marque, son modèle et les specs qu'un acheteur
+regarde — cœurs et fréquence pour le processeur, VRAM pour la carte graphique, capacité et
+fréquence pour la mémoire, puissance et certification pour l'alimentation, format pour le
+boîtier — plus l'état de la pièce quand il est connu.
+
+Le texte s'ouvre sur une consigne (« Rédige une annonce de vente attractive… ») et porte le
+prix le plus établi de la configuration : celui auquel la vente s'est conclue, sinon le prix
+demandé, sinon l'objectif — et rien du tout si aucun n'est renseigné. Une spec laissée vide
+au catalogue ne laisse pas de ligne vide : elle n'apparaît pas.
+
+Tel quel, le bloc se colle dans ChatGPT, Claude ou n'importe quelle IA, qui en tire l'annonce
+Leboncoin, Vinted ou Facebook. **Copier** le met dans le presse-papier et le confirme ; la
+zone reste modifiable si vous voulez ajouter un détail que le stock ne connaît pas, et
+**Rétablir le texte généré** annule ces retouches.
+
 ### Lots
 
 Un lot, c'est plusieurs pièces qui partent ensemble à un seul acheteur — un vrai lot annoncé
